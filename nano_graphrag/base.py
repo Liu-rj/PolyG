@@ -181,13 +181,13 @@ class BaseGraphStorage(StorageNameSpace):
     async def embed_nodes(self, algorithm: str) -> tuple[np.ndarray, list[str]]:
         raise NotImplementedError("Node embedding is not used in nano-graphrag.")
 
-    def subgraph(self, node_ids: list[str] | Iterable) -> Any:
+    async def subgraph(self, node_ids: list[str] | Iterable) -> Any:
         raise NotImplementedError
 
-    def shortest_path(self, source: str, target: str) -> list[str]:
+    async def shortest_path(self, source: str, target: str) -> list[str]:
         raise NotImplementedError
 
-    def all_shortest_paths(self, source: str, target: str) -> list[list[str]]:
+    async def all_shortest_paths(self, source: str, target: str) -> list[list[str]]:
         raise NotImplementedError
 
     async def nodes(self) -> list[str]:

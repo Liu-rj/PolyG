@@ -20,9 +20,9 @@ class Neo4jStorage(BaseGraphStorage):
     def __post_init__(self):
         self.neo4j_url = self.global_config["addon_params"].get("neo4j_url", None)
         self.neo4j_auth = self.global_config["addon_params"].get("neo4j_auth", None)
-        self.namespace = (
-            f"{make_path_idable(self.global_config['working_dir'])}__{self.namespace}"
-        )
+        self.namespace = f"{self.global_config['working_dir'].split('/')[-1].split('_')[-1]}"
+        # if "Physics" in self.global_config["working_dir"]:
+        #     self.namespace = "___" + self.namespace
         logger.info(f"Using the label {self.namespace} for Neo4j as identifier")
         if self.neo4j_url is None or self.neo4j_auth is None:
             raise ValueError("Missing neo4j_url or neo4j_auth in addon_params")
@@ -81,7 +81,7 @@ class Neo4jStorage(BaseGraphStorage):
     async def has_edge(self, source_node_id: str, target_node_id: str) -> bool:
         async with self.async_driver.session() as session:
             result = await session.run(
-                f"MATCH (s:{self.namespace})-[r]->(t:{self.namespace}) "
+                f"MATCH (s:{self.namespace})-[r]-(t:{self.namespace}) "
                 "WHERE s.id = $source_id AND t.id = $target_id "
                 "RETURN COUNT(r) > 0 AS exists",
                 source_id=source_node_id,
@@ -102,15 +102,27 @@ class Neo4jStorage(BaseGraphStorage):
 
     async def edge_degree(self, src_id: str, tgt_id: str) -> int:
         async with self.async_driver.session() as session:
-            result = await session.run(
-                f"MATCH (s:{self.namespace}), (t:{self.namespace}) "
-                "WHERE s.id = $src_id AND t.id = $tgt_id "
-                f"RETURN COUNT {{(s)-[]-(:{self.namespace})}} + COUNT {{(t)-[]-(:{self.namespace})}} AS degree",
+            result_src = await session.run(
+                f"""
+                MATCH (s:{self.namespace})-[r]-()
+                WHERE s.id = $src_id
+                RETURN COUNT(r) AS degree
+                """,
                 src_id=src_id,
+            )
+            result_tgt = await session.run(
+                f"""
+                MATCH (t:{self.namespace})-[r]-()
+                WHERE t.id = $tgt_id
+                RETURN COUNT(r) AS degree
+                """,
                 tgt_id=tgt_id,
             )
-            record = await result.single()
-            return record["degree"] if record else 0
+            record_src = await result_src.single()
+            record_tgt = await result_tgt.single()
+            degree_src = record_src["degree"] if record_src else 0
+            degree_tgt = record_tgt["degree"] if record_tgt else 0
+            return degree_src + degree_tgt
 
     async def get_node(self, node_id: str) -> Union[dict, None]:
         async with self.async_driver.session() as session:
@@ -120,19 +132,6 @@ class Neo4jStorage(BaseGraphStorage):
             )
             record = await result.single()
             raw_node_data = record["node_data"] if record else None
-        if raw_node_data is None:
-            return None
-        raw_node_data["clusters"] = json.dumps(
-            [
-                {
-                    "level": index,
-                    "cluster": cluster_id,
-                }
-                for index, cluster_id in enumerate(
-                    raw_node_data.get("communityIds", [])
-                )
-            ]
-        )
         return raw_node_data
 
     async def get_edge(
@@ -140,14 +139,14 @@ class Neo4jStorage(BaseGraphStorage):
     ) -> Union[dict, None]:
         async with self.async_driver.session() as session:
             result = await session.run(
-                f"MATCH (s:{self.namespace})-[r]->(t:{self.namespace}) "
+                f"MATCH (s:{self.namespace})-[r]-(t:{self.namespace}) "
                 "WHERE s.id = $source_id AND t.id = $target_id "
-                "RETURN properties(r) AS edge_data",
+                "RETURN TYPE(r) AS edge_data",
                 source_id=source_node_id,
                 target_id=target_node_id,
             )
             record = await result.single()
-            return record["edge_data"] if record else None
+            return {"relation": record["edge_data"]}
 
     async def get_node_edges(
         self, source_node_id: str
@@ -419,4 +418,22 @@ class Neo4jStorage(BaseGraphStorage):
                 # Join the path representation as a readable string
                 paths.append(" -> ".join(path_repr))
 
+            return paths
+
+    async def all_shortest_paths(self, source: str, target: str) -> list[list[str]]:
+        async with self.async_driver.session() as session:
+            result = await session.run(
+                f"""
+                MATCH p = SHORTEST 10 (s:{self.namespace} {{id: $source_id}})
+                -[*]->(t:{self.namespace} {{id: $target_id}})
+                RETURN [n in nodes(p) | n.id] AS path
+                """,
+                source_id=source,
+                target_id=target,
+            )
+
+            paths = []
+            async for record in result:
+                node_id = record["path"]
+                paths.append(node_id)
             return paths

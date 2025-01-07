@@ -784,7 +784,8 @@ async def _find_most_related_edges_from_entities(
     query_param: QueryParam,
     knowledge_graph_inst: BaseGraphStorage,
 ):
-    all_nodes = set(dp["node_id"] for dp in entry_nodes)
+    all_nodes = set(entry_nodes.values())
+    entry_ids = list(entry_nodes.values())
 
     tic = time.time()
     print(f"Number of nodes before traversal: {len(all_nodes)}")
@@ -802,31 +803,25 @@ async def _find_most_related_edges_from_entities(
         all_edges = list(all_edges)
         all_nodes = list(all_nodes)
         num_edges = len(all_edges)
+
+        print(f"Number of nodes retrieved: {len(all_nodes)}")
+        print(f"Number of edges retrieved: {num_edges}")
     elif query_param.traversal_type == "all_shortest_paths":
-        all_node_path = knowledge_graph_inst.all_shortest_paths(
-            entry_nodes[0]["node_id"], entry_nodes[1]["node_id"]
+        all_node_path = await knowledge_graph_inst.all_shortest_paths(
+            entry_ids[0], entry_ids[1]
         )
-        all_node_path = list(all_node_path)
-        all_nodes = set()
-        for node_path in all_node_path:
-            # all_edges.extend(
-            #     [(node_path[i], node_path[i + 1]) for i in range(len(node_path) - 1)]
-            # )
-            all_nodes.update(node_path)
-        all_nodes = list(all_nodes)
-        num_edges = sum([len(p) - 1 for p in all_node_path])
+
+        print(f"Number of paths retrieved: {len(all_node_path)}")
+        print(f"Number of edges retrieved: {sum([len(p) - 1 for p in all_node_path])}")
     elif query_param.traversal_type == "shortest_path":
-        node_path = knowledge_graph_inst.shortest_path(
-            entry_nodes[0]["node_id"], entry_nodes[1]["node_id"]
-        )
+        node_path = await knowledge_graph_inst.shortest_path(entry_ids[0], entry_ids[1])
         all_node_path = [node_path]
-        all_nodes = node_path
-        num_edges = len(node_path) - 1
+
+        print(f"Number of paths retrieved: {len(all_node_path)}")
+        print(f"Number of edges retrieved: {len(node_path) - 1}")
     else:
         raise ValueError(f"Unknown traversal type: {query_param.traversal_type}")
 
-    print(f"Number of nodes retrieved: {len(all_nodes)}")
-    print(f"Number of edges retrieved: {num_edges}")
     print(f"Traversal time: {time.time()-tic:.2f}s")
 
     tic = time.time()
@@ -846,12 +841,14 @@ async def _find_most_related_edges_from_entities(
 
     if query_param.traversal_type == "BFS":
         tic = time.time()
+        src_node_pack = await asyncio.gather(
+            *[knowledge_graph_inst.get_node(e[0]) for e in all_edges]
+        )
+        tgt_node_pack = await asyncio.gather(
+            *[knowledge_graph_inst.get_node(e[1]) for e in all_edges]
+        )
         all_edges_name = [
-            (
-                knowledge_graph_inst.get_node_sync(e[0])["name"],
-                knowledge_graph_inst.get_node_sync(e[1])["name"],
-            )
-            for e in all_edges
+            (src["name"], tgt["name"]) for src, tgt in zip(src_node_pack, tgt_node_pack)
         ]
         all_edges_pack = await asyncio.gather(
             *[knowledge_graph_inst.get_edge(e[0], e[1]) for e in all_edges]
@@ -888,12 +885,13 @@ async def _find_most_related_edges_from_entities(
         for node_path in all_node_path:
             path_data = []
             for i in range(len(node_path) - 1):
-                node_name = knowledge_graph_inst.get_node_sync(node_path[i])["name"]
+                node_data = await knowledge_graph_inst.get_node(node_path[i])
                 edge_data = await knowledge_graph_inst.get_edge(
                     node_path[i], node_path[i + 1]
                 )
-                path_data.extend([node_name, edge_data["relation"]])
-            path_data.append(knowledge_graph_inst.get_node_sync(node_path[-1])["name"])
+                path_data.extend([node_data["name"], edge_data["relation"]])
+            node_data = await knowledge_graph_inst.get_node(node_path[-1])
+            path_data.append(node_data["name"])
             all_edges_data.append(path_data)
         print(f"Collect path data time: {time.time()-tic:.2f}s")
     else:
@@ -903,37 +901,14 @@ async def _find_most_related_edges_from_entities(
 
 async def _build_local_query_context(
     query,
+    id_mapping,
     knowledge_graph_inst: BaseGraphStorage,
     entities_vdb: BaseVectorStorage,
     community_reports: BaseKVStorage[CommunitySchema],
     text_chunks_db: BaseKVStorage[TextChunkSchema],
     query_param: QueryParam,
+    global_config: dict,
 ):
-    tic = time.time()
-    # if query_param.traversal_type == "BFS":
-    #     results = await entities_vdb.query(query, top_k=query_param.top_k)
-    # elif query_param.traversal_type == "shortest_path":
-
-    # TODO: use llm to extract two names in the query
-    # extract the two names in the query
-    # node_name1, node_name2 = query.split('"')[1::2]
-    # node_id_1, node_id_2 = None, None
-    # # traverse the graph, find the node_id of the two nodes
-    # for node in await knowledge_graph_inst.nodes():
-    #     node_data = knowledge_graph_inst.get_node_sync(node)
-    #     if node_data["name"] == node_name1:
-    #         node_id_1 = node
-    #     if node_data["name"] == node_name2:
-    #         node_id_2 = node
-    #     if node_id_1 is not None and node_id_2 is not None:
-    #         break
-    # results = [{"node_id": node_id_1}, {"node_id": node_id_2}]
-
-    results = [{"node_id": "2140747304"}, {"node_id": "2013630425"}]
-    print(f"Node search time: {time.time()-tic:.2f}s")
-    if not len(results):
-        return None
-
     use_communities = []
     # tic = time.time()
     # use_communities = await _find_most_related_community_from_entities(
@@ -950,7 +925,7 @@ async def _build_local_query_context(
 
     tic = time.time()
     node_datas, use_relations = await _find_most_related_edges_from_entities(
-        results, query_param, knowledge_graph_inst
+        id_mapping, query_param, knowledge_graph_inst
     )
     print(f"Get relations time: {time.time()-tic:.2f}s")
     logger.info(
@@ -958,17 +933,14 @@ async def _build_local_query_context(
     )
 
     tic = time.time()
-    entity_header = ",\t".join(
-        [f"{enclose_string_with_quotes(data)}" for data in ["id", "entity", "type"]]
-    )
+    if "Physics" in global_config["working_dir"]:
+        keys = ["name", "node_type", "abstract"]
+    else:
+        keys = ["name", "node_type", "description"]
+    entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
     entites_section_list = [entity_header]
     for i, n in enumerate(node_datas):
-        raw_data = [
-            i,
-            n["name"],
-            n["node_type"],
-            # n.get("abstract", "UNKNOWN"),
-        ]
+        raw_data = [n.get(k, "UNKNOWN") for k in keys]
         entites_section_list.append(
             ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
         )
@@ -1049,6 +1021,7 @@ async def _build_local_query_context(
 
 async def local_query(
     query,
+    id_mapping,
     knowledge_graph_inst: BaseGraphStorage,
     entities_vdb: BaseVectorStorage,
     community_reports: BaseKVStorage[CommunitySchema],
@@ -1060,18 +1033,20 @@ async def local_query(
     tic = time.time()
     context = await _build_local_query_context(
         query,
+        id_mapping,
         knowledge_graph_inst,
         entities_vdb,
         community_reports,
         text_chunks_db,
         query_param,
+        global_config,
     )
     print(f"Build context time: {time.time()-tic:.2f}s")
+    token_len = num_tokens(context)
     assert (
-        num_tokens(context) < global_config["best_model_max_token_size"]
-    ), f"context length: {num_tokens(context)}"
-    print(context)
-    print(f"Context length: {num_tokens(context)} tokens")
+        token_len < global_config["best_model_max_token_size"]
+    ), f"context length: {token_len}"
+    print(f"Context length: {token_len} tokens")
 
     if query_param.only_need_context:
         return context
@@ -1090,7 +1065,7 @@ async def local_query(
         system_prompt=sys_prompt,
     )
     print(f"LLM generate time: {time.time()-tic:.2f}s")
-    return response
+    return response, token_len, 1
 
 
 async def local_query_cypher(
@@ -1106,20 +1081,29 @@ async def local_query_cypher(
     use_model_func = global_config["best_model_func"]
 
     tic = time.time()
-    sys_prompt = PROMPTS["cypher_query_prompt_citation"]
+    if "Physics" in global_config["working_dir"]:
+        sys_prompt = PROMPTS["cypher_query_prompt_physics"]
+    elif "amazon" in global_config["working_dir"]:
+        sys_prompt = PROMPTS["cypher_query_prompt_amazon"]
+    elif "goodreads" in global_config["working_dir"]:
+        sys_prompt = PROMPTS["cypher_query_prompt_goodreads"]
+    else:
+        raise NotImplementedError
+
     response = await use_model_func(
         f"query: {query}, id mapping: {id_mapping}",
         system_prompt=sys_prompt,
     )
     cypher_query = response.split("```")[1].strip("cypher")
     print(f"Cypher query generation time: {time.time()-tic:.2f}s")
-    print(f"Token length: {num_tokens(sys_prompt + query)}")
+    token_len = num_tokens(sys_prompt + query)
+    print(f"Token length: {token_len}")
     print("Generated cypher query:", cypher_query)
 
     tic = time.time()
     result = await knowledge_graph_inst.exec_query(cypher_query)
     print(f"Query execution time: {time.time()-tic:.2f}s")
-    return ", ".join(result)
+    return ", ".join(result), token_len, 1
 
 
 async def local_query_cypher_path_search(
@@ -1135,7 +1119,15 @@ async def local_query_cypher_path_search(
     use_model_func = global_config["best_model_func"]
 
     tic = time.time()
-    sys_prompt = PROMPTS["cypher_path_search_prompt_citation"]
+    if "Physics" in global_config["working_dir"]:
+        sys_prompt = PROMPTS["cypher_path_search_prompt_physics"]
+    elif "amazon" in global_config["working_dir"]:
+        sys_prompt = PROMPTS["cypher_path_search_prompt_amazon"]
+    elif "goodreads" in global_config["working_dir"]:
+        sys_prompt = PROMPTS["cypher_path_search_prompt_goodreads"]
+    else:
+        raise NotImplementedError
+
     response = await use_model_func(
         f"query: {query}, id mapping: {id_mapping}",
         system_prompt=sys_prompt,
@@ -1165,7 +1157,7 @@ async def local_query_cypher_path_search(
     print(f"LLM generate time: {time.time()-tic:.2f}s")
 
     print(f"Token length: {form_query_tokens + form_reponse_tokens}")
-    return final_response
+    return final_response, form_query_tokens + form_reponse_tokens, 2
 
 
 def batch_local_query(
@@ -1190,6 +1182,7 @@ def batch_local_query(
                     community_reports,
                     text_chunks_db,
                     query_param,
+                    global_config,
                 )
                 for q in query
             ]

@@ -1,0 +1,80 @@
+{"qid": 0, "question": "Tell me about 'Mud Vein'.", "entity": {"Mud Vein": "book-18246727"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 1, "question": "Tell me about 'Ash'.", "entity": {"Ash": "book-9693130"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 2, "question": "Tell me about 'Robin S. Sharma'.", "entity": {"Robin S. Sharma": "author-24678"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 3, "question": "Tell me about 'D. Vincent Baker'.", "entity": {"D. Vincent Baker": "author-1206540"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 4, "question": "Tell me about 'MiddleWorld'.", "entity": {"MiddleWorld": "book-29973362"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 5, "question": "Tell me about 'Baked Fresh (Portland Heat, #2)'.", "entity": {"Baked Fresh (Portland Heat, #2)": "book-24363545"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 6, "question": "Tell me about 'Editorial Orsai'.", "entity": {"Editorial Orsai": "pub_10769"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 7, "question": "Tell me about 'Leonid Motylev'.", "entity": {"Leonid Motylev": "author-3012839"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 8, "question": "Tell me about 'Life of Pi'.", "entity": {"Life of Pi": "book-8144803"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 9, "question": "Tell me about 'Sinful Intent (ALFA Private Investigations, #1)'.", "entity": {"Sinful Intent (ALFA Private Investigations, #1)": "book-25151764"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 10, "question": "Tell me about 'Stuart Stevens'.", "entity": {"Stuart Stevens": "author-16550"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 11, "question": "Tell me about 'Cape Cod Modern: Midcentury Architecture and Community on the Outer Cape'.", "entity": {"Cape Cod Modern: Midcentury Architecture and Community on the Outer Cape": "book-20300466"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 12, "question": "Tell me about 'Donald Ray Pollock'.", "entity": {"Donald Ray Pollock": "author-784866"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 13, "question": "Tell me about 'Susan Ridder'.", "entity": {"Susan Ridder": "author-3137969"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 14, "question": "Tell me about 'Franklin's Secret Club'.", "entity": {"Franklin's Secret Club": "book-2754753"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 15, "question": "Tell me about 'jPod'.", "entity": {"jPod": "book-824017"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 16, "question": "Tell me about 'Psy-Changeling'.", "entity": {"Psy-Changeling": "series-983788"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 17, "question": "Tell me about 'Creative Time and Space: Making Room for Making Art'.", "entity": {"Creative Time and Space: Making Room for Making Art": "book-6902716"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 18, "question": "Tell me about 'Cosmic Horizons'.", "entity": {"Cosmic Horizons": "book-7137824"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 19, "question": "Tell me about 'Clark Carlton'.", "entity": {"Clark Carlton": "author-324998"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 20, "question": "Tell me about 'Prins der Wrake'.", "entity": {"Prins der Wrake": "book-10723470"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 21, "question": "Tell me about 'The Elephants of Style: A Trunkload of Tips on the Big Issues and Gray Areas of Contemporary American English'.", "entity": {"The Elephants of Style: A Trunkload of Tips on the Big Issues and Gray Areas of Contemporary American English": "book-311920"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 22, "question": "Tell me about 'Robert Evert'.", "entity": {"Robert Evert": "author-6925118"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 23, "question": "Tell me about 'David Parlett'.", "entity": {"David Parlett": "author-538882"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 24, "question": "Tell me about 'In Order to Live: A North Korean Girl's Journey to Freedom'.", "entity": {"In Order to Live: A North Korean Girl's Journey to Freedom": "book-26878106"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 25, "question": "Tell me about 'Sir Thomas Malory's Tales Of King Arthur'.", "entity": {"Sir Thomas Malory's Tales Of King Arthur": "book-480466"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 26, "question": "Tell me about '百鬼夜行 陰'.", "entity": {"百鬼夜行 陰": "book-26198178"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 27, "question": "Tell me about 'Phyllis Pellman Good'.", "entity": {"Phyllis Pellman Good": "author-76002"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 28, "question": "Tell me about 'تابستان زندگی - سه گانه صحنه هایی از زندگی شهرستان - کتاب سوم'.", "entity": {"تابستان زندگی - سه گانه صحنه هایی از زندگی شهرستان - کتاب سوم": "book-32803836"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 29, "question": "Tell me about 'Frankenstein'.", "entity": {"Frankenstein": "book-4803264"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 30, "question": "Tell me about 'Anatomy of a Misfit'.", "entity": {"Anatomy of a Misfit": "book-25129183"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 31, "question": "Tell me about 'Fantastic Four by John Byrne: Omnibus, Vol. 1'.", "entity": {"Fantastic Four by John Byrne: Omnibus, Vol. 1": "book-11434407"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 32, "question": "Tell me about 'The Revenants #1'.", "entity": {"The Revenants #1": "book-29366380"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 33, "question": "Tell me about 'Higgs e il suo bosone: La caccia alla particella di Dio'.", "entity": {"Higgs e il suo bosone: La caccia alla particella di Dio": "book-18865945"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 34, "question": "Tell me about 'Five Nights in Paris: After Dark in the City of Light'.", "entity": {"Five Nights in Paris: After Dark in the City of Light": "book-22693212"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 35, "question": "Tell me about 'Magic Lessons (Magic or Madness, #2)'.", "entity": {"Magic Lessons (Magic or Madness, #2)": "book-53134"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 36, "question": "Tell me about 'Newsflesh'.", "entity": {"Newsflesh": "series-178320"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 37, "question": "Tell me about 'A History of South Africa'.", "entity": {"A History of South Africa": "book-234503"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 38, "question": "Tell me about 'Sag mir, dass es wahr ist'.", "entity": {"Sag mir, dass es wahr ist": "book-24583396"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 39, "question": "Tell me about 'Magnificent Obsession'.", "entity": {"Magnificent Obsession": "book-218394"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 40, "question": "Tell me about 'Further Adventures in the Restless Universe'.", "entity": {"Further Adventures in the Restless Universe": "book-6516070"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 41, "question": "Tell me about 'The Vaccine Book: Making the Right Decision for Your Child'.", "entity": {"The Vaccine Book: Making the Right Decision for Your Child": "book-10977952"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 42, "question": "Tell me about 'The Dead of Winter (John Madden, #3)'.", "entity": {"The Dead of Winter (John Madden, #3)": "book-7723767"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 43, "question": "Tell me about 'Inquiries Into the Nature of Slow Money: Investing as If Food, Farms, and Fertility Mattered'.", "entity": {"Inquiries Into the Nature of Slow Money: Investing as If Food, Farms, and Fertility Mattered": "book-7225555"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 44, "question": "Tell me about 'Carolina Bensler'.", "entity": {"Carolina Bensler": "author-6583526"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 45, "question": "Tell me about 'Kedi Sam'.", "entity": {"Kedi Sam": "book-25357190"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 46, "question": "Tell me about 'Moby Dick'.", "entity": {"Moby Dick": "book-336531"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 47, "question": "Tell me about 'Finding My Forever (The Beaumont Series #3)'.", "entity": {"Finding My Forever (The Beaumont Series #3)": "book-18808403"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 48, "question": "Tell me about 'Beautiful Wreck'.", "entity": {"Beautiful Wreck": "book-29415186"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 49, "question": "Tell me about 'Wolf in White Van'.", "entity": {"Wolf in White Van": "book-23271728"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 50, "question": "Tell me about 'The Very Best 81 Words So Far: Selected stories from 81words.net'.", "entity": {"The Very Best 81 Words So Far: Selected stories from 81words.net": "book-23643571"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 51, "question": "Tell me about 'The Jane Yellowrock World Companion'.", "entity": {"The Jane Yellowrock World Companion": "book-18007323"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 52, "question": "Tell me about 'Action Comics #39'.", "entity": {"Action Comics #39": "book-24824182"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 53, "question": "Tell me about 'While You Were Mine'.", "entity": {"While You Were Mine": "book-28388135"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 54, "question": "Tell me about 'Frankenstein, or The Modern Prometheus'.", "entity": {"Frankenstein, or The Modern Prometheus": "book-2660592"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 55, "question": "Tell me about 'Barlowe's Inferno'.", "entity": {"Barlowe's Inferno": "book-287979"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 56, "question": "Tell me about 'The Wrong Side of Goodbye'.", "entity": {"The Wrong Side of Goodbye": "book-32814588"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 57, "question": "Tell me about 'The Omen Machine (Richard & Kahlan, #1)'.", "entity": {"The Omen Machine (Richard & Kahlan, #1)": "book-13513645"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 58, "question": "Tell me about 'Love Under Two Lawmen (Lusty, Texas #2 Lost Collection)'.", "entity": {"Love Under Two Lawmen (Lusty, Texas #2 Lost Collection)": "book-8628420"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 59, "question": "Tell me about 'Like Family'.", "entity": {"Like Family": "book-25361884"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 60, "question": "Tell me about 'The House of Dead Maids'.", "entity": {"The House of Dead Maids": "book-8841344"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 61, "question": "Tell me about 'How to Be a Pirate (How to Train Your Dragon, #2)'.", "entity": {"How to Be a Pirate (How to Train Your Dragon, #2)": "book-6950498"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 62, "question": "Tell me about 'Ships of Oak, Guns of Iron: The War of 1812 and the Forging of the American Navy'.", "entity": {"Ships of Oak, Guns of Iron: The War of 1812 and the Forging of the American Navy": "book-21471382"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 63, "question": "Tell me about 'Aristotle: Selections'.", "entity": {"Aristotle: Selections": "book-437586"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 64, "question": "Tell me about 'Your Heart is a Muscle the Size of a Fist'.", "entity": {"Your Heart is a Muscle the Size of a Fist": "book-25671355"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 65, "question": "Tell me about 'The Seventh Trumpet (Sister Fidelma, #23)'.", "entity": {"The Seventh Trumpet (Sister Fidelma, #23)": "book-13539710"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 66, "question": "Tell me about 'Phenomenal: A Hesitant Adventurer's Search for Wonder in the Natural World'.", "entity": {"Phenomenal: A Hesitant Adventurer's Search for Wonder in the Natural World": "book-25810332"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 67, "question": "Tell me about 'The First Book of Swords (Books of Swords, #1)'.", "entity": {"The First Book of Swords (Books of Swords, #1)": "book-1808231"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 68, "question": "Tell me about 'The Complete Morgaine (Morgaine Saga #1-4)'.", "entity": {"The Complete Morgaine (Morgaine Saga #1-4)": "book-24611854"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 69, "question": "Tell me about 'Love All'.", "entity": {"Love All": "book-6758149"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 70, "question": "Tell me about 'Mind Over Matter'.", "entity": {"Mind Over Matter": "book-796344"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 71, "question": "Tell me about 'Murder in G Major'.", "entity": {"Murder in G Major": "book-32441599"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 72, "question": "Tell me about 'Carrie Bebris'.", "entity": {"Carrie Bebris": "author-3200370"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 73, "question": "Tell me about 'Wer braucht schon Liebe (Butterfly, #1)'.", "entity": {"Wer braucht schon Liebe (Butterfly, #1)": "book-16164668"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 74, "question": "Tell me about 'The Woman in Black: A Ghost Play'.", "entity": {"The Woman in Black: A Ghost Play": "book-669399"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 75, "question": "Tell me about 'Akira, tome 1'.", "entity": {"Akira, tome 1": "book-2617121"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 76, "question": "Tell me about 'Преднамерено шляене'.", "entity": {"Преднамерено шляене": "book-11196709"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 77, "question": "Tell me about 'Dry Lips Oughta Move to Kapuskasing'.", "entity": {"Dry Lips Oughta Move to Kapuskasing": "book-12469311"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 78, "question": "Tell me about 'Intertwined'.", "entity": {"Intertwined": "book-7664242"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}
+{"qid": 79, "question": "Tell me about 'Lake of the Long Sun (The Book of the Long Sun, #2)'.", "entity": {"Lake of the Long Sun (The Book of the Long Sun, #2)": "book-1785827"}, "type": "single_entity_abstract", "hops": 1, "answer": "N/A"}

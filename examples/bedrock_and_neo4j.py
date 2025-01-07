@@ -24,10 +24,10 @@ args = argparser.parse_args()
 
 
 # # DATASET_DIR = "datasets/maple/Physics"
-# # DATASET_DIR = "datasets/amazon"
+# DATASET_DIR = "datasets/amazon"
 # DATASET_DIR = "datasets/goodreads"
 DATASET_DIR = args.path
-WORKING_DIR = f"nano_graphrag_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
+WORKING_DIR = f"checkpoints/nano_graphrag_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 100000
 MAX_OUTPUT_TOKENS = 5000
@@ -104,10 +104,10 @@ def insert():
     print("# nodes:", graph.number_of_nodes())
     print("# edges:", graph.number_of_edges())
 
-    remove_if_exist(f"{WORKING_DIR}/vdb_entities.json")
-    remove_if_exist(f"{WORKING_DIR}/entities_hnsw_metadata.pkl")
-    remove_if_exist(f"{WORKING_DIR}/entities_hnsw.index")
-    remove_if_exist(f"{WORKING_DIR}/graph_chunk_entity_relation.pkl")
+    # remove_if_exist(f"{WORKING_DIR}/vdb_entities.json")
+    # remove_if_exist(f"{WORKING_DIR}/entities_hnsw_metadata.pkl")
+    # remove_if_exist(f"{WORKING_DIR}/entities_hnsw.index")
+    # remove_if_exist(f"{WORKING_DIR}/graph_chunk_entity_relation.pkl")
 
     rag = GraphRAG(
         working_dir=WORKING_DIR,
@@ -151,9 +151,11 @@ def cypher_query():
         },
     )
     response = rag.query(
-        "Who are the academic collaborators of the author who writes the paper 'cosmology unique or not unique'?",
+        # "Who are the academic collaborators of the author who writes the paper 'cosmology unique or not unique'?",
         # "What venues have the author of the paper 'cosmology unique or not unique' published in?",
         # "What venues have the academic collaborators of the author who writes the paper 'cosmology unique or not unique' published in?",
+        "What is the brand of the item 'Channel Master Roof/Attic Tv Antenna Mount'.",
+        {"Channel Master Roof/Attic Tv Antenna Mount": "B000BSGCV2"},
         param=QueryParam(
             mode="local",
             # top_k=10,
@@ -211,6 +213,6 @@ def cypher_path_search():
 
 
 if __name__ == "__main__":
-    # insert()
+    insert()
     # cypher_query()
-    cypher_path_search()
+    # cypher_path_search()

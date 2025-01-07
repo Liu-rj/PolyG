@@ -27,8 +27,6 @@ from ._op import (
     local_query_cypher,
     local_query_cypher_path_search,
     batch_local_query,
-    global_query,
-    naive_query,
 )
 from ._storage import (
     JsonKVStorage,
@@ -92,7 +90,6 @@ class GraphRAG:
             "dimensions": 1536,
             "num_walks": 10,
             "walk_length": 40,
-            "num_walks": 10,
             "window_size": 2,
             "iterations": 3,
             "random_seed": 3,
@@ -174,7 +171,7 @@ class GraphRAG:
             namespace="community_reports", global_config=asdict(self)
         )
         self.chunk_entity_relation_graph = self.graph_storage_cls(
-            namespace="chunk_entity_relation", global_config=asdict(self)
+            namespace="", global_config=asdict(self)
         )
 
         self.embedding_func = limit_async_func_call(self.embedding_func_max_async)(
@@ -229,7 +226,9 @@ class GraphRAG:
         )
         return response
 
-    async def aquery(self, query: str, id_mapping: dict, param: QueryParam = QueryParam()):
+    async def aquery(
+        self, query: str, id_mapping: dict, param: QueryParam = QueryParam()
+    ):
         if param.mode == "local" and not self.enable_local:
             raise ValueError("enable_local is False, cannot query in local mode")
         if param.mode == "naive" and not self.enable_naive_rag:
@@ -237,7 +236,7 @@ class GraphRAG:
         if param.mode == "local":
             tic = time.time()
             if param.traversal_type == "cypher_query":
-                response = await local_query_cypher(
+                response, token_len, api_calls = await local_query_cypher(
                     query,
                     id_mapping,
                     self.chunk_entity_relation_graph,
@@ -248,7 +247,7 @@ class GraphRAG:
                     asdict(self),
                 )
             elif param.traversal_type == "cypher_path_search":
-                response = await local_query_cypher_path_search(
+                response, token_len, api_calls = await local_query_cypher_path_search(
                     query,
                     id_mapping,
                     self.chunk_entity_relation_graph,
@@ -259,8 +258,9 @@ class GraphRAG:
                     asdict(self),
                 )
             else:
-                response = await local_query(
+                response, token_len, api_calls = await local_query(
                     query,
+                    id_mapping,
                     self.chunk_entity_relation_graph,
                     self.entities_vdb,
                     self.community_reports,
@@ -268,29 +268,12 @@ class GraphRAG:
                     param,
                     asdict(self),
                 )
-            print(f"Query time: {time.time() - tic:.2f}s")
-        elif param.mode == "global":
-            response = await global_query(
-                query,
-                self.chunk_entity_relation_graph,
-                self.entities_vdb,
-                self.community_reports,
-                self.text_chunks,
-                param,
-                asdict(self),
-            )
-        elif param.mode == "naive":
-            response = await naive_query(
-                query,
-                self.chunks_vdb,
-                self.text_chunks,
-                param,
-                asdict(self),
-            )
+            duration = time.time() - tic
+            print(f"Query time: {duration:.2f}s")
         else:
             raise ValueError(f"Unknown mode {param.mode}")
         await self._query_done()
-        return response
+        return response, duration, token_len, api_calls
 
     def insert_from_networkx_graph(self, graph: nx.Graph):
         loop = always_get_an_event_loop()
@@ -360,7 +343,9 @@ class GraphRAG:
             edges_data = all_edges_data[i : i + batch_size]
             await asyncio.gather(
                 *[
-                    self.chunk_entity_relation_graph.upsert_edge_without_check(e[0], e[1], dp)
+                    self.chunk_entity_relation_graph.upsert_edge_without_check(
+                        e[0], e[1], dp
+                    )
                     for e, dp in zip(edge_ids, edges_data)
                 ]
             )
@@ -388,7 +373,7 @@ class GraphRAG:
             _add_doc_keys = await self.full_docs.filter_keys(list(new_docs.keys()))
             new_docs = {k: v for k, v in new_docs.items() if k in _add_doc_keys}
             if not len(new_docs):
-                logger.warning(f"All docs are already in the storage")
+                logger.warning("All docs are already in the storage")
                 return
             logger.info(f"[New Docs] inserting {len(new_docs)} docs")
 
@@ -408,7 +393,7 @@ class GraphRAG:
                 k: v for k, v in inserting_chunks.items() if k in _add_chunk_keys
             }
             if not len(inserting_chunks):
-                logger.warning(f"All chunks are already in the storage")
+                logger.warning("All chunks are already in the storage")
                 return
             logger.info(f"[New Chunks] inserting {len(inserting_chunks)} chunks")
             if self.enable_naive_rag:

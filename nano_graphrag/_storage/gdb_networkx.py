@@ -259,14 +259,14 @@ class NetworkXStorage(BaseGraphStorage):
         nodes_ids = [self._graph.nodes[node_id]["id"] for node_id in nodes]
         return embeddings, nodes_ids
 
-    def subgraph(self, node_ids: list[str] | Iterable) -> Any:
+    async def subgraph(self, node_ids: list[str] | Iterable) -> Any:
         return self._graph.subgraph(node_ids)
 
-    def shortest_path(self, source: str, target: str) -> list[str]:
+    async def shortest_path(self, source: str, target: str) -> list[str]:
         return nx.shortest_path(self._graph, source, target)
 
-    def all_shortest_paths(self, source: str, target: str) -> Iterable[list[str]]:
-        return nx.all_shortest_paths(self._graph, source, target)
+    async def all_shortest_paths(self, source: str, target: str) -> list[list[str]]:
+        return list(nx.all_shortest_paths(self._graph, source, target))
 
     async def nodes(self) -> list[str]:
         return list(self._graph.nodes())

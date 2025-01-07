@@ -351,7 +351,7 @@ Do not include information where the supporting evidence for it is not provided.
 {context_data}
 """
 
-PROMPTS["cypher_query_prompt_citation"] = """---Role---
+PROMPTS["cypher_query_prompt_physics"] = """---Role---
 
 You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
 
@@ -383,30 +383,31 @@ Node properties:
 
 Edge properties:
 Author nodes are linked to their paper nodes by authorship. Specific relations are:
-1. author_node -> "paper" -> paper_node
+1. author -> "paper" -> paper
 
 Paper nodes are linked to their author nodes, venue nodes, reference paper nodes and cited_by paper nodes. Specific relations are:
-1. paper_node -> "paper" -> author_node
-2. paper_node -> "reference" -> paper_node
-3. paper_node -> "paper" -> venue_node
-3. paper_node -> "cited_by" -> venue_node
+1. paper -> "author" -> author
+2. paper -> "reference" -> paper
+3. paper -> "venue" -> venue
+3. paper -> "cited_by" -> paper
 
 Venue nodes are linked to their included paper nodes. Specific relations are:
-1. venue_node -> "paper" -> paper_node
+1. venue -> "paper" -> paper
 
 ---Notes---
 
-1. Please use "-" instead of "->" when discribing the "paper" relation between paper node and author node (same for paper node and venue node) in the cypher query.
+1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
 
-2. Please carefully think about the query structure and make sure the query is efficient to execute.
+2. Add the identification label "Physics" to the entities, for example, ":Physics:author" (same for other types of entities).
 
-3. Add the identification label "___nano_graphrag_bedrock_and_neo4j_Physics__chunk_entity_relation" to the entities, for example, ":___nano_graphrag_bedrock_and_neo4j_Physics__chunk_entity_relation:author" (same for paper and venue).
+3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-5. Return the names of retrieved entities, using `RETURN DISTINCT node.name as name` in the cypher query.
+5. Return the unique names of retrieved entities and set the label of the result column as "name", using `RETURN DISTINCT node.name as name` in the cypher query.
+
+6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 """
-
 
 
 # More examples:
@@ -432,7 +433,126 @@ Venue nodes are linked to their included paper nodes. Specific relations are:
 # ```
 
 
-PROMPTS["cypher_path_search_prompt_citation"] = """---Role---
+PROMPTS["cypher_query_prompt_amazon"] = """---Role---
+
+You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
+
+---Setting---
+
+You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
+
+User questions are about node inquries which involve multi-hop relation paths.
+
+---Goal---
+
+Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph.
+
+Also give the cypher query that can be executed on the graph to get the answer.
+
+If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
+
+Do not include information where the supporting evidence for it is not provided.
+
+---Graph Schema---
+
+Definition of the graph:
+This knowledge graph is an e-commerce graph in amazon, there are two types of nodes in this graph: item and brand.
+
+Node properties:
+1. type: item, properties: ["id", "name", "node_type"]
+2. type: brand, properties: ["id", "name", "node_type"]
+
+Edge properties:
+Item nodes are linked to neighboring item nodes and brand nodes. Specific relations are:
+1. item -> "also_viewed_item" -> item
+2. item -> "buy_after_viewing" -> item
+3. item -> "also_bought" -> item
+4. item -> "bought_together" -> item
+5. item -> "brand" -> brand
+
+Brand nodes are linked to their neighboring item nodes. Specific relations are:
+1. brand -> "item" -> item
+
+---Notes---
+
+1. Please carefully think about the query structure and make sure the query is correct and efficient to execute. Do not forget to assign a variable name before retrieving the attributes.
+
+2. Add the identification label "amazon" to the entities, for example, ":amazon:item" (same for other types of entities).
+
+3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+
+4. Return the names of retrieved entities and set the label of the result column as "name", using `RETURN DISTINCT node.name as name` in the cypher query.
+
+5. Use "DISTINCT" to ensure that the results are unique.
+
+6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
+"""
+
+
+PROMPTS["cypher_query_prompt_goodreads"] = """---Role---
+
+You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
+
+---Setting---
+
+You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
+
+User questions are about node inquries which involve multi-hop relation paths.
+
+---Goal---
+
+Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph.
+
+Also give the cypher query that can be executed on the graph to get the answer.
+
+If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
+
+Do not include information where the supporting evidence for it is not provided.
+
+---Graph Schema---
+
+Definition of the graph:
+This knowledge graph is a literature graph names goodreads, there are four types of nodes in this graph: book, author, publisher and series.
+
+Node properties:
+1. type: book, properties: ["id", "name", "node_type", "description", "publication_year", "genres"]
+2. type: author, properties: ["id", "name", "node_type"]
+3. type: publisher, properties: ["id", "name", "node_type"]
+4. type: series, properties: ["id", "name", "node_type", "description"]
+
+Edge properties:
+Book nodes are linked to neighboring book nodes, author nodes, publisher nodes and series nodes. Specific relations are:
+1. book -> "author" -> author
+2. book -> "publisher" -> publisher
+3. book -> "series" -> series
+4. book -> "similar_books" -> book
+
+Author nodes are linked to their neighboring book nodes. Specific relations are:
+1. author -> "book" -> book
+
+Publisher nodes are linked to their neighboring book nodes. Specific relations are:
+1. publisher -> "book" -> book
+
+Series nodes are linked to their neighboring book nodes. Specific relations are:
+1. series -> "book" -> book
+
+---Notes---
+
+1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
+
+2. Add the identification label "goodreads" to the entities, for example, ":goodreads:book" (same for other types of entites).
+
+3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+
+4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
+
+5. Return the unique names of retrieved entities and set the label of the result column as "name", using `RETURN DISTINCT node.name as name` in the cypher query.
+
+6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
+"""
+
+
+PROMPTS["cypher_path_search_prompt_physics"] = """---Role---
 
 You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
 
@@ -446,8 +566,7 @@ An example:
 User question is "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of paper reference?". In this case, the user is asking about the paths between two authors that is constraint to paper references and citations.
 Suppose the "id" of 'J. Koll' and 'Z. Staykova' is 'id1' and 'id2', and the cypher query for this question is (where only paths that contains reference and citation relations should be considered):
 ```cypher
-MATCH (author1 {id: 'id1'}), (author2 {id: 'id2'})
-MATCH path = (author1)-[:paper]-(paper1)-[:reference|cited_by]-(paper2)-[:paper]-(author2)
+MATCH path = (author1:author {id: 'id1'})-[:paper]->(paper1:paper)-[:reference|cited_by]->(paper2:paper)-[:author]->(author2:author {id: 'id2'})
 RETURN path
 ORDER BY length(path)
 LIMIT 20
@@ -467,36 +586,118 @@ Definition of the graph:
 This knowledge graph is a citation graph in physics, there are three types of nodes in this graph: paper, author and venue.
 
 Node properties:
-1. type: author, properties: ["name", "id", "node_type"]
-2. type: paper, properties: ["name", "label", "year", "id", "node_type", "abstract"]
-3. type: venue, properties: ["name", "id", "node_type"]
+1. type: author, properties: ["id", "name", "node_type"]
+2. type: paper, properties: ["id", "name", "label", "year", "node_type", "abstract"]
+3. type: venue, properties: ["id", "name", "node_type"]
 
 Edge properties:
 Author nodes are linked to their paper nodes by authorship. Specific relations are:
-1. author_node -> "paper" -> paper_node
+1. author -> "paper" -> paper
 
 Paper nodes are linked to their author nodes, venue nodes, reference paper nodes and cited_by paper nodes. Specific relations are:
-1. paper_node -> "paper" -> author_node
-2. paper_node -> "reference" -> paper_node
-3. paper_node -> "paper" -> venue_node
-3. paper_node -> "cited_by" -> venue_node
+1. paper -> "author" -> author
+2. paper -> "reference" -> paper
+3. paper -> "venue" -> venue
+3. paper -> "cited_by" -> paper
 
 Venue nodes are linked to their included paper nodes. Specific relations are:
-1. venue_node -> "paper" -> paper_node
+1. venue -> "paper" -> paper
 
 ---Notes---
 
-1. Please use "-" instead of "->" when discribing the "paper" relation between paper node and author node (same for paper node and venue node) in the cypher query.
+1. Add the identification label "Physics" to the entities, for example, ":Physics:author" (same for other types of entities).
 
-2. Start from short-path cypher queries and do not use `*1..` or `*..` in the relation matching if we don't explicitly tell you to do so. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
+2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-3. Please carefully think about the query structure and make sure the query is efficient to execute.
+3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
+For example, correct cypher query should first "MATCH path" then "RETURN path". Moreover, always use single "MATCH" clause for the whole cypher query.
+Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:Physics)" is fine.
 
-4. Add the identification label "___nano_graphrag_bedrock_and_neo4j_Physics__chunk_entity_relation" to the entities, for example, ":___nano_graphrag_bedrock_and_neo4j_Physics__chunk_entity_relation:author" (same for paper and venue).
+4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
+For example, just starting from "(:paper)-[:reference|cited_by]->(:paper)" for matching "paper reference" relations is good. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
 
-5. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+5. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-6. Return the results in path format, for example:
+6. Return the results in path format:
+```cypher
+RETURN path
+ORDER BY length(path)
+LIMIT 20
+```
+"""
+
+
+PROMPTS["cypher_path_search_prompt_goodreads"] = """---Role---
+
+You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
+
+---Setting---
+
+You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
+
+User questions are about relationships between nodes which can be indirect and result in multi-hop relation paths. User questions may include a relation constraint that indicates some specific paths.
+
+An example:
+User question is "What is the relationship between authors 'A' and 'B' regarding collaborated books?". In this case, the user is asking about the paths between two authors that is constraint to books they have co-authored.
+Suppose the "id"s of author 'A' and 'B' are 'id1' and 'id2', and the cypher query for this question is (where only paths that contains co-authored books should be considered):
+```cypher
+MATCH path = (author1:author {id: 'id1'})-[:book]->(book1:book)-[:author]->(author2:author {id: 'id2'})
+RETURN path
+ORDER BY length(path)
+LIMIT 20
+```
+
+---Goal---
+
+Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph. Also give the cypher query that can be executed on the graph to get the answer.
+
+If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
+
+Do not include information where the supporting evidence for it is not provided.
+
+---Graph Schema---
+
+Definition of the graph:
+This knowledge graph is a literature graph names goodreads, there are four types of nodes in this graph: book, author, publisher and series.
+
+Node properties:
+1. type: book, properties: ["id", "name", "node_type", "description", "publication_year", "genres"]
+2. type: author, properties: ["id", "name", "node_type"]
+3. type: publisher, properties: ["id", "name", "node_type"]
+4. type: series, properties: ["id", "name", "node_type", "description"]
+
+Edge properties:
+Book nodes are linked to neighboring book nodes, author nodes, publisher nodes and series nodes. Specific relations are:
+1. book -> "author" -> author
+2. book -> "publisher" -> publisher
+3. book -> "series" -> series
+4. book -> "similar_books" -> book
+
+Author nodes are linked to their neighboring book nodes. Specific relations are:
+1. author -> "book" -> book
+
+Publisher nodes are linked to their neighboring book nodes. Specific relations are:
+1. publisher -> "book" -> book
+
+Series nodes are linked to their neighboring book nodes. Specific relations are:
+1. series -> "book" -> book
+
+---Notes---
+
+1. Add the identification label "goodreads" to the entities, for example, ":goodreads:author" (same for other types of entities).
+
+2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+
+3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
+For example, correct cypher query should first "MATCH path" then "RETURN path". Moreover, always use single "MATCH" clause for the whole cypher query.
+Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:goodreads)" is fine.
+
+4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
+If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
+
+5. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
+
+6. Return the results in path format:
 ```cypher
 RETURN path
 ORDER BY length(path)
