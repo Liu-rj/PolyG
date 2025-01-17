@@ -328,7 +328,11 @@ You are a helpful assistant responding to questions about data in the tables pro
 
 ---Setting---
 
-There will be two tables provided: one being the entity node and one being the edge relationship. Questions can be about node inquries or relations between nodes.
+The data tables may appear in one of the two forms:
+1. Two tables are provided: one being the entity node and one being the edge relationship.
+2. Multiple reasoning paths are provided, indicating relations between entities.
+
+Questions can be about node inquries or relations between nodes.
 
 Entities in the question may not have direct relationship and answering the question will need to consider multi-hop relations.
 
@@ -342,11 +346,40 @@ If you don't know the answer, just say so. Do not make anything up.
 
 Do not include information where the supporting evidence for it is not provided.
 
+Note: In your reponses, keep the name of entities as they are, do not change them in any way.
+
 ---Target response length and format---
 
 {response_type}
 
 ---Data tables---
+
+{context_data}
+"""
+
+PROMPTS["cypher_answer_summary"] = """---Role---
+
+You are a helpful assistant responding to questions about data in the tables provided.
+
+---Setting---
+
+The rows in the data table are answer entities to user questions given by cypher queries, please give a summary based on the answers.
+
+For example, if the question is "Who is the the author of the book 'xxx'?", then the author information is already listed as rows in the answer table.
+
+You don't need to come up with the answers yourself as they are already given, just give a summary based on the answers.
+
+Note: Keep the name of answer entities as they are in the answer table, do not change them in any way.
+
+---Goal---
+
+The summary should be comprehensive, diverse and empowerful, which can thoroughly cover diverse aspects, enable the reader to understand the topic and make informed judgments.
+
+---Target response length and format---
+
+{response_type}
+
+---Answer table---
 
 {context_data}
 """
@@ -398,39 +431,16 @@ Venue nodes are linked to their included paper nodes. Specific relations are:
 
 1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
 
-2. Add the identification label "Physics" to the entities, for example, ":Physics:author" (same for other types of entities).
+2. Add the identification label "Physics" to the entities, for example, ":physics:author" (same for other types of entities).
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
 4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-5. Return the unique names of retrieved entities and set the label of the result column as "name", using `RETURN DISTINCT node.name as name` in the cypher query.
+5. Return the unique ids of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query.
 
 6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 """
-
-
-# More examples:
-
-# 1. User question: "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of common collaborators?"
-# Cypher query:
-# ```cypher
-# MATCH (author1 {id: 'id1'}), (author2 {id: 'id2'})
-# MATCH path = (author1)-[:paper]-(paper1:paper)-[:paper]-(collaborator:author)-[:paper]-(paper2:paper)-[:paper]-(author2)
-# WHERE author1 <> collaborator AND author2 <> collaborator
-# RETURN path
-# ORDER BY length(path)
-# LIMIT 10
-# ```
-
-# 2. User question: "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of venues and papers in those venues?"
-# Cypher query:
-# ```cypher
-# MATCH path = (author1:author {id: 'id1'})-[:paper]-(paper1:paper)-[:paper]-(venue:venue)-[:paper]-(paper2:paper)-[:paper]-(author2:author {id: 'id2'})
-# RETURN path
-# ORDER BY length(path)
-# LIMIT 10
-# ```
 
 
 PROMPTS["cypher_query_prompt_amazon"] = """---Role---
@@ -481,9 +491,9 @@ Brand nodes are linked to their neighboring item nodes. Specific relations are:
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Return the names of retrieved entities and set the label of the result column as "name", using `RETURN DISTINCT node.name as name` in the cypher query.
+4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-5. Use "DISTINCT" to ensure that the results are unique.
+5. Return the unique ids of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query.
 
 6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 """
@@ -546,7 +556,7 @@ Series nodes are linked to their neighboring book nodes. Specific relations are:
 
 4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-5. Return the unique names of retrieved entities and set the label of the result column as "name", using `RETURN DISTINCT node.name as name` in the cypher query.
+5. Return the unique ids of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query.
 
 6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 """
@@ -568,8 +578,7 @@ Suppose the "id" of 'J. Koll' and 'Z. Staykova' is 'id1' and 'id2', and the cyph
 ```cypher
 MATCH path = (author1:author {id: 'id1'})-[:paper]->(paper1:paper)-[:reference|cited_by]->(paper2:paper)-[:author]->(author2:author {id: 'id2'})
 RETURN path
-ORDER BY length(path)
-LIMIT 20
+LIMIT 10
 ```
 
 ---Goal---
@@ -605,24 +614,25 @@ Venue nodes are linked to their included paper nodes. Specific relations are:
 
 ---Notes---
 
-1. Add the identification label "Physics" to the entities, for example, ":Physics:author" (same for other types of entities).
+1. Add the identification label "Physics" to the entities, for example, ":physics:author" (same for other types of entities).
 
 2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
 3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
-For example, correct cypher query should first "MATCH path" then "RETURN path". Moreover, always use single "MATCH" clause for the whole cypher query.
-Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:Physics)" is fine.
+For example, correct cypher query should first "MATCH path" then "RETURN path".
+Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:physics)" is fine.
 
 4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
 For example, just starting from "(:paper)-[:reference|cited_by]->(:paper)" for matching "paper reference" relations is good. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
 
 5. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-6. Return the results in path format:
+6. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
+
+7. Return the results in path format:
 ```cypher
 RETURN path
-ORDER BY length(path)
-LIMIT 20
+LIMIT 10
 ```
 """
 
@@ -643,8 +653,7 @@ Suppose the "id"s of author 'A' and 'B' are 'id1' and 'id2', and the cypher quer
 ```cypher
 MATCH path = (author1:author {id: 'id1'})-[:book]->(book1:book)-[:author]->(author2:author {id: 'id2'})
 RETURN path
-ORDER BY length(path)
-LIMIT 20
+LIMIT 10
 ```
 
 ---Goal---
@@ -689,7 +698,7 @@ Series nodes are linked to their neighboring book nodes. Specific relations are:
 2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
 3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
-For example, correct cypher query should first "MATCH path" then "RETURN path". Moreover, always use single "MATCH" clause for the whole cypher query.
+For example, correct cypher query should first "MATCH path" then "RETURN path".
 Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:goodreads)" is fine.
 
 4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
@@ -697,11 +706,12 @@ If current simple queries can not find the answer, we will ask you to gradually 
 
 5. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-6. Return the results in path format:
+6. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
+
+7. Return the results in path format:
 ```cypher
 RETURN path
-ORDER BY length(path)
-LIMIT 20
+LIMIT 10
 ```
 """
 

@@ -9,7 +9,9 @@ from scipy.sparse import csr_matrix
 
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument("--path", type=str, default="dataset/maple/Physics", required=True)
+argparser.add_argument(
+    "--path", type=str, default="dataset/maple/Physics", required=True
+)
 args = argparser.parse_args()
 
 
@@ -61,10 +63,8 @@ all_edges_data = {
 }
 del G_nx
 
-# all_nodes_data = [{"id": nid, **data} for nid, data in zip(all_nodes, all_nodes_data)]
 keys = ["name", "node_type", "description"]
 ig_nodes_data = {k: [d.get(k, "UNKOWN") for d in all_nodes_data] for k in keys}
-del all_nodes_data
 ig_nodes_data["node_name"] = ig_nodes_data.pop("name")
 
 # add node and edge list
@@ -72,11 +72,13 @@ G_ig.add_vertices(all_nodes, attributes=ig_nodes_data)
 print(G_ig.summary())
 G_ig.add_edges(all_edges, all_edges_data)
 
+del all_nodes, all_edges, all_nodes_data, all_edges_data
+
 e2r = get_entities_to_relationships_map(G_ig)
 
 # # Print summary
 print(G_ig.summary())
-ig.Graph.write_picklez(G_ig, os.path.join(DATASET_DIR,"graph_igraph_data.pklz"))  # type: ignore
+ig.Graph.write_picklez(G_ig, os.path.join(DATASET_DIR, "graph_igraph_data.pklz"))  # type: ignore
 
 with open(os.path.join(DATASET_DIR, "map_e2r_blob_data.pkl"), "wb") as f:
     pickle.dump(e2r, f)

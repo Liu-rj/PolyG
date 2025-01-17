@@ -27,18 +27,20 @@ G = nx.DiGraph()
 
 # add nodes
 for node_type in data.keys():
+    node_t = node_type.split("_")[0]
     for key, value in data[node_type].items():
         node_data = data[node_type][key]["features"]
-        node_data["node_type"] = node_type.split("_")[0]
-        if "maple" in args.path and node_type == "paper_nodes":
-            node_data["label"] = ", ".join(node_data["label"])
-        if "title" in node_data and "name" not in node_data:
-            node_data["name"] = node_data["title"]
-            del node_data["title"]
-        if "abstract" in node_data and "description" not in node_data:
-            node_data["description"] = node_data["abstract"]
-            del node_data["abstract"]
-        G.add_node(key, **node_data)
+        name = node_data["name"] if "name" in node_data else node_data["title"]
+        name = name.replace("\n", " ").replace("\r", " ").replace('"', "'")
+        description = (
+            node_data["description"]
+            if "description" in node_data
+            else node_data.get("abstract", "UNKNOWN")
+        )
+        description = (
+            description.replace("\n", " ").replace("\r", " ").replace('"', "'")
+        )
+        G.add_node(key, **{"name": name, "node_type": node_t, "description": description})
 
 print("# nodes:", G.number_of_nodes())
 print("# edges:", G.number_of_edges())
@@ -62,8 +64,6 @@ print(f"graph is directed: {G.is_directed()}")
 del data
 
 pickle.dump(G, open(os.path.join(args.path, "graph.pkl"), "wb"))
-
-exit()
 
 
 def csr_from_indices_list(data: List[List[int]], shape: Tuple[int, int]) -> csr_matrix:
@@ -104,16 +104,16 @@ all_edges_data = {
 }
 del G
 
-# all_nodes_data = [{"id": nid, **data} for nid, data in zip(all_nodes, all_nodes_data)]
 keys = ["name", "node_type", "description"]
 ig_nodes_data = {k: [d.get(k, "UNKOWN") for d in all_nodes_data] for k in keys}
-del all_nodes_data
 ig_nodes_data["node_name"] = ig_nodes_data.pop("name")
 
 # add node and edge list
 G_ig.add_vertices(all_nodes, attributes=ig_nodes_data)
 print(G_ig.summary())
 G_ig.add_edges(all_edges, all_edges_data)
+
+del all_nodes, all_edges, all_nodes_data, all_edges_data
 
 e2r = get_entities_to_relationships_map(G_ig)
 

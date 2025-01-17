@@ -373,7 +373,7 @@ async def extract_entities(
             already_processed % len(PROMPTS["process_tickers"])
         ]
         print(
-            f"{now_ticks} Processed {already_processed}({already_processed*100//len(ordered_chunks)}%) chunks,  {already_entities} entities(duplicated), {already_relations} relations(duplicated)\r",
+            f"{now_ticks} Processed {already_processed}({already_processed * 100 // len(ordered_chunks)}%) chunks,  {already_entities} entities(duplicated), {already_relations} relations(duplicated)\r",
             end="",
             flush=True,
         )
@@ -789,6 +789,9 @@ async def _find_most_related_edges_from_entities(
 
     tic = time.time()
     print(f"Number of nodes before traversal: {len(all_nodes)}")
+    print(
+        f"Traversal type: {query_param.traversal_type}, depth: {query_param.edge_depth}"
+    )
 
     if query_param.traversal_type == "BFS":
         all_edges = set()
@@ -822,7 +825,7 @@ async def _find_most_related_edges_from_entities(
     else:
         raise ValueError(f"Unknown traversal type: {query_param.traversal_type}")
 
-    print(f"Traversal time: {time.time()-tic:.2f}s")
+    print(f"Traversal time: {time.time() - tic:.2f}s")
 
     tic = time.time()
     node_datas = await asyncio.gather(
@@ -837,7 +840,7 @@ async def _find_most_related_edges_from_entities(
         {**n, "rank": d} for n, d in zip(node_datas, node_degrees) if n is not None
     ]
     node_datas = sorted(node_datas, key=lambda x: x["rank"], reverse=True)
-    print(f"Get node data time: {time.time()-tic:.2f}s")
+    print(f"Get node data time: {time.time() - tic:.2f}s")
 
     if query_param.traversal_type == "BFS":
         tic = time.time()
@@ -853,13 +856,13 @@ async def _find_most_related_edges_from_entities(
         all_edges_pack = await asyncio.gather(
             *[knowledge_graph_inst.get_edge(e[0], e[1]) for e in all_edges]
         )
-        print(f"Get edge data time: {time.time()-tic:.2f}s")
+        print(f"Get edge data time: {time.time() - tic:.2f}s")
 
         tic = time.time()
         all_edges_degree = await asyncio.gather(
             *[knowledge_graph_inst.edge_degree(e[0], e[1]) for e in all_edges]
         )
-        print(f"Get edge degree time: {time.time()-tic:.2f}s")
+        print(f"Get edge degree time: {time.time() - tic:.2f}s")
 
         tic = time.time()
         all_edges_data = [
@@ -867,11 +870,11 @@ async def _find_most_related_edges_from_entities(
             for k, r, v in zip(all_edges_name, all_edges_degree, all_edges_pack)
             if v is not None
         ]
-        print(f"Combine edge data time: {time.time()-tic:.2f}s")
+        print(f"Combine edge data time: {time.time() - tic:.2f}s")
 
         tic = time.time()
         all_edges_data = sorted(all_edges_data, key=lambda x: x["rank"], reverse=True)
-        print(f"Sort edge data time: {time.time()-tic:.2f}s")
+        print(f"Sort edge data time: {time.time() - tic:.2f}s")
 
         # all_edges_data = truncate_list_by_token_size(
         #     all_edges_data,
@@ -893,7 +896,7 @@ async def _find_most_related_edges_from_entities(
             node_data = await knowledge_graph_inst.get_node(node_path[-1])
             path_data.append(node_data["name"])
             all_edges_data.append(path_data)
-        print(f"Collect path data time: {time.time()-tic:.2f}s")
+        print(f"Collect path data time: {time.time() - tic:.2f}s")
     else:
         raise ValueError(f"Unknown traversal type: {query_param.traversal_type}")
     return (node_datas, all_edges_data)
@@ -927,16 +930,13 @@ async def _build_local_query_context(
     node_datas, use_relations = await _find_most_related_edges_from_entities(
         id_mapping, query_param, knowledge_graph_inst
     )
-    print(f"Get relations time: {time.time()-tic:.2f}s")
+    print(f"Get relations time: {time.time() - tic:.2f}s")
     logger.info(
         f"Using {len(node_datas)} entites, {len(use_communities)} communities, {len(use_relations)} relations, {len(use_text_units)} text units"
     )
 
     tic = time.time()
-    if "Physics" in global_config["working_dir"]:
-        keys = ["name", "node_type", "abstract"]
-    else:
-        keys = ["name", "node_type", "description"]
+    keys = ["name", "node_type", "description"]
     entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
     entites_section_list = [entity_header]
     for i, n in enumerate(node_datas):
@@ -951,7 +951,7 @@ async def _build_local_query_context(
     )
     entities_context = list_to_csv(truncated_entities_list)
     print(
-        f"Build entity context time: {time.time()-tic:.2f}s, context length: {num_tokens(entities_context)} tokens"
+        f"Build entity context time: {time.time() - tic:.2f}s, context length: {num_tokens(entities_context)} tokens"
     )
 
     tic = time.time()
@@ -986,7 +986,7 @@ async def _build_local_query_context(
     relations_context = list_to_csv(truncated_relations_list)
 
     print(
-        f"Build relation context time: {time.time()-tic:.2f}s, context length: {num_tokens(relations_context)} tokens"
+        f"Build relation context time: {time.time() - tic:.2f}s, context length: {num_tokens(relations_context)} tokens"
     )
 
     # tic = time.time()
@@ -1041,7 +1041,7 @@ async def local_query(
         query_param,
         global_config,
     )
-    print(f"Build context time: {time.time()-tic:.2f}s")
+    print(f"Build context time: {time.time() - tic:.2f}s")
     token_len = num_tokens(context)
     assert (
         token_len < global_config["best_model_max_token_size"]
@@ -1057,14 +1057,14 @@ async def local_query(
     sys_prompt = sys_prompt_temp.format(
         context_data=context, response_type=query_param.response_type
     )
-    print(f"Form prompt time: {time.time()-tic:.2f}s")
+    print(f"Form prompt time: {time.time() - tic:.2f}s")
 
     tic = time.time()
     response = await use_model_func(
         query,
         system_prompt=sys_prompt,
     )
-    print(f"LLM generate time: {time.time()-tic:.2f}s")
+    print(f"LLM generate time: {time.time() - tic:.2f}s")
     return response, token_len, 1
 
 
@@ -1095,15 +1095,53 @@ async def local_query_cypher(
         system_prompt=sys_prompt,
     )
     cypher_query = response.split("```")[1].strip("cypher")
-    print(f"Cypher query generation time: {time.time()-tic:.2f}s")
+    print(f"Cypher query generation time: {time.time() - tic:.2f}s")
     token_len = num_tokens(sys_prompt + query)
     print(f"Token length: {token_len}")
     print("Generated cypher query:", cypher_query)
 
     tic = time.time()
-    result = await knowledge_graph_inst.exec_query(cypher_query)
-    print(f"Query execution time: {time.time()-tic:.2f}s")
-    return ", ".join(result), token_len, 1
+    results = await knowledge_graph_inst.exec_query(cypher_query)
+    ret_ids = [r["id"] for r in results]
+    print(f"Query execution time: {time.time() - tic:.2f}s")
+
+    tic = time.time()
+    entry_ids = list(id_mapping.values())
+    ret_ids = entry_ids + ret_ids
+    node_datas = await asyncio.gather(
+        *[knowledge_graph_inst.get_node(nid) for nid in ret_ids]
+    )
+    ret_names = [n["name"] for n in node_datas[len(entry_ids) :]]
+    if not all([n is not None for n in node_datas]):
+        logger.warning("Some nodes are missing, maybe the storage is damaged")
+    print(f"Get node data time: {time.time() - tic:.2f}s")
+
+    keys = ["name", "node_type", "description"]
+    entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
+    entites_section_list = [entity_header]
+    for i, n in enumerate(node_datas):
+        raw_data = [n.get(k, "UNKNOWN") for k in keys]
+        entites_section_list.append(
+            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+        )
+    entities_context = list_to_csv(entites_section_list)
+
+    tic = time.time()
+    sys_prompt_temp = PROMPTS["cypher_answer_summary"]
+    sys_prompt = sys_prompt_temp.format(
+        context_data=entities_context, response_type=query_param.response_type
+    )
+    print(f"Form prompt time: {time.time() - tic:.2f}s")
+    token_len += num_tokens(sys_prompt)
+    print(f"Token length: {token_len}")
+
+    tic = time.time()
+    response = await use_model_func(
+        query,
+        system_prompt=sys_prompt,
+    )
+    print(f"LLM generate time: {time.time() - tic:.2f}s")
+    return response, token_len, 2, ", ".join(ret_names)
 
 
 async def local_query_cypher_path_search(
@@ -1133,20 +1171,20 @@ async def local_query_cypher_path_search(
         system_prompt=sys_prompt,
     )
     cypher_query = response.split("```")[1].strip("cypher")
-    print(f"Cypher query generation time: {time.time()-tic:.2f}s")
+    print(f"Cypher query generation time: {time.time() - tic:.2f}s")
     print("Generated cypher query:", cypher_query)
     form_query_tokens = num_tokens(sys_prompt + query)
 
     tic = time.time()
     context = await knowledge_graph_inst.exec_query_and_get_path(cypher_query)
-    print(f"Query execution time: {time.time()-tic:.2f}s")
+    print(f"Query execution time: {time.time() - tic:.2f}s")
 
     tic = time.time()
     sys_prompt_temp = PROMPTS["local_rag_response"]
     sys_prompt = sys_prompt_temp.format(
         context_data=context, response_type=query_param.response_type
     )
-    print(f"Form prompt time: {time.time()-tic:.2f}s")
+    print(f"Form prompt time: {time.time() - tic:.2f}s")
     form_reponse_tokens = num_tokens(sys_prompt + query)
 
     tic = time.time()
@@ -1154,7 +1192,7 @@ async def local_query_cypher_path_search(
         query,
         system_prompt=sys_prompt,
     )
-    print(f"LLM generate time: {time.time()-tic:.2f}s")
+    print(f"LLM generate time: {time.time() - tic:.2f}s")
 
     print(f"Token length: {form_query_tokens + form_reponse_tokens}")
     return final_response, form_query_tokens + form_reponse_tokens, 2
@@ -1188,7 +1226,7 @@ def batch_local_query(
             ]
         )
     )
-    print(f"Build context time: {time.time()-tic:.2f}s")
+    print(f"Build context time: {time.time() - tic:.2f}s")
     for c in batch_context:
         assert (
             num_tokens(c) < global_config["best_model_max_token_size"]
@@ -1210,7 +1248,7 @@ def batch_local_query(
             context_data=context, response_type=query_param.response_type
         )
         batch_sys_prompt.append(sys_prompt)
-    print(f"Form prompt time: {time.time()-tic:.2f}s")
+    print(f"Form prompt time: {time.time() - tic:.2f}s")
 
     tic = time.time()
     loop = always_get_an_event_loop()
@@ -1220,7 +1258,7 @@ def batch_local_query(
             system_prompt=batch_sys_prompt,
         )
     )
-    print(f"LLM generate time: {time.time()-tic:.2f}s")
+    print(f"LLM generate time: {time.time() - tic:.2f}s")
     return response
 
 
@@ -1339,9 +1377,9 @@ async def global_query(
     points_context = []
     for dp in final_support_points:
         points_context.append(
-            f"""----Analyst {dp['analyst']}----
-Importance Score: {dp['score']}
-{dp['answer']}
+            f"""----Analyst {dp["analyst"]}----
+Importance Score: {dp["score"]}
+{dp["answer"]}
 """
         )
     points_context = "\n".join(points_context)

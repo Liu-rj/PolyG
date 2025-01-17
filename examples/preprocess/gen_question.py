@@ -3,6 +3,7 @@ import jsonlines
 import argparse
 import pickle
 import os
+import time
 import networkx as nx
 from typing import List
 from neo4j import GraphDatabase
@@ -12,7 +13,7 @@ neo4j_config = {
     "neo4j_url": os.environ.get("NEO4J_URL", "neo4j://localhost:7687"),
     "neo4j_auth": (
         os.environ.get("NEO4J_USER", "neo4j"),
-        os.environ.get("NEO4J_PASSWORD", "123456789"),
+        os.environ.get("NEO4J_PASSWORD", "12345678"),
     ),
 }
 
@@ -22,17 +23,17 @@ single_entity_concrete_template = {
         "author": {
             "What paper have the author '{}' published?": {
                 "cypher": """
-            MATCH (author:Physics:author {{id: '{}'}})
-            -[:paper]->(paper:Physics:paper)
+            MATCH (author:physics:author {{id: '{}'}})
+            -[:paper]->(paper:physics:paper)
             RETURN paper.name as name
             """,
                 "hops": 1,
             },
             "What are the academic collaborators of '{}'?": {
                 "cypher": """
-            MATCH (author:Physics:author {{id: '{}'}})
-            -[:paper]->(paper:Physics:paper)
-            -[:author]->(collaborator:Physics:author)
+            MATCH (author:physics:author {{id: '{}'}})
+            -[:paper]->(paper:physics:paper)
+            -[:author]->(collaborator:physics:author)
             WHERE collaborator <> author
             RETURN DISTINCT collaborator.name AS name
             """,
@@ -40,9 +41,9 @@ single_entity_concrete_template = {
             },
             "What venues have the author '{}' published in?": {
                 "cypher": """
-            MATCH (author:Physics:author {{id: '{}'}})
-            -[:paper]->(paper:Physics:paper)
-            -[:venue]->(venue:Physics:venue)
+            MATCH (author:physics:author {{id: '{}'}})
+            -[:paper]->(paper:physics:paper)
+            -[:venue]->(venue:physics:venue)
             RETURN DISTINCT venue.name AS name
             """,
                 "hops": 2,
@@ -51,8 +52,8 @@ single_entity_concrete_template = {
         "paper": {
             "Who are the authors of the paper '{}'?": {
                 "cypher": """
-            MATCH (p:Physics:paper {{id: '{}'}})
-            -[:author]->(a:Physics:author)
+            MATCH (p:physics:paper {{id: '{}'}})
+            -[:author]->(a:physics:author)
             RETURN DISTINCT a.name AS name
             """,
                 "hops": 1,
@@ -67,10 +68,10 @@ single_entity_concrete_template = {
             },
             "Who are the academic collaborators of the author who writes the paper '{}'?": {
                 "cypher": """
-            MATCH (p:Physics:paper {{id: '{}'}})
-            MATCH (p)-[:author]->(a:Physics:author)
-            MATCH (a)-[:paper]->(otherPaper:Physics:paper)
-            MATCH (otherPaper)-[:author]->(coAuthor:Physics:author)
+            MATCH (p:physics:paper {{id: '{}'}})
+            MATCH (p)-[:author]->(a:physics:author)
+            MATCH (a)-[:paper]->(otherPaper:physics:paper)
+            MATCH (otherPaper)-[:author]->(coAuthor:physics:author)
             WHERE coAuthor <> a
             RETURN DISTINCT coAuthor.name AS name
             """,
@@ -78,23 +79,23 @@ single_entity_concrete_template = {
             },
             "What venues have the author of the paper '{}' published in?": {
                 "cypher": """
-            MATCH (p:Physics:paper {{id: '{}'}})
-            -[:author]->(a:Physics:author)
-            -[:paper]->(other_p:Physics:paper)
-            -[:venue]->(v:Physics:venue)
+            MATCH (p:physics:paper {{id: '{}'}})
+            -[:author]->(a:physics:author)
+            -[:paper]->(other_p:physics:paper)
+            -[:venue]->(v:physics:venue)
             RETURN DISTINCT v.name AS name
             """,
                 "hops": 3,
             },
             "What venues have the academic collaborators of the author who writes the paper '{}' published in?": {
                 "cypher": """
-            MATCH (start_paper:Physics:paper {{id: '{}'}})
-            -[:author]->(author:Physics:author)
-            -[:paper]->(collab_paper:Physics:paper)
-            -[:author]->(collaborator:Physics:author)
+            MATCH (start_paper:physics:paper {{id: '{}'}})
+            -[:author]->(author:physics:author)
+            -[:paper]->(collab_paper:physics:paper)
+            -[:author]->(collaborator:physics:author)
             WHERE collaborator <> author
-            MATCH (collaborator)-[:paper]->(pub:Physics:paper)
-            -[:venue]->(venue:Physics:venue)
+            MATCH (collaborator)-[:paper]->(pub:physics:paper)
+            -[:venue]->(venue:physics:venue)
             RETURN DISTINCT venue.name AS name
             """,
                 "hops": 5,
@@ -138,7 +139,7 @@ single_entity_concrete_template = {
     },
     "goodreads": {
         "book": {
-            "Who is the author of the book '{}'?": {
+            "Who are the authors of the book '{}'?": {
                 "cypher": """
             MATCH (book:goodreads:book {{id: '{}'}})
             -[:author]->(author:goodreads:author)
@@ -225,51 +226,99 @@ single_entity_concrete_template = {
 
 multi_entity_concrete_template = {
     "physics": {
-        "What is the relationship between authors '{}' and '{}' regarding collaborated papers?": {
-            "cypher": """
-            MATCH (author1:Physics:author)
-            -[:paper]->(paper1:Physics:paper)
-            -[:author]->(author2:Physics:author)
+        "Have the author '{}' cited or been cited by the work of the author '{}' and what are those works?": {
+            "cypher_template": """
+            MATCH (author1:physics:author)
+            -[:paper]->(paper1:physics:paper)
+            -[:reference|cited_by]->(paper2:physics:paper)
+            -[:author]->(author2:physics:author)
             WHERE author1 <> author2
             RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
             """,
-            "hops": 2,
-        },
-        "What is the relationship between authors '{}' and '{}' regarding paper references?": {
             "cypher": """
-            MATCH (author1:Physics:author)
-            -[:paper]->(paper1:Physics:paper)
-            -[:reference|cited_by]->(paper2:Physics:paper)
-            -[:author]->(author2:Physics:author)
-            WHERE author1 <> author2
-            RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
+            MATCH path = (author1:physics:author {{id: '{}'}})
+            -[:paper]->(paper1:physics:paper)
+            -[:reference|cited_by]->(paper2:physics:paper)
+            -[:author]->(author2:physics:author {{id: '{}'}})
+            RETURN path LIMIT 10
             """,
             "hops": 3,
         },
-        "What is the relationship between authors authors '{}' and '{}' regarding common collaborators?": {
-            "cypher": """
-            MATCH (author1:Physics:author)
-            -[:paper]->(paper1:Physics:paper)
-            -[:author]->(collaborator:Physics:author)
-            -[:paper]->(paper2:Physics:paper)
-            -[:author]->(author2:Physics:author)
+        "Have authors '{}' and '{}' both collaborated with some other authors and who are they?": {
+            "cypher_template": """
+            MATCH (author1:physics:author)
+            -[:paper]->(paper1:physics:paper)
+            -[:author]->(collaborator:physics:author)
+            -[:paper]->(paper2:physics:paper)
+            -[:author]->(author2:physics:author)
             WHERE author1 <> collaborator AND author2 <> collaborator
             RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
             """,
-            "hops": 4,
-        },
-        "What is the relationship between authors '{}' and '{}' regarding common venues they have published in?": {
             "cypher": """
-            MATCH (author1:Physics:author)
-            -[:paper]->(paper1:Physics:paper)
-            -[:venue]->(venue:Physics:venue)
-            -[:paper]->(paper2:Physics:paper)
-            -[:author]->(author2:Physics:author)
-            WHERE author1 <> author2
-            RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
+            MATCH path = (author1:physics:author {{id: '{}'}})
+            -[:paper]->(paper1:physics:paper)
+            -[:author]->(collaborator:physics:author)
+            -[:paper]->(paper2:physics:paper)
+            -[:author]->(author2:physics:author {{id: '{}'}})
+            WHERE author1 <> collaborator AND author2 <> collaborator
+            RETURN path LIMIT 10
             """,
             "hops": 4,
         },
+        "Have the authors '{}' and '{}' ever published papers in the same venues? If so, tell me some examples.": {
+            "cypher_template": """
+            MATCH (author1:physics:author)
+            -[:paper]->(paper1:physics:paper)
+            -[:venue]->(venue:physics:venue)
+            -[:paper]->(paper2:physics:paper)
+            -[:author]->(author2:physics:author)
+            WHERE author1 <> author2
+            RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (author1:physics:author {{id: '{}'}})
+            -[:paper]->(paper1:physics:paper)
+            -[:venue]->(venue:physics:venue)
+            -[:paper]->(paper2:physics:paper)
+            -[:author]->(author2:physics:author {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
+        },
+        "Do the venues '{}' and '{}' have the same authors publishing work in both of them and who are they?": {
+            "cypher_template": """
+            MATCH (v1:physics:venue)<-[:venue]-(:physics:paper)<-[:paper]-(a:physics:author)-[:paper]->(:physics:paper)-[:venue]->(v2:physics:venue)
+            RETURN v1.name AS name1, v1.id AS id1, v2.name AS name2, v2.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (v1:physics:venue {{id: '{}'}})
+            -[:paper]->(:physics:paper)
+            -[:author]->(a:physics:author)
+            -[:paper]->(:physics:paper)
+            -[:venue]->(v2:physics:venue {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
+        },
+        # "What is the collaboration relationship between the authors of the paper '{}' and '{}'?": {
+        #     "cypher_template": """
+        #     MATCH (paper1:physics:paper)-[:author]->(author1:physics:author)
+        #     -[:paper]->(sharedPaper:physics:paper)<-[:paper]-(author2:physics:author)
+        #     <-[:author]-(paper2:physics:paper)
+        #     WHERE author1 <> author2
+        #     RETURN paper1.name AS name1, paper1.id AS id1, paper2.name AS name2, paper2.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (paper1:physics:paper {{id: '{}'}})
+        #     -[:author]->(author1:physics:author)
+        #     -[:paper]->(sharedPaper:physics:paper)
+        #     -[:author]->(author2:physics:author)
+        #     -[:paper]->(paper2:physics:paper {{id: '{}'}})
+        #     WHERE author1 <> author2
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
     },
     "amazon": {
         "What is the relationship between items '{}' and '{}' regarding common brands?": {
@@ -286,38 +335,88 @@ multi_entity_concrete_template = {
         },
     },
     "goodreads": {
-        "What is the relationship between authors '{}' and '{}' regarding collaborated books?": {
+        # NGW"What is the relationship between authors '{}' and '{}' regarding collaborated books?": {
+        #     "cypher_template": """
+        #     MATCH path = (author1:goodreads:author)-[:book]->(book:goodreads:book)<-[:book]-(author2:goodreads:author)
+        #     WHERE author1 <> author2
+        #     RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (author1:goodreads:author {{id: '{}'}})-[:book]->(book:goodreads:book)-[:author]->(author2:goodreads:author {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 2,
+        # },
+        # NGW"Have the authors '{}' and '{}' published books that belongs to the same series and what are they?": {
+        #     "cypher_template": """
+        #     MATCH path = (author1:goodreads:author)-[:book]->(book1:goodreads:book)-[:series]->(series:goodreads:series)<-[:series]-(book2:goodreads:book)<-[:book]-(author2:goodreads:author)
+        #     WHERE author1 <> author2
+        #     RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (author1:goodreads:author {{id: '{}'}})-[:book]->(book1:goodreads:book)-[:series]->(series:goodreads:series)-[:book]->(book2:goodreads:book)-[:author]->(author2:goodreads:author {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
+        "Have the authors '{}' and '{}' ever published books in the same publishers? If so, tell me some examples.": {
+            "cypher_template": """
+            MATCH path = (author1:goodreads:author)-[:book]->(book1:goodreads:book)-[:publisher]->(publisher:goodreads:publisher)<-[:publisher]-(book2:goodreads:book)<-[:book]-(author2:goodreads:author)
+            WHERE author1 <> author2
+            RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
+            """,
             "cypher": """
-        MATCH path = (author1:goodreads:author)-[:book]->(book:goodreads:book)<-[:book]-(author2:goodreads:author)
-        WHERE author1 <> author2
-        RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
-        """,
-            "hops": 2,
-        },
-        "What is the relationship between authors '{}' and '{}' regarding common series?": {
-            "cypher": """
-        MATCH path = (author1:goodreads:author)-[:book]->(book1:goodreads:book)-[:series]->(series:goodreads:series)<-[:series]-(book2:goodreads:book)<-[:book]-(author2:goodreads:author)
-        WHERE author1 <> author2
-        RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
-        """,
+            MATCH path = (author1:goodreads:author {{id: '{}'}})-[:book]->(book1:goodreads:book)-[:publisher]->(publisher:goodreads:publisher)-[:book]->(book2:goodreads:book)-[:author]->(author2:goodreads:author {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
             "hops": 4,
         },
-        "What is the relationship between authors '{}' and '{}' regarding common publishers?": {
+        "Do the publishers '{}' and '{}' have any authors publishing books in both of them and what are the publications and authors?": {
+            "cypher_template": """
+            MATCH path = (publisher1:goodreads:publisher)-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:publisher]->(publisher2:goodreads:publisher)
+            WHERE publisher1 <> publisher2
+            RETURN publisher1.name AS name1, publisher1.id AS id1, publisher2.name AS name2, publisher2.id AS id2
+            """,
             "cypher": """
-        MATCH path = (author1:goodreads:author)-[:book]->(book1:goodreads:book)-[:publisher]->(publisher:goodreads:publisher)<-[:publisher]-(book2:goodreads:book)<-[:book]-(author2:goodreads:author)
-        WHERE author1 <> author2
-        RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
-        """,
+            MATCH path = (publisher1:goodreads:publisher {{id: '{}'}})-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:publisher]->(publisher2:goodreads:publisher {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
             "hops": 4,
         },
-        "What is the relationship between publishers '{}' and '{}' regarding commonly involved authors?": {
+        "Do the publishers '{}' and '{}' have books that belong to the same series, and if so, what are those books?": {
+            "cypher_template": """
+            MATCH (p1:goodreads:publisher)-[:book]->(:goodreads:book)-[:series]->(:goodreads:series)<-[:series]-(:goodreads:book)<-[:book]-(p2:goodreads:publisher)
+            where p1 <> p2
+            RETURN p1.name AS name1, p1.id AS id1, p2.name AS name2, p2.id AS id2
+            """,
             "cypher": """
-        MATCH path = (publisher1:goodreads:publisher)-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:publisher]->(publisher2:goodreads:publisher)
-        WHERE publisher1 <> publisher2
-        RETURN publisher1.name AS name1, publisher1.id AS id1, publisher2.name AS name2, publisher2.id AS id2
-        """,
+            MATCH path = (:goodreads:publisher {{id: '{}'}})-[:book]->(:goodreads:book)-[:series]->(:goodreads:series)-[:book]->(:goodreads:book)-[:publisher]->(:goodreads:publisher {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
             "hops": 4,
         },
+        "Do the series '{}' and '{}' contain books that are published by the same publisher? If so, tell me about them.": {
+            "cypher_template": """
+            MATCH (s1:goodreads:series)-[:book]->(:goodreads:book)-[:publisher]->(:goodreads:publisher)-[:book]->(:goodreads:book)-[:series]->(s2:goodreads:series)
+            RETURN s1.name AS name1, s1.id AS id1, s2.name AS name2, s2.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (:goodreads:series {{id: '{}'}})-[:book]->(:goodreads:book)-[:publisher]->(:goodreads:publisher)-[:book]->(:goodreads:book)-[:series]->(:goodreads:series {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
+        },
+        # NGW"Are there authors who have published books in both the series '{}' and '{}' and what are they?": {
+        #     "cypher_template": """
+        #     MATCH (series1:goodreads:series)-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:series]->(series2:goodreads:series)
+        #     RETURN series1.name AS name1, series1.id AS id1, series2.name AS name2, series2.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (series1:goodreads:series {{id: '{}'}})-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:series]->(series2:goodreads:series {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
     },
 }
 
@@ -379,7 +478,7 @@ def gen_single_entity_concrete(
                 continue_flag = False
                 with driver.session() as session:
                     try:
-                        with session.begin_transaction(timeout=30) as tx:
+                        with session.begin_transaction(timeout=10) as tx:
                             result = tx.run(q_cypher.format(node))
                             for record in result:
                                 result_names.append(record["name"])
@@ -390,7 +489,7 @@ def gen_single_entity_concrete(
                     except Exception as e:
                         print(f"Query failed: {e}")
                         continue_flag = True
-                if continue_flag or len(result_names) == 0:
+                if (n_hop > 1 and len(result_names) <= 5) or continue_flag:
                     continue
 
                 node_name = graph.nodes[node]["name"]
@@ -463,6 +562,27 @@ def gen_multi_entity_abstract(
             writer.write(row)
 
 
+def all_shortest_paths(
+    neo4j_driver, namespace, source: str, target: str
+) -> list[list[str]]:
+    with neo4j_driver.session() as session:
+        result = session.run(
+            f"""
+            MATCH p = SHORTEST 10 (s:{namespace} {{id: $source_id}})
+            -[*]->(t:{namespace} {{id: $target_id}})
+            RETURN [n in nodes(p) | n.id] AS path
+            """,
+            source_id=source,
+            target_id=target,
+        )
+
+        paths = []
+        for record in result:
+            node_id = record["path"]
+            paths.append(node_id)
+        return paths
+
+
 def gen_multi_entity_concrete(
     graph: nx.Graph, n: int, graph_name: str, output_path: str
 ):
@@ -476,22 +596,65 @@ def gen_multi_entity_concrete(
     )
     q_templates = multi_entity_concrete_template[graph_name]
     questions = []
-    for q, content in q_templates.items():
-        q_cypher, n_hop = content["cypher"], content["hops"]
+    for it, (q, content) in enumerate(q_templates.items()):
+        q_cypher_t, n_hop = content["cypher_template"], content["hops"]
+        q_cypher = content["cypher"]
 
         result_list = []
         name_set = set()
+        retry_counts = 0
         with driver.session() as session:
-            results = session.run(q_cypher)
+            results = session.run(q_cypher_t)
             for record in results:
                 if record["name1"] == record["name2"]:
                     continue
-                if record["name1"] in name_set or record["name2"] in name_set:
+                if "venues '{}' and '{}'" in q:
+                    if record["name1"] in name_set and record["name2"] in name_set:
+                        continue
+                else:
+                    if record["name1"] in name_set or record["name2"] in name_set:
+                        continue
+                print(f"Getting the next record for question: {q}")
+
+                try:
+                    # Use a separate session for the nested query
+                    with driver.session() as inner_session:
+                        with inner_session.begin_transaction(timeout=10) as tx:
+                            tic = time.time()
+                            record_ret = tx.run(
+                                q_cypher.format(record["id1"], record["id2"])
+                            )
+                            duration = time.time() - tic
+                            num_path = 0
+                            for r in record_ret:
+                                num_path += 1
+                            if num_path < 10:
+                                print(f"Too few paths: {num_path}, retry")
+                                continue
+                except Exception as e:
+                    print(f"Query failed: {e}")
+                    print(f"Query: {q_cypher.format(record['id1'], record['id2'])}")
                     continue
+
+                count = 0
+                if n_hop > 2 and retry_counts < 2000:
+                    print("Checking overlap with shortest paths")
+                    shortest_paths = all_shortest_paths(
+                        driver, graph_name, record["id1"], record["id2"]
+                    )
+                    for path in shortest_paths:
+                        if len(path) - 1 >= n_hop:
+                            count += 1
+                if count >= 5:
+                    print("Overlap with shortest paths, retry")
+                    retry_counts += 1
+                    continue
+
+                print(f"Path count: {num_path}, Duration: {duration}")
                 name_set.add(record["name1"])
                 name_set.add(record["name2"])
                 result_list.append(record)
-                if len(result_list) == 20:
+                if len(result_list) == n:
                     break
 
         for line in result_list:
@@ -517,7 +680,10 @@ def gen_multi_entity_concrete(
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
-    "--path", type=str, default="datasets/maple/Physics", required=True
+    "--path", type=str, default="../datasets/maple/Physics", required=True
+)
+argparser.add_argument(
+    "--output-path", type=str, default="../benchmarks/hysics", required=True
 )
 args = argparser.parse_args()
 print(args)
@@ -531,15 +697,26 @@ print("# nodes:", graph.number_of_nodes())
 print("# edges:", graph.number_of_edges())
 
 # generate questions
-gen_single_entity_abstract(
-    graph, 80, os.path.join(args.path, "single_entity_abstract.jsonl")
-)
-gen_single_entity_concrete(
-    graph, 10, dataset_name, os.path.join(args.path, "single_entity_concrete.jsonl")
-)
-gen_multi_entity_abstract(
-    graph, 20, [2, 3, 4, 5], os.path.join(args.path, "multi_entity_abstract.jsonl")
-)
+# gen_single_entity_abstract(
+#     graph,
+#     80,
+#     os.path.join(args.output_path, "single_entity_abstract.jsonl"),
+# )
+# gen_single_entity_concrete(
+#     graph,
+#     10,
+#     dataset_name,
+#     os.path.join(args.output_path, "single_entity_concrete.jsonl"),
+# )
+# gen_multi_entity_abstract(
+#     graph,
+#     20,
+#     [2, 3, 4, 5],
+#     os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
+# )
 gen_multi_entity_concrete(
-    graph, 10, dataset_name, os.path.join(args.path, "multi_entity_concrete.jsonl")
+    graph,
+    20,
+    dataset_name,
+    os.path.join(args.output_path, "multi_entity_concrete.jsonl"),
 )

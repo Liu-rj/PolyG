@@ -1,8 +1,8 @@
 import jsonlines
 
 
-# LLM_JUDGE_PATH = "../results/Physics/judgements.jsonl"
-LLM_JUDGE_PATH = "../results/goodreads/judgements.jsonl"
+# LLM_JUDGE_PATH = "../results/Physics/judgements_ranking.jsonl"
+LLM_JUDGE_PATH = "../results/goodreads/judgements_ranking.jsonl"
 
 
 judgements = []
@@ -23,12 +23,12 @@ question_judgement = {key: [] for key in question_types}
 for judgement in judgements:
     question_judgement[judgement["question_type"]].append(judgement)
 
-criteria = ["Comprehensiveness", "Diversity", "Empowerment", "Overall Winner"]
+criteria = ["Comprehensiveness", "Diversity", "Empowerment", "Overall"]
 method_names = [
     "BFS",
     "Fastgraphrag_PPR",
-    "cypher_single_entity",
     "shortest_paths",
+    "cypher_single_entity",
     "cypher_multi_entity",
     "GraphCoT",
 ]
@@ -36,19 +36,17 @@ for question_type in question_types:
     method_wins = {name: {method: 0 for method in method_names} for name in criteria}
     for judgement in question_judgement[question_type]:
         for criterion in criteria:
-            winner = judgement[criterion]["Winner"]
-            for key in method_wins[criterion].keys():
-                if key in winner:
-                    method_wins[criterion][key] += 1
+            ranking = judgement[criterion]["Ranking"].split(",")
+            for rank, methods in enumerate(ranking):
+                for key in method_wins[criterion].keys():
+                    if key in methods:
+                        method_wins[criterion][key] += rank + 1
 
     for criterion, methods in method_wins.items():
         for method, value in methods.items():
-            if len(question_judgement[question_type]) > 0:
-                method_wins[criterion][method] = value / len(
-                    question_judgement[question_type]
-                )
-            else:
-                method_wins[criterion][method] = 0
+            method_wins[criterion][method] = value / len(
+                question_judgement[question_type]
+            )
 
     print("=" * 80)
     print(f"Question Type: {question_type}")

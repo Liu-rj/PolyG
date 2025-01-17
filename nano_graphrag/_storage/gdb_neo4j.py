@@ -20,7 +20,9 @@ class Neo4jStorage(BaseGraphStorage):
     def __post_init__(self):
         self.neo4j_url = self.global_config["addon_params"].get("neo4j_url", None)
         self.neo4j_auth = self.global_config["addon_params"].get("neo4j_auth", None)
-        self.namespace = f"{self.global_config['working_dir'].split('/')[-1].split('_')[-1]}"
+        self.namespace = (
+            f"{self.global_config['working_dir'].split('/')[-1].split('_')[-1].lower()}"
+        )
         # if "Physics" in self.global_config["working_dir"]:
         #     self.namespace = "___" + self.namespace
         logger.info(f"Using the label {self.namespace} for Neo4j as identifier")
@@ -391,10 +393,10 @@ class Neo4jStorage(BaseGraphStorage):
         async with self.async_driver.session() as session:
             result = await session.run(query)
 
-            result_names = []
+            result_list = []
             async for record in result:
-                result_names.append(record["name"])
-            return result_names
+                result_list.append(record)
+            return result_list
 
     async def exec_query_and_get_path(self, query: str):
         async with self.async_driver.session() as session:

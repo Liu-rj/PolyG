@@ -34,12 +34,13 @@ for item in answers:
 method_names = [
     "BFS",
     "Fastgraphrag_PPR",
-    "shortest_paths",
     "cypher_single_entity",
+    "shortest_paths",
     "cypher_multi_entity",
     "GraphCoT",
 ]
 all_time, all_tokens, all_api_calls = [], [], []
+bfs_time = []
 for question_type in question_types:
     method_time = {method: 0 for method in method_names}
     method_tokens = {method: 0 for method in method_names}
@@ -52,6 +53,9 @@ for question_type in question_types:
             method_time[method] += float(answer["duration"])
             method_tokens[method] += int(answer["token_count"])
             method_api_calss[method] += int(answer["api_calls"])
+
+            if method == "BFS":
+                bfs_time.append(float(answer["duration"]))
 
     for method, duration in method_time.items():
         if method_counts[method] != 0:
@@ -101,3 +105,13 @@ print("All API Calls")
 print(",".join(method_names))
 for method_api_calss in all_api_calls:
     print(",".join([str(method_api_calss[method]) for method in method_names]))
+
+
+# # plot BFS time
+# import matplotlib.pyplot as plt
+
+# plt.hist(bfs_time, bins=10)
+# plt.xlabel("Time (s)")
+# plt.ylabel("Frequency")
+# plt.title("BFS time distribution")
+# plt.savefig("bfs_time_distribution.pdf")

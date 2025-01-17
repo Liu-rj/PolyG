@@ -1,0 +1,1 @@
+sudo neo4j-admin database import full --nodes=amazon/nodes.csv --nodes=goodreads/nodes.csv --nodes=maple/Physics/nodes.csv --relationships=amazon/edges.csv --relationships=goodreads/edges.csv --relationships=maple/Physics/edges.csv --overwrite-destination --verbose

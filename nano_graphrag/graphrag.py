@@ -235,8 +235,9 @@ class GraphRAG:
             raise ValueError("enable_naive_rag is False, cannot query in naive mode")
         if param.mode == "local":
             tic = time.time()
+            answer_list = "N/A"
             if param.traversal_type == "cypher_query":
-                response, token_len, api_calls = await local_query_cypher(
+                response, token_len, api_calls, answer_list = await local_query_cypher(
                     query,
                     id_mapping,
                     self.chunk_entity_relation_graph,
@@ -273,7 +274,7 @@ class GraphRAG:
         else:
             raise ValueError(f"Unknown mode {param.mode}")
         await self._query_done()
-        return response, duration, token_len, api_calls
+        return response, duration, token_len, api_calls, answer_list
 
     def insert_from_networkx_graph(self, graph: nx.Graph):
         loop = always_get_an_event_loop()

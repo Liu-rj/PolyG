@@ -6,13 +6,10 @@ from nano_graphrag._storage import HNSWVectorStorage, Neo4jStorage
 from nano_graphrag._utils import wrap_embedding_func_with_attrs
 from sentence_transformers import SentenceTransformer
 from typing import List
-from time import time
-import pickle
 import torch
 import boto3
 import argparse
 import jsonlines
-import csv
 
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger("nano-graphrag").setLevel(logging.INFO)
@@ -22,12 +19,11 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument(
     "--data_dir", type=str, default="datasets/maple/Physics", required=True
 )
+argparser.add_argument(
+    "--benchmark_dir", type=str, default="benchmarks/physics", required=True
+)
 args = argparser.parse_args()
 
-
-# # DATASET_DIR = "datasets/maple/Physics"
-# # DATASET_DIR = "datasets/amazon"
-# DATASET_DIR = "datasets/goodreads"
 DATASET_DIR = args.data_dir
 WORKING_DIR = (
     f"checkpoints/nano_graphrag_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
@@ -38,7 +34,10 @@ MAX_CONTEXT_TOKENS = 100000
 MAX_OUTPUT_TOKENS = 5000
 
 print(
-    "Dataset dir:", DATASET_DIR, "Working dir:", WORKING_DIR, "Result dir:", RESULT_DIR
+    f"Dataset dir: {DATASET_DIR}",
+    f"Benchmark dir: {args.benchmark_dir}",
+    f"Working dir: {WORKING_DIR}",
+    f"Result dir: {RESULT_DIR}",
 )
 
 if not os.path.exists(RESULT_DIR):
@@ -50,7 +49,7 @@ neo4j_config = {
     "neo4j_url": os.environ.get("NEO4J_URL", "neo4j://localhost:7687"),
     "neo4j_auth": (
         os.environ.get("NEO4J_USER", "neo4j"),
-        os.environ.get("NEO4J_PASSWORD", "123456789"),
+        os.environ.get("NEO4J_PASSWORD", "12345678"),
     ),
 }
 
@@ -124,7 +123,7 @@ rag = GraphRAG(
 
 def BFS(question, id_mapping):
     print(f"Question: {question}")
-    response, duration, token_len, api_calls = rag.query(
+    response, duration, token_len, api_calls, answer_list = rag.query(
         question,
         id_mapping,
         param=QueryParam(
@@ -138,12 +137,12 @@ def BFS(question, id_mapping):
         ),
     )
     print_outputs(response)
-    return "BFS", response, duration, token_len, api_calls
+    return "BFS", response, duration, token_len, api_calls, answer_list
 
 
 def shortest_path(question, id_mapping):
     print(f"Question: {question}")
-    response, duration, token_len, api_calls = rag.query(
+    response, duration, token_len, api_calls, answer_list = rag.query(
         question,
         id_mapping,
         param=QueryParam(
@@ -157,12 +156,12 @@ def shortest_path(question, id_mapping):
         ),
     )
     print_outputs(response)
-    return "shortest_paths", response, duration, token_len, api_calls
+    return "shortest_paths", response, duration, token_len, api_calls, answer_list
 
 
 def cypher_single_entity(question, id_mapping):
     print(f"Question: {question}")
-    response, duration, token_len, api_calls = rag.query(
+    response, duration, token_len, api_calls, answer_list = rag.query(
         question,
         id_mapping,
         param=QueryParam(
@@ -175,12 +174,12 @@ def cypher_single_entity(question, id_mapping):
         ),
     )
     print_outputs(response)
-    return "cypher_single_entity", response, duration, token_len, api_calls
+    return "cypher_single_entity", response, duration, token_len, api_calls, answer_list
 
 
 def cypher_multi_entity(question, id_mapping):
     print(f"Question: {question}")
-    response, duration, token_len, api_calls = rag.query(
+    response, duration, token_len, api_calls, answer_list = rag.query(
         question,
         id_mapping,
         param=QueryParam(
@@ -193,7 +192,7 @@ def cypher_multi_entity(question, id_mapping):
         ),
     )
     print_outputs(response)
-    return "cypher_multi_entity", response, duration, token_len, api_calls
+    return "cypher_multi_entity", response, duration, token_len, api_calls, answer_list
 
 
 if __name__ == "__main__":
@@ -209,7 +208,7 @@ if __name__ == "__main__":
     ]
     for question_type in question_types:
         contents = []
-        with open(os.path.join(args.data_dir, f"{question_type}.jsonl"), "r") as f:
+        with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
             for item in jsonlines.Reader(f):
                 contents.append(item)
 
@@ -237,6 +236,7 @@ if __name__ == "__main__":
                     "duration": round(result[2], 2),
                     "token_count": result[3],
                     "api_calls": result[4],
+                    "answer_list": result[5],
                     "gt_answer": item["answer"],
                 }
                 result_entrees.append(result_entree)

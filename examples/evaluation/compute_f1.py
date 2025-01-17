@@ -3,17 +3,17 @@ import jsonlines
 from collections import defaultdict
 
 
-# ANSWER_PATH = [
-#     "/home/ubuntu/graphrag_planner/examples/results/Physics/results.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
-# ]
-
 ANSWER_PATH = [
-    "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+    "/home/ubuntu/graphrag_planner/examples/results/Physics/results.jsonl",
+    "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
+    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
 ]
+
+# ANSWER_PATH = [
+#     "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+# ]
 
 CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
@@ -33,6 +33,8 @@ Question: "Who are the authors of the paper 'self trapping of optical beams in p
 User Response: "Based on the information provided in the relationships table, the authors of the paper \"Self trapping of optical beams in photorefractive media\" are:\n\nMordechai Segev\nBruno Crosignani\nAmnon Yariv\nDoruk Engin\nPaolo Di Porto\nGregory J. Salamo\n\nThis can be inferred from the multiple relationships listing these individuals as authors of the paper in question."
 
 Output: ["Mordechai Segev", "Bruno Crosignani", "Amnon Yariv", "Doruk Engin", "Paolo Di Porto", "Gregory J. Salamo"]
+
+Note: Keep the answer phrases as they are in the reponses and do not change them in any way.
 
 ---Question and Reponse---
 
@@ -89,15 +91,22 @@ method_names = [
     "cypher_multi_entity",
     "GraphCoT",
 ]
+method_precision = {method: 0 for method in method_names}
+method_recall = {method: 0 for method in method_names}
 method_f1 = {method: 0 for method in method_names}
 method_counts = {method: 0 for method in method_names}
 for it, (question, answers) in enumerate(question_answer.items()):
     print(f"Question {it+1}: {question}, Number of answers: {len(answers)}")
     for answer in answers:
         method, gt = answer["method"], answer["gt_answer"].split(", ")
+        answer = (
+            answer["answer_list"]
+            if "answer_list" in answer and answer["answer_list"] != "N/A"
+            else answer["model_answer"]
+        )
 
         result = bedrock_generator(
-            prompt=PROMPT.format(query=question, reponse=answer["model_answer"]),
+            prompt=PROMPT.format(query=question, reponse=answer),
             system_prompt=SYSTEM_ROLE,
         )
         result = result.strip("[]").split(", ")
@@ -118,16 +127,24 @@ for it, (question, answers) in enumerate(question_answer.items()):
             if precision + recall != 0
             else 0
         )
-        print(f"Method: {method}, F1: {f1}")
+        print(f"Method: {method}, Precision: {precision}, Recall: {recall}, F1: {f1}")
 
         method_counts[method] += 1
+        method_precision[method] += precision
+        method_recall[method] += recall
         method_f1[method] += f1
 
-for method, f1 in method_f1.items():
+for method in method_names:
     if method_counts[method] != 0:
-        method_f1[method] = round(f1 / method_counts[method], 2)
+        method_precision[method] = round(
+            method_precision[method] / method_counts[method], 2
+        )
+        method_recall[method] = round(method_recall[method] / method_counts[method], 2)
+        method_f1[method] = round(method_f1[method] / method_counts[method], 2)
 
 print("=" * 80)
 print(method_f1)
 print(",".join(method_names))
+print(",".join([str(method_precision[method]) for method in method_names]))
+print(",".join([str(method_recall[method]) for method in method_names]))
 print(",".join([str(method_f1[method]) for method in method_names]))

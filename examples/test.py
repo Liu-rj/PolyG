@@ -51,28 +51,42 @@
 #         f.write(json.dumps(result_entree) + "\n")
 
 
+# import jsonlines
+
+# new = {
+#     "question_type": "single_entity_concrete",
+#     "question": "Who are the academic collaborators of the author who writes the paper 'a simplified approach to collision processes'?",
+#     "method": "cypher_single_entity",
+#     "model_answer": "Dennis Sivers, David G. Richards, Jian-Wei Qui, Lionel E. Gordon, Mehrdad Goshtasbpour, David Richards, Jianwei Qiu, Asim Gangopadhyaya",
+#     "duration": 9.51,
+#     "token_count": 622,
+#     "api_calls": 1,
+#     "gt_answer": "Dennis Sivers, David G. Richards, Jian-Wei Qui, Lionel E. Gordon, Mehrdad Goshtasbpour, David Richards, Jianwei Qiu, Asim Gangopadhyaya",
+# }
+
+# # load the jsonl file and replace one line
+# lines = []
+# with jsonlines.open("results/Physics/results.jsonl", "r") as reader:
+#     for item in reader:
+#         if item["question"] == new["question"]:
+#             lines.append(new)
+#         else:
+#             lines.append(item)
+
+# # write the new jsonl file
+# with jsonlines.open("results/Physics/results.jsonl", "w") as writer:
+#     writer.write_all(lines)
+
 import jsonlines
 
-new = {
-    "question_type": "single_entity_concrete",
-    "question": "Who are the academic collaborators of the author who writes the paper 'a simplified approach to collision processes'?",
-    "method": "cypher_single_entity",
-    "model_answer": "Dennis Sivers, David G. Richards, Jian-Wei Qui, Lionel E. Gordon, Mehrdad Goshtasbpour, David Richards, Jianwei Qiu, Asim Gangopadhyaya",
-    "duration": 9.51,
-    "token_count": 622,
-    "api_calls": 1,
-    "gt_answer": "Dennis Sivers, David G. Richards, Jian-Wei Qui, Lionel E. Gordon, Mehrdad Goshtasbpour, David Richards, Jianwei Qiu, Asim Gangopadhyaya",
-}
+answers = []
+with open("results/goodreads/archive/results.jsonl", "r") as f:
+    for item in jsonlines.Reader(f):
+        if (
+            item["question_type"] == "multi_entity_concrete"
+            and item["method"] != "cypher_multi_entity"
+        ):
+            answers.append(item)
 
-# load the jsonl file and replace one line
-lines = []
-with jsonlines.open("results/Physics/results.jsonl", "r") as reader:
-    for item in reader:
-        if item["question"] == new["question"]:
-            lines.append(new)
-        else:
-            lines.append(item)
-
-# write the new jsonl file
-with jsonlines.open("results/Physics/results.jsonl", "w") as writer:
-    writer.write_all(lines)
+with jsonlines.open("results/goodreads/results.jsonl", "w") as writer:
+    writer.write_all(answers)
