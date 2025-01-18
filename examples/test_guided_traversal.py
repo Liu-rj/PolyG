@@ -104,37 +104,37 @@ single_entity_concrete_template = {
     },
     "amazon": {
         "item": {
-            "What is the brand of the item '{}'?": {
-                "cypher": """
-            MATCH (:amazon:item {{id: '{}'}})
-            -[:brand]->(brand:amazon:brand)
-            RETURN DISTINCT brand.name as name
-            """,
-                "hops": 1,
-            },
+            # "What is the brand of the item '{}'?": {
+            #     "cypher": """
+            # MATCH (:amazon:item {{id: '{}'}})
+            # -[:brand]->(brand:amazon:brand)
+            # RETURN DISTINCT brand.name as name
+            # """,
+            #     "hops": 1,
+            # },
             "What are the brands of the items that are also brought after viewing the item '{}'?": {
                 "cypher": """
             """,
                 "hops": 2,
             },
-            "What are the items that are also viewed when viewing items of the brand owning the item '{}'?": {
-                "hops": 3,
-            },
-            "What are the brands of the items that are brought together with items of the brand owning the item '{}'?": {
-                "hops": 4,
-            },
+            # "What are the items that are also viewed when viewing items of the brand owning the item '{}'?": {
+            #     "hops": 3,
+            # },
+            # "What are the brands of the items that are brought together with items of the brand owning the item '{}'?": {
+            #     "hops": 4,
+            # },
         },
         "brand": {
-            "What are the items of the brand '{}'?": {"hops": 1},
-            "What are the items that are also brought together with items of the brand '{}'?": {
-                "hops": 2,
-            },
-            "What are the brands of the items that are also brought after viewing items of the brand '{}'?": {
-                "hops": 3,
-            },
-            "What items does the brands of the items that are also brought after viewing items of the brand '{}' have?": {
-                "hops": 4
-            },
+            # "What are the items of the brand '{}'?": {"hops": 1},
+            # "What are the items that are also brought together with items of the brand '{}'?": {
+            #     "hops": 2,
+            # },
+            # "What are the brands of the items that are also brought after viewing items of the brand '{}'?": {
+            #     "hops": 3,
+            # },
+            # "What items does the brands of the items that are also viewed together with items of the brand '{}' have?": {
+            #     "hops": 4
+            # },
         },
     },
     "goodreads": {
@@ -256,7 +256,7 @@ def bedrock_generator(
 
 def gen_paths():
     for dataset, entities in single_entity_concrete_template.items():
-        if dataset != "physics":
+        if dataset != "amazon":
             continue
         if dataset == "physics":
             prompt = PROMPTS["cypher_query_prompt_physics"]

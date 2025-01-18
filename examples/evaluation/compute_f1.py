@@ -3,17 +3,17 @@ import jsonlines
 from collections import defaultdict
 
 
-ANSWER_PATH = [
-    "/home/ubuntu/graphrag_planner/examples/results/Physics/results.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
-]
-
 # ANSWER_PATH = [
-#     "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+#     "/home/ubuntu/graphrag_planner/examples/results/Physics/results.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
 # ]
+
+ANSWER_PATH = [
+    "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
+    "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
+    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+]
 
 CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 

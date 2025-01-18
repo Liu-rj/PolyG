@@ -76,35 +76,32 @@ multi_entity_concrete_template = {
         # },
     },
     "amazon": {
-        "What is the relationship between items '{}' and '{}' regarding common brands?": {
-            "hops": 2
-        },
-        "What is the relationship between brands '{}' and '{}' regarding item purchasing?": {
-            "hops": 3
-        },
-        "What is the relationship between items '{}' and '{}' regarding brands that are purchased together?": {
-            "hops": 4
-        },
-        "What is the relationship between brands '{}' and '{}' regarding commonly viewed brands?": {
-            "hops": 6
-        },
+        # "Have the items of the brands 'A' and 'B' ever been brought together, and if so, what are those items? A: 1, B, 2": {
+        #     "hops": 3,
+        # },
+        # "Are there any brands whose items are also brought when buying the items 'A' and 'B'? If so, tell me about those brands and their items. A: 1, B, 2": {
+        #     "hops": 4,
+        # },
+        # "Are there any brands whose items are also viewed when viewing the items 'A' and 'B' and what are those brands? A: 1, B, 2": {
+        #     "hops": 4,
+        # },
+        # "Have the items of the brands 'A' and 'B' ever been viewed together with some other items, and if so, what are those items? A: 1, B, 2": {
+        #     "hops": 4,
+        # },
+        "Have the items of the brands '{}' and '{}' ever been bought together with some other items, and if so, what are those items? A: 1, B, 2": {}
     },
     "goodreads": {
         # "Does series '{}' and '{}' contains books that are published in the same publisher? If so, tell me abou them.": {
         #     "cypher_template": """
-            
         #     """,
         #     "cypher": """
-            
         #     """,
         #     "hops": 4,
         # },
         # "Are there authors who have published books in both the series '{}' and '{}' and what are they?": {
         #     "cypher_template": """
-            
         #     """,
         #     "cypher": """
-            
         #     """,
         #     "hops": 4,
         # },
@@ -151,7 +148,7 @@ def bedrock_generator(
 
 def gen_paths():
     for dataset, entities in multi_entity_concrete_template.items():
-        if dataset != "goodreads":
+        if dataset != "amazon":
             continue
         if dataset == "physics":
             prompt = PROMPTS["cypher_path_search_prompt_physics"]

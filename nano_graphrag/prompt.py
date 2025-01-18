@@ -443,62 +443,6 @@ Venue nodes are linked to their included paper nodes. Specific relations are:
 """
 
 
-PROMPTS["cypher_query_prompt_amazon"] = """---Role---
-
-You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
-
----Setting---
-
-You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
-
-User questions are about node inquries which involve multi-hop relation paths.
-
----Goal---
-
-Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph.
-
-Also give the cypher query that can be executed on the graph to get the answer.
-
-If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
-
-Do not include information where the supporting evidence for it is not provided.
-
----Graph Schema---
-
-Definition of the graph:
-This knowledge graph is an e-commerce graph in amazon, there are two types of nodes in this graph: item and brand.
-
-Node properties:
-1. type: item, properties: ["id", "name", "node_type"]
-2. type: brand, properties: ["id", "name", "node_type"]
-
-Edge properties:
-Item nodes are linked to neighboring item nodes and brand nodes. Specific relations are:
-1. item -> "also_viewed_item" -> item
-2. item -> "buy_after_viewing" -> item
-3. item -> "also_bought" -> item
-4. item -> "bought_together" -> item
-5. item -> "brand" -> brand
-
-Brand nodes are linked to their neighboring item nodes. Specific relations are:
-1. brand -> "item" -> item
-
----Notes---
-
-1. Please carefully think about the query structure and make sure the query is correct and efficient to execute. Do not forget to assign a variable name before retrieving the attributes.
-
-2. Add the identification label "amazon" to the entities, for example, ":amazon:item" (same for other types of entities).
-
-3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
-
-4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
-
-5. Return the unique ids of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query.
-
-6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
-"""
-
-
 PROMPTS["cypher_query_prompt_goodreads"] = """---Role---
 
 You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
@@ -551,6 +495,61 @@ Series nodes are linked to their neighboring book nodes. Specific relations are:
 1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
 
 2. Add the identification label "goodreads" to the entities, for example, ":goodreads:book" (same for other types of entites).
+
+3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+
+4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
+
+5. Return the unique ids of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query.
+
+6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
+"""
+
+PROMPTS["cypher_query_prompt_amazon"] = """---Role---
+
+You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
+
+---Setting---
+
+You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
+
+User questions are about node inquries which involve multi-hop relation paths.
+
+---Goal---
+
+Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph.
+
+Also give the cypher query that can be executed on the graph to get the answer.
+
+If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
+
+Do not include information where the supporting evidence for it is not provided.
+
+---Graph Schema---
+
+Definition of the graph:
+This knowledge graph is an e-commerce graph in amazon, there are two types of nodes in this graph: item and brand.
+
+Node properties:
+1. type: item, properties: ["id", "name", "node_type"]
+2. type: brand, properties: ["id", "name", "node_type"]
+
+Edge properties:
+Item nodes are linked to neighboring item nodes and brand nodes. Specific relations are:
+1. item -> "also_viewed_item" -> item
+2. item -> "buy_after_viewing_item" -> item
+3. item -> "also_bought_item" -> item
+4. item -> "bought_together_item" -> item
+5. item -> "brand" -> brand
+
+Brand nodes are linked to their neighboring item nodes. Specific relations are:
+1. brand -> "item" -> item
+
+---Notes---
+
+1. Please carefully think about the query structure and make sure the query is correct and efficient to execute. Do not forget to assign a variable name before retrieving the attributes.
+
+2. Add the identification label "amazon" to the entities, for example, ":amazon:item" (same for other types of entities).
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
@@ -700,6 +699,78 @@ Series nodes are linked to their neighboring book nodes. Specific relations are:
 3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
 For example, correct cypher query should first "MATCH path" then "RETURN path".
 Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:goodreads)" is fine.
+
+4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
+If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
+
+5. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
+
+6. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
+
+7. Return the results in path format:
+```cypher
+RETURN path
+LIMIT 10
+```
+"""
+
+
+PROMPTS["cypher_path_search_prompt_amazon"] = """---Role---
+
+You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
+
+---Setting---
+
+You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
+
+User questions are about relationships between nodes which can be indirect and result in multi-hop relation paths. User questions may include a relation constraint that indicates some specific paths.
+
+An example:
+User question is ""What is the relationship between items 'A' and 'B' regarding common brands?"". In this case, the user is asking about the paths between two items that is constraint to brands they both belong to.
+Suppose the "id"s of author 'A' and 'B' are 'id1' and 'id2', and the cypher query for this question is (where only paths that contains their belonging brands should be considered):
+```cypher
+MATCH path = (item1:amazon:item {id: 'id1'})-[:brand]->(brand1:amazon:brand)-[:item]->(item2:amazon:item {id: 'id2'})
+RETURN path
+LIMIT 10
+```
+
+---Goal---
+
+Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph. Also give the cypher query that can be executed on the graph to get the answer.
+
+If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
+
+Do not include information where the supporting evidence for it is not provided.
+
+---Graph Schema---
+
+Definition of the graph:
+This knowledge graph is an e-commerce graph in amazon, there are two types of nodes in this graph: item and brand.
+
+Node properties:
+1. type: item, properties: ["id", "name", "node_type"]
+2. type: brand, properties: ["id", "name", "node_type"]
+
+Edge properties:
+Item nodes are linked to neighboring item nodes and brand nodes. Specific relations are:
+1. item -> "also_viewed_item" -> item
+2. item -> "buy_after_viewing_item" -> item
+3. item -> "also_bought_item" -> item
+4. item -> "bought_together_item" -> item
+5. item -> "brand" -> brand
+
+Brand nodes are linked to their neighboring item nodes. Specific relations are:
+1. brand -> "item" -> item
+
+---Notes---
+
+1. Add the identification label "amazon" to the entities, for example, ":amazon:author" (same for other types of entities).
+
+2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
+
+3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
+For example, correct cypher query should first "MATCH path" then "RETURN path".
+Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:amazon)" is fine.
 
 4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
 If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.

@@ -105,35 +105,123 @@ single_entity_concrete_template = {
     "amazon": {
         "item": {
             "What is the brand of the item '{}'?": {
+                "cypher_template": """
+            MATCH (a1:amazon:item)-[:brand]->(brand1:amazon:brand)
+            RETURN DISTINCT a1.name as name, a1.id as id LIMIT 10000
+            """,
                 "cypher": """
             MATCH (:amazon:item {{id: '{}'}})
-            -[:brand]->(brand:amazon:brand)
-            RETURN DISTINCT brand.name as name
+            -[:brand]->(brand1:amazon:brand)
+            RETURN DISTINCT brand1.name as name
             """,
                 "hops": 1,
             },
-            "What are the brands of the items that are also brought after viewing the item '{}'?": {
+            "What are the brands of the items that are also bought after viewing the item '{}'?": {
+                "cypher_template": """
+            MATCH (a1:amazon:item)-[:buy_after_viewing_item]->(bought_item:amazon:item)-[:brand]->(brand1:amazon:brand)
+            RETURN DISTINCT a1.name as name, a1.id as id LIMIT 10000
+            """,
                 "cypher": """
+            MATCH (:amazon:item {{id: '{}'}})-[:buy_after_viewing_item]->(bought_item:amazon:item)-[:brand]->(brand1:amazon:brand)
+            RETURN DISTINCT brand1.name as name
             """,
                 "hops": 2,
             },
             "What are the items that are also viewed when viewing items of the brand owning the item '{}'?": {
+                "cypher_template": """
+            MATCH (start:amazon:item)
+            -[:brand]->(brand:amazon:brand)
+            -[:item]->(other_items:amazon:item)
+            -[:also_viewed_item]->(also_viewed:amazon:item)
+            RETURN DISTINCT start.name as name, start.id as id LIMIT 10000
+            """,
+                "cypher": """
+            MATCH (start:amazon:item {{id: '{}'}})
+            -[:brand]->(brand:amazon:brand)
+            -[:item]->(other_items:amazon:item)
+            -[:also_viewed_item]->(also_viewed:amazon:item)
+            RETURN DISTINCT also_viewed.name as name
+            """,
                 "hops": 3,
             },
-            "What are the brands of the items that are brought together with items of the brand owning the item '{}'?": {
+            "What are the brands of the items that are also bought with items of the brand owning the item '{}'?": {
+                "cypher_template": """
+            MATCH (start:amazon:item)
+            -[:brand]->(brand:amazon:brand)
+            -[:item]->(same_brand_items:amazon:item)
+            -[:also_bought_item]->(also_bought_items:amazon:item)
+            -[:brand]->(result_brands:amazon:brand)
+            RETURN DISTINCT start.name as name, start.id as id LIMIT 1000
+            """,
+                "cypher": """
+            MATCH (start:amazon:item {{id: '{}'}})
+            -[:brand]->(brand:amazon:brand)
+            -[:item]->(same_brand_items:amazon:item)
+            -[:also_bought_item]->(also_bought_items:amazon:item)
+            -[:brand]->(result_brands:amazon:brand)
+            RETURN DISTINCT result_brands.name as name
+            """,
                 "hops": 4,
             },
         },
         "brand": {
-            "What are the items of the brand '{}'?": {"hops": 1},
-            "What are the items that are also brought together with items of the brand '{}'?": {
+            "What are the items of the brand '{}'?": {
+                "cypher_template": """
+            MATCH (b:amazon:brand)-[:item]->(i:amazon:item)
+            RETURN DISTINCT b.name as name, b.id as id LIMIT 10000
+            """,
+                "cypher": """
+            MATCH (b:amazon:brand {{id: '{}'}})-[:item]->(i:amazon:item)
+            RETURN DISTINCT i.name as name
+            """,
+                "hops": 1,
+            },
+            "What are the items that are bought together with items of the brand '{}'?": {
+                "cypher_template": """
+            MATCH (b1:amazon:brand)-[:item]->(:amazon:item)-[:bought_together_item]->(bought_together_items:amazon:item)
+            RETURN DISTINCT b1.name as name, b1.id as id LIMIT 10000
+            """,
+                "cypher": """
+            MATCH (:amazon:brand {{id: '{}'}})-[:item]->(:amazon:item)-[:bought_together_item]->(bought_together_items:amazon:item)
+            RETURN DISTINCT bought_together_items.name as name
+            """,
                 "hops": 2,
             },
-            "What are the brands of the items that are also brought after viewing items of the brand '{}'?": {
+            "What are the brands of the items that are also bought with items of the brand '{}'?": {
+                "cypher_template": """
+            MATCH (start_brand:amazon:brand)
+            -[:item]->(brand_item:amazon:item)
+            -[:also_bought_item]->(bought_item:amazon:item)
+            -[:brand]->(result_brand:amazon:brand)
+            RETURN DISTINCT start_brand.name as name, start_brand.id as id LIMIT 10000
+            """,
+                "cypher": """
+            MATCH (start_brand:amazon:brand {{id: '{}'}})
+            -[:item]->(brand_item:amazon:item)
+            -[:also_bought_item]->(bought_item:amazon:item)
+            -[:brand]->(result_brand:amazon:brand)
+            RETURN DISTINCT result_brand.name as name
+            """,
                 "hops": 3,
             },
-            "What items does the brands of the items that are also brought after viewing items of the brand '{}' have?": {
-                "hops": 4
+            "What items does the brands of the items that are also viewed together with items of the brand '{}' have?": {
+                "cypher_template": """
+            MATCH (brandA:amazon:brand)
+            -[:item]->(itemA:amazon:item)
+            -[:also_viewed_item]->(alsoViewedItem:amazon:item)
+            -[:brand]->(otherBrand:amazon:brand)
+            -[:item]->(resultItem:amazon:item)
+            RETURN DISTINCT brandA.name as name, brandA.id as id LIMIT 10000
+            """,
+                "cypher": """
+            MATCH (brandA:amazon:brand {{id: '{}'}})
+            -[:item]->(itemA:amazon:item)
+            -[:also_viewed_item]->(alsoViewedItem:amazon:item)
+            -[:brand]->(otherBrand:amazon:brand)
+            -[:item]->(resultItem:amazon:item)
+            RETURN DISTINCT resultItem.name as name
+            """,
+                "hops": 4,
             },
         },
     },
@@ -300,7 +388,7 @@ multi_entity_concrete_template = {
             """,
             "hops": 4,
         },
-        # "What is the collaboration relationship between the authors of the paper '{}' and '{}'?": {
+        # NGW"What is the collaboration relationship between the authors of the paper '{}' and '{}'?": {
         #     "cypher_template": """
         #     MATCH (paper1:physics:paper)-[:author]->(author1:physics:author)
         #     -[:paper]->(sharedPaper:physics:paper)<-[:paper]-(author2:physics:author)
@@ -321,17 +409,53 @@ multi_entity_concrete_template = {
         # },
     },
     "amazon": {
-        "What is the relationship between items '{}' and '{}' regarding common brands?": {
-            "hops": 2
+        "Are there any brands whose items are also bought when buying the items '{}' and '{}'? If so, tell me about those brands and their items.": {
+            "cypher_template": """
+            MATCH (itemA:amazon:item)-[:also_viewed_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)<-[:brand]-(viewedItemB:amazon:item)<-[:also_viewed_item]-(itemB:amazon:item)
+            WHERE itemA <> itemB
+            RETURN itemA.name AS name1, itemA.id AS id1, itemB.name AS name2, itemB.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (itemA:amazon:item {{id: '{}'}})-[:also_viewed_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)-[:item]->(viewedItemB:amazon:item)-[:also_viewed_item]->(itemB:amazon:item {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
         },
-        "What is the relationship between brands '{}' and '{}' regarding item purchasing?": {
-            "hops": 3
+        "Are there any brands whose items are also viewed when viewing the items '{}' and '{}' and what are those brands?": {
+            "cypher_template": """
+            MATCH (item1:amazon:item)-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)<-[:brand]-(also_viewed2:amazon:item)<-[:also_viewed_item]-(item2:amazon:item)
+            WHERE item1 <> item2
+            RETURN item1.name AS name1, item1.id AS id1, item2.name AS name2, item2.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (item1:amazon:item {{id: '{}'}})-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)-[:item]->(also_viewed2:amazon:item)-[:also_viewed_item]->(item2:amazon:item {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
         },
-        "What is the relationship between items '{}' and '{}' regarding brands that are purchased together?": {
-            "hops": 4
+        "Have the items of the brands '{}' and '{}' ever been viewed together with some other items, and if so, what are those items?": {
+            "cypher_template": """
+            MATCH (brandA:amazon:brand)-[:item]->(itemA:amazon:item)-[:also_viewed_item]->(viewedItem:amazon:item)<-[:also_viewed_item]-(itemB:amazon:item)<-[:item]-(brandB:amazon:brand)
+            WHERE brandA <> brandB
+            RETURN brandA.name AS name1, brandA.id AS id1, brandB.name AS name2, brandB.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (brandA:amazon:brand {{id: '{}'}})-[:item]->(itemA:amazon:item)-[:also_viewed_item]->(viewedItem:amazon:item)-[:also_viewed_item]->(itemB:amazon:item)-[:brand]->(brandB:amazon:brand {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
         },
-        "What is the relationship between brands '{}' and '{}' regarding commonly viewed brands?": {
-            "hops": 6
+        "Have the items of the brands '{}' and '{}' ever been bought together with some other items, and if so, what are those items?": {
+            "cypher_template": """
+            MATCH (b1:amazon:brand)-[:item]->(itemA:amazon:item)-[:bought_together_item]->(otherItem:amazon:item)<-[:bought_together_item]-(itemB:amazon:item)<-[:item]-(b2:amazon:brand)
+            WHERE b1 <> b2
+            RETURN b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (b1:amazon:brand {{id: '{}'}})-[:item]->(itemA:amazon:item)-[:bought_together_item]->(otherItem:amazon:item)-[:bought_together_item]->(itemB:amazon:item)-[:brand]->(b2:amazon:brand {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
         },
     },
     "goodreads": {
@@ -452,6 +576,20 @@ def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
             writer.write(row)
 
 
+def choose_random_node(neo4j_driver, namespace):
+    with neo4j_driver.session() as session:
+        result = session.run(
+            f"""
+            MATCH (n:{namespace})
+            RETURN n.id as id, n.name as name
+            ORDER BY rand()
+            LIMIT 1
+            """
+        )
+        node = result.single()
+        return node["name"], node["id"]
+
+
 def gen_single_entity_concrete(
     graph: nx.Graph, n: int, graph_name: str, output_path: str
 ):
@@ -468,11 +606,28 @@ def gen_single_entity_concrete(
     for node_type, templates in q_templates.items():
         for q, content in templates.items():
             q_cypher, n_hop = content["cypher"], content["hops"]
+
+            candidates = []
+            if "cypher_template" in content:
+                print("Using cypher template")
+                with driver.session() as session:
+                    results = session.run(content["cypher_template"])
+                    for record in results:
+                        candidates.append((record["name"], record["id"]))
+
             i = 0
+            selected_nodes = set()
             while i < n:
-                node = random.choice(list(graph.nodes()))
-                while graph.nodes[node]["node_type"] != node_type:
-                    node = random.choice(list(graph.nodes()))
+                if len(candidates) > 0:
+                    print("Using candidates")
+                    node_name, node = candidates.pop(0)
+                    if node_name in selected_nodes:
+                        continue
+                else:
+                    print("Using random node")
+                    node_name, node = choose_random_node(
+                        driver, f"{graph_name}:{node_type}"
+                    )
 
                 result_names = []
                 continue_flag = False
@@ -483,16 +638,26 @@ def gen_single_entity_concrete(
                             for record in result:
                                 result_names.append(record["name"])
                                 if len(result_names) > 20:
-                                    print(f"{i}: Too many results, retry")
+                                    print(
+                                        f"{i}: Too many results, cypher: {q_cypher.format(node)}"
+                                    )
                                     continue_flag = True
                                     break
                     except Exception as e:
                         print(f"Query failed: {e}")
                         continue_flag = True
-                if (n_hop > 1 and len(result_names) <= 5) or continue_flag:
+                if continue_flag:
+                    continue
+                if None in result_names:
+                    print(f"{i}: None in results, cypher: {q_cypher.format(node)}")
+                    continue
+                if len(result_names) == 0:
+                    print(f"{i}: empty results, cypher: {q_cypher.format(node)}")
+                    continue
+                if n_hop > 1 and len(result_names) < 3:
+                    print(f"{i}: Too few results, cypher: {q_cypher.format(node)}")
                     continue
 
-                node_name = graph.nodes[node]["name"]
                 question = q.format(node_name)
                 q_entity = {
                     "qid": len(questions),
@@ -503,6 +668,7 @@ def gen_single_entity_concrete(
                     "answer": ", ".join(result_names),
                 }
                 questions.append(q_entity)
+                selected_nodes.add(node_name)
                 print(q_entity)
                 i += 1
 
@@ -657,6 +823,8 @@ def gen_multi_entity_concrete(
                 if len(result_list) == n:
                     break
 
+        print(f"Retry counts: {retry_counts}")
+        
         for line in result_list:
             question = q.format(line["name1"], line["name2"])
             q_entity = {
@@ -697,23 +865,23 @@ print("# nodes:", graph.number_of_nodes())
 print("# edges:", graph.number_of_edges())
 
 # generate questions
-# gen_single_entity_abstract(
-#     graph,
-#     80,
-#     os.path.join(args.output_path, "single_entity_abstract.jsonl"),
-# )
-# gen_single_entity_concrete(
-#     graph,
-#     10,
-#     dataset_name,
-#     os.path.join(args.output_path, "single_entity_concrete.jsonl"),
-# )
-# gen_multi_entity_abstract(
-#     graph,
-#     20,
-#     [2, 3, 4, 5],
-#     os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
-# )
+gen_single_entity_abstract(
+    graph,
+    80,
+    os.path.join(args.output_path, "single_entity_abstract.jsonl"),
+)
+gen_single_entity_concrete(
+    graph,
+    10,
+    dataset_name,
+    os.path.join(args.output_path, "single_entity_concrete.jsonl"),
+)
+gen_multi_entity_abstract(
+    graph,
+    20,
+    [2, 3, 4, 5],
+    os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
+)
 gen_multi_entity_concrete(
     graph,
     20,
