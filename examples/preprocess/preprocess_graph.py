@@ -34,6 +34,7 @@ for node_type in data.keys():
         name = node_data["name"] if "name" in node_data else node_data["title"]
         name = name.replace("\n", " ").replace("\r", " ").replace('"', "'")
         if name == "":
+            print(f"Empty name for {key}, skipping")
             continue
         description = (
             node_data["description"]
