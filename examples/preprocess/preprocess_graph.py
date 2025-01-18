@@ -26,12 +26,15 @@ for key in data.keys():
 G = nx.DiGraph()
 
 # add nodes
+node_set = set()
 for node_type in data.keys():
     node_t = node_type.split("_")[0]
     for key, value in data[node_type].items():
         node_data = data[node_type][key]["features"]
         name = node_data["name"] if "name" in node_data else node_data["title"]
         name = name.replace("\n", " ").replace("\r", " ").replace('"', "'")
+        if name == "":
+            continue
         description = (
             node_data["description"]
             if "description" in node_data
@@ -40,7 +43,11 @@ for node_type in data.keys():
         description = (
             description.replace("\n", " ").replace("\r", " ").replace('"', "'")
         )
-        G.add_node(key, **{"name": name, "node_type": node_t, "description": description})
+        if key not in node_set:
+            node_set.add(key)
+            G.add_node(
+                key, **{"name": name, "node_type": node_t, "description": description}
+            )
 
 print("# nodes:", G.number_of_nodes())
 print("# edges:", G.number_of_edges())
@@ -48,14 +55,13 @@ print("# edges:", G.number_of_edges())
 # add edges
 for node_type in data.keys():
     for key, value in data[node_type].items():
+        if key not in node_set:
+            continue
         for relation, neighbors in data[node_type][key]["neighbors"].items():
-            if isinstance(neighbors, list):
-                for edge in neighbors:
-                    if edge in G.nodes:
-                        G.add_edge(key, edge, relation=relation)
-            else:
-                if edge in G.nodes:
-                    G.add_edge(key, edge, relation=relation)
+            assert isinstance(neighbors, list)
+            for tgt in neighbors:
+                if tgt in node_set:
+                    G.add_edge(key, tgt, relation=relation)
 
 print("# nodes:", G.number_of_nodes())
 print("# edges:", G.number_of_edges())

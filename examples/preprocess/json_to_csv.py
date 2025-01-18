@@ -29,6 +29,9 @@ for node_type in data.keys():
         node_data = data[node_type][key]["features"]
         name = node_data["name"] if "name" in node_data else node_data["title"]
         name = name.replace("\n", " ").replace("\r", " ").replace('"', "'")
+        if name == "":
+            print(f"Empty name for {key}, skipping")
+            continue
         description = (
             node_data["description"]
             if "description" in node_data
@@ -52,14 +55,13 @@ with open(csv_nodes, "w", newline="", encoding="utf-8") as cf:
 edge_csv_data = [[f":START_ID({label})", f":END_ID({label})", "relation:TYPE"]]
 for node_type in data.keys():
     for key, value in data[node_type].items():
+        if key not in node_set:
+            continue
         for relation, neighbors in data[node_type][key]["neighbors"].items():
-            if isinstance(neighbors, list):
-                for edge in neighbors:
-                    if edge in node_set:
-                        edge_csv_data.append([key, edge, relation])
-            else:
-                if neighbors in node_set:
-                    edge_csv_data.append([key, neighbors, relation])
+            assert isinstance(neighbors, list)
+            for tgt in neighbors:
+                if tgt in node_set:
+                    edge_csv_data.append([key, tgt, relation])
 
 csv_edges = os.path.join(args.path, "edges.csv")
 with open(csv_edges, "w", newline="", encoding="utf-8") as cf:
