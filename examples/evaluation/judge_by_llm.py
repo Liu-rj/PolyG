@@ -21,7 +21,14 @@ if args.dataset == "physics":
         "/home/ubuntu/graphrag_planner/examples/results/Physics/judgements.jsonl"
     )
 elif args.dataset == "amazon":
-    raise NotImplementedError
+    ANSWER_PATH = [
+        "/home/ubuntu/graphrag_planner/examples/results/amazon/results.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/amazon/results.jsonl",
+        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results.jsonl",
+    ]
+    OUTPUT_FILE = (
+        "/home/ubuntu/graphrag_planner/examples/results/amazon/judgements.jsonl"
+    )
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
         "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
@@ -165,10 +172,10 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 question_types = [
-    "single_entity_abstract",
+    # "single_entity_abstract",
     # "single_entity_concrete",
     # "multi_entity_abstract",
-    # "multi_entity_concrete",
+    "multi_entity_concrete",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
 for item in answers:
@@ -218,7 +225,7 @@ for question_type in question_types:
         # Function to replace double quotes with single quotes in the explanation content
         def replace_double_quotes(match):
             content = match.group(1)
-            modified_content = content.replace('"', "'")
+            modified_content = content.replace('"', "'").replace("\\'", "'")
             return f'"Explanation": "{modified_content}"\n'
 
         # Replace double quotes in the Explanation contents

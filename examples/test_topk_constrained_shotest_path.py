@@ -88,7 +88,55 @@ multi_entity_concrete_template = {
         # "Have the items of the brands 'A' and 'B' ever been viewed together with some other items, and if so, what are those items? A: 1, B, 2": {
         #     "hops": 4,
         # },
-        "Have the items of the brands '{}' and '{}' ever been bought together with some other items, and if so, what are those items? A: 1, B, 2": {}
+        # "Have the items of the brands '{}' and '{}' ever been bought together with some other items, and if so, what are those items? A: 1, B, 2": {}
+        # "Are the items '{}' and '{}' both also bought with items of some other brands? If so, tell me about those brands and their items. A: 1, B, 2": {
+        #     "cypher_template": """
+        #     MATCH (itemA:amazon:item)-[:also_viewed_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)<-[:brand]-(viewedItemB:amazon:item)<-[:also_viewed_item]-(itemB:amazon:item)
+        #     WHERE itemA <> itemB
+        #     RETURN itemA.name AS name1, itemA.id AS id1, itemB.name AS name2, itemB.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (itemA:amazon:item {{id: '{}'}})-[:also_viewed_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)-[:item]->(viewedItemB:amazon:item)-[:also_viewed_item]->(itemB:amazon:item {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
+        # "Are the items '{}' and '{}' both also viewed with items of some other brands and what are those items? A: 1, B, 2": {
+        #     "cypher_template": """
+        #     MATCH (item1:amazon:item)-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)<-[:brand]-(also_viewed2:amazon:item)<-[:also_viewed_item]-(item2:amazon:item)
+        #     WHERE item1 <> item2
+        #     RETURN item1.name AS name1, item1.id AS id1, item2.name AS name2, item2.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (item1:amazon:item {{id: '{}'}})-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)-[:item]->(also_viewed2:amazon:item)-[:also_viewed_item]->(item2:amazon:item {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
+        "Have the items of the brands '{}' and '{}' ever both been also bought with some other items, and if so, what are those items? A: 1, B, 2": {
+            "cypher_template": """
+            MATCH (brandA:amazon:brand)-[:item]->(itemA:amazon:item)-[:also_viewed_item]->(viewedItem:amazon:item)<-[:also_viewed_item]-(itemB:amazon:item)<-[:item]-(brandB:amazon:brand)
+            WHERE brandA <> brandB
+            RETURN brandA.name AS name1, brandA.id AS id1, brandB.name AS name2, brandB.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (brandA:amazon:brand {{id: '{}'}})-[:item]->(itemA:amazon:item)-[:also_viewed_item]->(viewedItem:amazon:item)-[:also_viewed_item]->(itemB:amazon:item)-[:brand]->(brandB:amazon:brand {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
+        },
+        "Have the items of the brands '{}' and '{}' ever both been bought after viewing some other items, and if so, what are those items? A: 1, B, 2": {
+            "cypher_template": """
+            MATCH (b1:amazon:brand)-[:item]->(itemA:amazon:item)-[:bought_together_item]->(otherItem:amazon:item)<-[:bought_together_item]-(itemB:amazon:item)<-[:item]-(b2:amazon:brand)
+            WHERE b1 <> b2
+            RETURN b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2
+            """,
+            "cypher": """
+            MATCH path = (b1:amazon:brand {{id: '{}'}})-[:item]->(itemA:amazon:item)-[:bought_together_item]->(otherItem:amazon:item)-[:bought_together_item]->(itemB:amazon:item)-[:brand]->(b2:amazon:brand {{id: '{}'}})
+            RETURN path LIMIT 10
+            """,
+            "hops": 4,
+        },
     },
     "goodreads": {
         # "Does series '{}' and '{}' contains books that are published in the same publisher? If so, tell me abou them.": {

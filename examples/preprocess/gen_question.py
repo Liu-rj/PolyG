@@ -409,26 +409,50 @@ multi_entity_concrete_template = {
         # },
     },
     "amazon": {
-        "Are there any brands whose items are also bought when buying the items '{}' and '{}'? If so, tell me about those brands and their items.": {
+        # NGW"Are the items '{}' and '{}' both also bought with items of some other brands? If so, tell me about those brands and their items.": {
+        #     "cypher_template": """
+        #     MATCH (itemA:amazon:item)-[:also_bought_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)<-[:brand]-(viewedItemB:amazon:item)<-[:also_bought_item]-(itemB:amazon:item)
+        #     WHERE itemA <> itemB
+        #     RETURN itemA.name AS name1, itemA.id AS id1, itemB.name AS name2, itemB.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (itemA:amazon:item {{id: '{}'}})-[:also_bought_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)-[:item]->(viewedItemB:amazon:item)-[:also_bought_item]->(itemB:amazon:item {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
+        # NGW"Are the items '{}' and '{}' both also viewed with items of some other brands and what are those items?": {
+        #     "cypher_template": """
+        #     MATCH (item1:amazon:item)-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)<-[:brand]-(also_viewed2:amazon:item)<-[:also_viewed_item]-(item2:amazon:item)
+        #     WHERE item1 <> item2
+        #     RETURN item1.name AS name1, item1.id AS id1, item2.name AS name2, item2.id AS id2
+        #     """,
+        #     "cypher": """
+        #     MATCH path = (item1:amazon:item {{id: '{}'}})-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)-[:item]->(also_viewed2:amazon:item)-[:also_viewed_item]->(item2:amazon:item {{id: '{}'}})
+        #     RETURN path LIMIT 10
+        #     """,
+        #     "hops": 4,
+        # },
+        "Have the items of the brands '{}' and '{}' ever both been also bought with some other items, and if so, what are those items?": {
             "cypher_template": """
-            MATCH (itemA:amazon:item)-[:also_viewed_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)<-[:brand]-(viewedItemB:amazon:item)<-[:also_viewed_item]-(itemB:amazon:item)
-            WHERE itemA <> itemB
-            RETURN itemA.name AS name1, itemA.id AS id1, itemB.name AS name2, itemB.id AS id2
+            MATCH (brandA:amazon:brand)-[:item]->(itemA:amazon:item)-[:also_bought_item]->(viewedItem:amazon:item)<-[:also_bought_item]-(itemB:amazon:item)<-[:item]-(brandB:amazon:brand)
+            WHERE brandA <> brandB
+            RETURN brandA.name AS name1, brandA.id AS id1, brandB.name AS name2, brandB.id AS id2
             """,
             "cypher": """
-            MATCH path = (itemA:amazon:item {{id: '{}'}})-[:also_viewed_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)-[:item]->(viewedItemB:amazon:item)-[:also_viewed_item]->(itemB:amazon:item {{id: '{}'}})
+            MATCH path = (brandA:amazon:brand {{id: '{}'}})-[:item]->(itemA:amazon:item)-[:also_bought_item]->(viewedItem:amazon:item)-[:also_bought_item]->(itemB:amazon:item)-[:brand]->(brandB:amazon:brand {{id: '{}'}})
             RETURN path LIMIT 10
             """,
             "hops": 4,
         },
-        "Are there any brands whose items are also viewed when viewing the items '{}' and '{}' and what are those brands?": {
+        "Have the items of the brands '{}' and '{}' ever both been bought after viewing some other items, and if so, what are those items?": {
             "cypher_template": """
-            MATCH (item1:amazon:item)-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)<-[:brand]-(also_viewed2:amazon:item)<-[:also_viewed_item]-(item2:amazon:item)
-            WHERE item1 <> item2
-            RETURN item1.name AS name1, item1.id AS id1, item2.name AS name2, item2.id AS id2
+            MATCH (b1:amazon:brand)-[:item]->(itemA:amazon:item)<-[:buy_after_viewing_item]-(commonItem:amazon:item)-[:buy_after_viewing_item]->(itemB:amazon:item)<-[:item]-(b2:amazon:brand)
+            WHERE b1 <> b2
+            RETURN b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2
             """,
             "cypher": """
-            MATCH path = (item1:amazon:item {{id: '{}'}})-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)-[:item]->(also_viewed2:amazon:item)-[:also_viewed_item]->(item2:amazon:item {{id: '{}'}})
+            MATCH path = (b1:amazon:brand {{id: '{}'}})-[:item]->(itemA:amazon:item)<-[:buy_after_viewing_item]-(commonItem:amazon:item)-[:buy_after_viewing_item]->(itemB:amazon:item)-[:brand]->(b2:amazon:brand {{id: '{}'}})
             RETURN path LIMIT 10
             """,
             "hops": 4,
@@ -824,7 +848,7 @@ def gen_multi_entity_concrete(
                     break
 
         print(f"Retry counts: {retry_counts}")
-        
+
         for line in result_list:
             question = q.format(line["name1"], line["name2"])
             q_entity = {

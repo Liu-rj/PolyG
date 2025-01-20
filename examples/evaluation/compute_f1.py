@@ -9,10 +9,16 @@ from collections import defaultdict
 #     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
 # ]
 
+# ANSWER_PATH = [
+#     "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+# ]
+
 ANSWER_PATH = [
-    "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+    "/home/ubuntu/graphrag_planner/examples/results/amazon/results.jsonl",
+    "/home/ubuntu/fast-graphrag/examples/results/amazon/results.jsonl",
+    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results.jsonl",
 ]
 
 CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
@@ -86,8 +92,8 @@ print(f"Number of questions: {len(question_answer)}")
 method_names = [
     "BFS",
     "Fastgraphrag_PPR",
-    "shortest_paths",
     "cypher_single_entity",
+    "shortest_paths",
     "cypher_multi_entity",
     "GraphCoT",
 ]

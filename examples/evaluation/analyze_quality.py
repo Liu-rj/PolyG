@@ -2,7 +2,8 @@ import jsonlines
 
 
 # LLM_JUDGE_PATH = "../results/Physics/judgements.jsonl"
-LLM_JUDGE_PATH = "../results/goodreads/judgements.jsonl"
+# LLM_JUDGE_PATH = "../results/goodreads/judgements.jsonl"
+LLM_JUDGE_PATH = "../results/amazon/judgements.jsonl"
 
 
 judgements = []
