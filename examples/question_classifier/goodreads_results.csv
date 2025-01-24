@@ -1,0 +1,321 @@
+num_tokens,latency,prediction,type,question
+510,0.745154619216919,0,0,Tell me about 'Mud Vein'.
+507,1.170501470565796,0,0,Tell me about 'Ash'.
+510,0.6172604560852051,0,0,Tell me about 'Robin S. Sharma'.
+510,1.1171331405639648,0,0,Tell me about 'D. Vincent Baker'.
+508,0.7869870662689209,0,0,Tell me about 'MiddleWorld'.
+516,0.6343989372253418,0,0,Tell me about 'Baked Fresh (Portland Heat, #2)'.
+511,0.6131205558776855,0,0,Tell me about 'Editorial Orsai'.
+511,0.8093085289001465,0,0,Tell me about 'Leonid Motylev'.
+509,0.7944650650024414,0,0,Tell me about 'Life of Pi'.
+518,0.679234504699707,0,0,Tell me about 'Sinful Intent (ALFA Private Investigations, #1)'.
+509,1.1196563243865967,0,0,Tell me about 'Stuart Stevens'.
+521,0.5531845092773438,0,0,Tell me about 'Cape Cod Modern: Midcentury Architecture and Community on the Outer Cape'.
+510,1.1126141548156738,0,0,Tell me about 'Donald Ray Pollock'.
+509,0.9726848602294922,0,0,Tell me about 'Susan Ridder'.
+511,0.5498180389404297,0,0,Tell me about 'Franklin's Secret Club'.
+508,0.7136342525482178,0,0,Tell me about 'jPod'.
+510,0.5997879505157471,0,0,Tell me about 'Psy-Changeling'.
+516,0.6482734680175781,0,0,Tell me about 'Creative Time and Space: Making Room for Making Art'.
+510,0.6922659873962402,0,0,Tell me about 'Cosmic Horizons'.
+508,0.6520428657531738,0,0,Tell me about 'Clark Carlton'.
+511,0.6983613967895508,0,0,Tell me about 'Prins der Wrake'.
+529,0.6366689205169678,0,0,Tell me about 'The Elephants of Style: A Trunkload of Tips on the Big Issues and Gray Areas of Contemporary American English'.
+509,0.6509654521942139,0,0,Tell me about 'Robert Evert'.
+509,0.6202678680419922,0,0,Tell me about 'David Parlett'.
+519,0.6611957550048828,0,0,Tell me about 'In Order to Live: A North Korean Girl's Journey to Freedom'.
+515,0.7144160270690918,0,0,Tell me about 'Sir Thomas Malory's Tales Of King Arthur'.
+517,0.7539365291595459,0,0,Tell me about '百鬼夜行 陰'.
+512,0.9813320636749268,0,0,Tell me about 'Phyllis Pellman Good'.
+550,0.7761147022247314,0,0,Tell me about 'تابستان زندگی - سه گانه صحنه هایی از زندگی شهرستان - کتاب سوم'.
+508,0.6091017723083496,0,0,Tell me about 'Frankenstein'.
+512,1.0774290561676025,0,0,Tell me about 'Anatomy of a Misfit'.
+519,0.6632208824157715,0,0,Tell me about 'Fantastic Four by John Byrne: Omnibus, Vol. 1'.
+512,0.6261842250823975,0,0,Tell me about 'The Revenants #1'.
+523,0.6330952644348145,0,0,Tell me about 'Higgs e il suo bosone: La caccia alla particella di Dio'.
+518,1.1048073768615723,0,0,Tell me about 'Five Nights in Paris: After Dark in the City of Light'.
+516,0.6844367980957031,0,0,Tell me about 'Magic Lessons (Magic or Madness, #2)'.
+509,0.6265363693237305,0,0,Tell me about 'Newsflesh'.
+511,0.8473470211029053,0,0,Tell me about 'A History of South Africa'.
+515,1.0658578872680664,0,0,Tell me about 'Sag mir, dass es wahr ist'.
+510,0.8606951236724854,0,0,Tell me about 'Magnificent Obsession'.
+513,0.7523534297943115,0,0,Tell me about 'Further Adventures in the Restless Universe'.
+517,1.6178269386291504,0,0,Tell me about 'The Vaccine Book: Making the Right Decision for Your Child'.
+517,0.5343937873840332,0,0,Tell me about 'The Dead of Winter (John Madden, #3)'.
+527,0.6885037422180176,0,0,Tell me about 'Inquiries Into the Nature of Slow Money: Investing as If Food, Farms, and Fertility Mattered'.
+511,0.8085432052612305,0,0,Tell me about 'Carolina Bensler'.
+509,0.9200384616851807,0,0,Tell me about 'Kedi Sam'.
+509,0.7755742073059082,0,0,Tell me about 'Moby Dick'.
+517,0.7908258438110352,0,0,Tell me about 'Finding My Forever (The Beaumont Series #3)'.
+509,0.8803269863128662,0,0,Tell me about 'Beautiful Wreck'.
+510,1.0205836296081543,0,0,Tell me about 'Wolf in White Van'.
+522,1.229177474975586,0,0,Tell me about 'The Very Best 81 Words So Far: Selected stories from 81words.net'.
+512,0.664562463760376,0,0,Tell me about 'The Jane Yellowrock World Companion'.
+510,0.847069263458252,0,0,Tell me about 'Action Comics #39'.
+510,1.8171892166137695,0,0,Tell me about 'While You Were Mine'.
+513,0.6067445278167725,0,0,Tell me about 'Frankenstein, or The Modern Prometheus'.
+512,0.869300127029419,0,0,Tell me about 'Barlowe's Inferno'.
+512,0.6548182964324951,0,0,Tell me about 'The Wrong Side of Goodbye'.
+519,0.7155072689056396,0,0,Tell me about 'The Omen Machine (Richard & Kahlan, #1)'.
+521,0.7343719005584717,0,0,Tell me about 'Love Under Two Lawmen (Lusty, Texas #2 Lost Collection)'.
+508,1.1137776374816895,0,0,Tell me about 'Like Family'.
+512,0.7259328365325928,0,0,Tell me about 'The House of Dead Maids'.
+521,0.8773353099822998,0,0,Tell me about 'How to Be a Pirate (How to Train Your Dragon, #2)'.
+529,0.7361302375793457,0,0,Tell me about 'Ships of Oak, Guns of Iron: The War of 1812 and the Forging of the American Navy'.
+512,0.6481645107269287,0,0,Tell me about 'Aristotle: Selections'.
+516,0.5987715721130371,0,0,Tell me about 'Your Heart is a Muscle the Size of a Fist'.
+520,0.7140195369720459,0,0,Tell me about 'The Seventh Trumpet (Sister Fidelma, #23)'.
+525,0.8413510322570801,0,0,Tell me about 'Phenomenal: A Hesitant Adventurer's Search for Wonder in the Natural World'.
+519,0.8374731540679932,0,0,Tell me about 'The First Book of Swords (Books of Swords, #1)'.
+520,0.8362340927124023,0,0,Tell me about 'The Complete Morgaine (Morgaine Saga #1-4)'.
+508,0.7586324214935303,0,0,Tell me about 'Love All'.
+509,0.5918700695037842,0,0,Tell me about 'Mind Over Matter'.
+511,0.845360517501831,0,0,Tell me about 'Murder in G Major'.
+510,0.9678928852081299,0,0,Tell me about 'Carrie Bebris'.
+519,1.2018871307373047,0,0,Tell me about 'Wer braucht schon Liebe (Butterfly, #1)'.
+514,0.7191674709320068,0,0,Tell me about 'The Woman in Black: A Ghost Play'.
+512,0.5948491096496582,0,0,Tell me about 'Akira, tome 1'.
+516,0.8756723403930664,0,0,Tell me about 'Преднамерено шляене'.
+516,0.8123617172241211,0,0,Tell me about 'Dry Lips Oughta Move to Kapuskasing'.
+510,0.5045931339263916,0,0,Tell me about 'Intertwined'.
+522,0.7320132255554199,0,0,Tell me about 'Lake of the Long Sun (The Book of the Long Sun, #2)'.
+523,0.6631271839141846,1,1,Who are the authors of the book 'The Great Comet: The Journey of a New Musical to Broadway'?
+518,1.2353096008300781,1,1,Who are the authors of the book 'BYU Studies #50:3'?
+518,0.7720329761505127,1,1,Who are the authors of the book 'Sunshine for the Latter-Day Sa'?
+518,0.7821218967437744,1,1,Who are the authors of the book 'X-Men Legacy: Necrosha'?
+517,0.8291375637054443,1,1,Who are the authors of the book 'A Nave das Sombras'?
+519,0.5931475162506104,1,1,Who are the authors of the book 'Alpha Flight by John Byrne: Omnibus'?
+528,0.710003137588501,1,1,Who are the authors of the book 'The Pony Express Romance Collection: Historic Express Mail Route Delivers Nine Inspiring Romances'?
+515,0.9571948051452637,1,1,Who are the authors of the book 'April Fool's Love'?
+524,1.6333668231964111,1,1,Who are the authors of the book 'Inked Outlaw: A Bad Boy MC Romance Boxed Set'?
+513,0.6492202281951904,1,1,Who are the authors of the book 'Sweet Dreams'?
+525,0.8340997695922852,1,1,What series have the author of the book 'Cookies for the Dragon (Saint Lakes, #2.1)' published?
+516,0.7892820835113525,1,1,What series have the author of the book 'Minor Miracles' published?
+517,0.792475700378418,1,1,What series have the author of the book 'The Dragonbards' published?
+524,0.9041471481323242,1,1,What series have the author of the book 'Endgame (Voluntary Eradicators, #1)' published?
+521,1.1953318119049072,1,1,What series have the author of the book 'Picnic!: A Day in the Park' published?
+527,0.8463804721832275,1,1,What series have the author of the book 'Wild for Wolves  (Werewolves of Forever, Texas #2)' published?
+522,0.9377570152282715,1,1,What series have the author of the book 'The Clocks: Complete & Unabridged' published?
+520,0.6874780654907227,1,1,What series have the author of the book 'The Best of Cordwainer Smith' published?
+518,0.6072208881378174,1,1,What series have the author of the book 'Fairy in the Flesh' published?
+525,0.7254540920257568,1,1,What series have the author of the book 'Stories from the Little Beach Street Bakery: An Omnibus Edition' published?
+513,0.7035095691680908,1,1,What books has the author 'Denise Fields' published?
+512,0.6655421257019043,1,1,What books has the author 'Ben Carson' published?
+516,0.7495384216308594,1,1,What books has the author 'Clara Wimberly' published?
+514,0.7990729808807373,1,1,What books has the author 'Jossilynn' published?
+516,0.8206295967102051,1,1,What books has the author 'mHmd `wd@' published?
+515,0.7298920154571533,1,1,What books has the author 'Tottie Limejuice' published?
+513,0.6035494804382324,1,1,What books has the author 'David Orrell' published?
+514,1.1647047996520996,1,1,What books has the author 'Nicolas Dickner' published?
+513,0.9866750240325928,1,1,What books has the author 'Lynn Willis' published?
+513,0.83223557472229,1,1,What books has the author 'Tom Vetter' published?
+515,0.9137921333312988,1,1,What books have the collaborators of the author 'Daniel Gonzalez' published?
+517,0.5619373321533203,1,1,What books have the collaborators of the author 'Steve Hackett' published?
+517,0.5708332061767578,1,1,What books have the collaborators of the author 'Jeffrey Owen Jones' published?
+517,0.6936311721801758,1,1,What books have the collaborators of the author 'Stephen K. Hunt' published?
+515,0.6013598442077637,1,1,What books have the collaborators of the author 'The Mother' published?
+516,0.7115366458892822,1,1,What books have the collaborators of the author 'Alix Sloan' published?
+519,0.7316944599151611,1,1,What books have the collaborators of the author 'Jesse Dukeminier' published?
+517,0.741966962814331,1,1,What books have the collaborators of the author 'John McQuaid' published?
+516,1.087801218032837,1,1,What books have the collaborators of the author 'Gayle Farmer' published?
+517,0.5270881652832031,1,1,What books have the collaborators of the author 'Ritu Pandey' published?
+522,0.8848206996917725,1,1,What are the series published by the publishers that have published books of the author 'Jean Manco'?
+525,1.5668737888336182,1,1,What are the series published by the publishers that have published books of the author 'ywsf hrwby'?
+525,0.6852223873138428,1,1,What are the series published by the publishers that have published books of the author 'Maree Fenton-Smith'?
+524,0.6253111362457275,1,1,What are the series published by the publishers that have published books of the author 'Piret Toomet'?
+525,0.7196457386016846,1,1,What are the series published by the publishers that have published books of the author 'Karoline Stjernfelt'?
+522,0.765538215637207,1,1,What are the series published by the publishers that have published books of the author 'Brian Hiatt'?
+525,0.8836958408355713,1,1,What are the series published by the publishers that have published books of the author 'Larisa Bespalova'?
+522,0.694833517074585,1,1,What are the series published by the publishers that have published books of the author 'Wayne Brown'?
+524,0.6396348476409912,1,1,What are the series published by the publishers that have published books of the author 'Susanne Blesius'?
+525,0.7364976406097412,1,1,What are the series published by the publishers that have published books of the author 'Kapka Kasabova'?
+527,0.6521008014678955,1,1,What are the authors of the books published by the publisher 'Kinneret, Zmora, Dvir Publishing House'?
+519,0.5945651531219482,1,1,What are the authors of the books published by the publisher 'dEpoca Editorial'?
+520,0.8889634609222412,1,1,What are the authors of the books published by the publisher 'Ponto de Leitura'?
+517,1.0637145042419434,1,1,What are the authors of the books published by the publisher 'Multiplayer'?
+520,0.6141319274902344,1,1,What are the authors of the books published by the publisher 'Editions Sharon Kena'?
+531,1.1212458610534668,1,1,What are the authors of the books published by the publisher 'lhyy'@ lmSry@ l`m@  llktb'?
+519,0.6707484722137451,1,1,What are the authors of the books published by the publisher 'Cynthia Mendoza'?
+519,0.5521142482757568,1,1,What are the authors of the books published by the publisher 'FENN-M&S'?
+518,1.3186817169189453,1,1,What are the authors of the books published by the publisher 'Perma Books'?
+518,0.8686017990112305,1,1,What are the authors of the books published by the publisher 'Fingerprint Publishing'?
+515,0.7358853816986084,1,1,Where does the books of the series 'Foundation Universe' published in?
+515,0.6684408187866211,1,1,Where does the books of the series 'Ronin' published in?
+517,0.9362890720367432,1,1,Where does the books of the series 'Dark-Hunterverse' published in?
+518,1.196803092956543,1,1,Where does the books of the series 'Johannes Cabal' published in?
+516,0.7326822280883789,1,1,Where does the books of the series 'The Dance Sequence' published in?
+522,0.7163832187652588,1,1,Where does the books of the series 'Kendrick/Coulter/Harrigan' published in?
+521,0.732182502746582,1,1,Where does the books of the series 'Anna Karenina, 2 Volumes' published in?
+515,0.8487753868103027,1,1,Where does the books of the series 'Decimation' published in?
+518,1.527000904083252,1,1,Where does the books of the series 'Dragonlance: Chronicles' published in?
+521,0.5909528732299805,1,1,Where does the books of the series 'No. 1 Ladies' Detective Agency' published in?
+542,0.973527193069458,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Luan toHui Se noShi Jie  / Ran and the Gray World'?
+525,1.1227521896362305,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Tag'?
+529,1.185563087463379,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Kelly McWinter P.I.'?
+530,0.813208818435669,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Beneath the Trap Door'?
+528,0.5653808116912842,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Scooby Apocalypse'?
+529,1.1591758728027344,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Devil of Ponong'?
+530,0.5927026271820068,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Kommissar Jennerwein'?
+527,0.7511470317840576,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Shifter Justice'?
+530,0.949103593826294,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'Doc Savage (Bantam)'?
+526,0.7224299907684326,1,1,What are the authors of the books that are published by the publishers that have published books of the series 'smsh'?
+532,1.3762617111206055,2,2,What is the relationship between 'Burglars Can't Be Choosers' and 'Make Out With Murder (Chip Harrison, #3)'?
+535,0.6655144691467285,2,2,What is the relationship between 'კლასობანა' and 'Takipçi'?
+520,0.6605408191680908,2,2,What is the relationship between 'Kizuna' and 'Kazuma Kodaka'?
+524,0.5937294960021973,2,2,What is the relationship between 'Sexy Gay Stories - Volume Six' and 'Naughty Little Forest Nymph'?
+527,0.5648741722106934,2,2,What is the relationship between 'All Souls' Night (Blood Ties, #4)' and 'Blood Ties Bundle'?
+524,0.7375695705413818,2,2,What is the relationship between 'Special Delivery (Hollywood Hills, #1)' and 'Look For Me'?
+521,1.195329189300537,2,2,What is the relationship between 'Minor Arcana' and 'Dark Lord of Derkholm'?
+523,1.1090021133422852,2,2,What is the relationship between 'Beth M. Honeycutt' and 'Scavenger of Souls'?
+521,0.7497031688690186,2,2,What is the relationship between 'Invisible monsters' and 'Le Festival de la Couille'?
+528,0.5842547416687012,2,2,What is the relationship between 'Dear Me' and 'The Lure of White Oak Lake (White Oak Lake, #1)'?
+530,0.7461414337158203,2,2,What is the relationship between 'Blood Howl (Sanguis Noctis, #1)' and 'Luna di sangue'?
+522,1.1257116794586182,2,2,What is the relationship between 'Marylou Hadditt' and 'Nicole  Foster'?
+525,0.5637803077697754,2,2,What is the relationship between 'Trailer' and 'What the Dark Brings: A Collection of Horrors'?
+530,1.1348776817321777,2,2,What is the relationship between 'The Angel with One Hundred Wings: A Tale from the Arabian Nights' and 'Toad Triumphant'?
+522,0.5950615406036377,2,2,What is the relationship between 'Adina Rishe Gewirtz' and 'Candlewick'?
+526,0.6552584171295166,2,2,What is the relationship between 'Maid of Murder (India Hayes, #1)' and 'The Final Vow'?
+517,0.6487810611724854,2,2,What is the relationship between 'Monster House Press' and 'Matt Hart'?
+537,0.6775002479553223,2,2,What is the relationship between 'Liars & Thieves (Tommy Carmellini #1)' and 'Pirate Alley (Tommy Carmellini, #5)'?
+544,0.5960650444030762,2,2,What is the relationship between 'Nelson to Vanguard: Warship Design and Development 1923-1945' and 'Warrior to Dreadnought: Warship Development 1860-1905'?
+532,0.5771245956420898,2,2,What is the relationship between 'Le Sottisier Du Cinema' and 'Calvin et Hobbes 13: Enfin seuls !'?
+529,0.5852603912353516,2,2,What is the relationship between 'Starting Over on Blackberry Lane (Life in Icicle Falls #10)' and 'Mira'?
+535,0.9033081531524658,2,2,What is the relationship between 'Christopher Fay' and 'The General Councils: A History of the Twenty-One General Councils from Nicaea to Vatican II'?
+523,0.7498996257781982,2,2,What is the relationship between 'Chatter Creek Publishing' and 'The Story of Sassy Sweetwater'?
+517,0.8352608680725098,2,2,What is the relationship between 'The Queen' and 'Diversion Books'?
+520,1.0944812297821045,2,2,What is the relationship between 'Very LeFreak' and 'David Levithan'?
+533,1.1412756443023682,2,2,What is the relationship between 'Our Patchwork Nation: The Surprising Truth About the "Real" America' and 'Trade-Off Trade-Off'?
+530,1.0606677532196045,2,2,What is the relationship between 'Historia Del Antiguo Egipto/ History of Ancient Egypt' and 'Mondolibri'?
+520,0.6731603145599365,2,2,What is the relationship between 'Rogue Valley Wine' and 'Fireship Press'?
+528,0.7968547344207764,2,2,What is the relationship between 'Young Justice Vol. II' and 'Gargoyles: Bad Guys, Volume 1'?
+522,0.5232441425323486,2,2,What is the relationship between 'Greetings from Somewhere' and 'The Mystery of the Gold Coin'?
+522,0.6471850872039795,2,2,What is the relationship between 'Batwoman: Elegy' and 'Rick Burchett'?
+524,1.1120266914367676,2,2,What is the relationship between 'Taken (Give & Take, #1)' and 'Smashwords Edition'?
+523,0.6332845687866211,2,2,What is the relationship between 'Against the Odds: Tales of Achievement' and 'Susan O'Malley'?
+531,1.1413836479187012,2,2,What is the relationship between 'Michael Boulter' and 'An  Evening at the Garden of Allah: A Gay Cabaret in Seattle'?
+544,0.678943395614624,2,2,What is the relationship between 'Buffi Jashanmal' and 'Storey's Guide to Raising Dairy Goats, 4th Edition: Breeds, Care, Dairying, Marketing'?
+518,0.9493770599365234,2,2,What is the relationship between 'Recipe for Submission' and 'Loose ID'?
+527,0.7856462001800537,2,2,What is the relationship between 'A Commentary on the Animal Apocalypse of I Enoch' and 'Birger Albert Pearson'?
+528,1.2428383827209473,2,2,What is the relationship between 'The Best Fantasy Stories from the Magazine of Fantasy & Science Fiction' and 'Paul Di Filippo'?
+520,0.7948617935180664,2,2,What is the relationship between 'Spinnaker' and 'Il profumo del sud'?
+521,0.6160237789154053,2,2,What is the relationship between 'The Mute Mistress' and 'mikaelanay'?
+572,0.7055559158325195,2,2,What is the relationship between 'Words of Radiance (The Stormlight Archive, #2)' and 'Η βασίλισσα του χιονιού: Παραμύθι σε εφτά ιστορίες'?
+527,0.6910686492919922,2,2,What is the relationship between 'Korbel Classic Romance Humorous Series' and 'Harlequin Mills & Boon'?
+527,0.6351222991943359,2,2,What is the relationship between 'The Two Towers' and 'Lady Mechanika #3 (Lady Mechanika, #3)'?
+519,0.6218116283416748,2,2,What is the relationship between 'Neil  Shah' and 'W.B. Marsh'?
+523,0.6176176071166992,2,2,What is the relationship between 'Berenice Moreno' and 'Isaias Cortejosa'?
+517,0.5832695960998535,2,2,What is the relationship between 'Het punt' and 'Het Punt'?
+528,0.70955491065979,2,2,What is the relationship between 'Op zoek naar de vogelkoning' and 'Amelia and Eleanor Go for a Ride'?
+526,0.6527700424194336,2,2,What is the relationship between 'Starfire (Demon Slayers, #3)' and 'Tielle St. Clare'?
+532,0.680156946182251,2,2,What is the relationship between 'Shock Waves (Silhouette Intimate Moments, #1287)' and 'The Temptation of Savannah O'Neill'?
+518,1.1154630184173584,2,2,What is the relationship between 'Between Heaven and Texas' and 'Mary Dove'?
+527,1.1297338008880615,2,2,What is the relationship between 'Rebellion (Section One Series Book 3)' and 'Helix: Episode 3'?
+539,0.5684974193572998,2,2,What is the relationship between 'Not in Our Genes: Biology, Ideology and Human Nature' and 'Bioethics and the New Embryology: Springboards for Debate'?
+519,1.1493868827819824,2,2,What is the relationship between 'Pablo Michaels' and 'Elianne Adams'?
+518,0.7337698936462402,2,2,What is the relationship between 'Corrupted 2' and 'Sam Crescent'?
+519,0.7781085968017578,2,2,What is the relationship between 'Simmons, Brian' and 'Cheryl Barker'?
+517,0.6982221603393555,2,2,What is the relationship between 'Familiar Magic' and 'Kat Lind'?
+535,1.0524752140045166,2,2,What is the relationship between 'Lies That Chelsea Handler Told Me' and 'The Way I See It: A Look Back at My Life on Little House'?
+520,0.5488836765289307,2,2,What is the relationship between 'Malcolm S. Thaler' and 'Tor Books'?
+531,1.0991008281707764,2,2,What is the relationship between 'الراعي الهمجي' and 'بطولة الأشياء'?
+524,0.9797477722167969,2,2,What is the relationship between 'The Red Dirt Paradox' and 'Mama Gloria's Sunflower Garden'?
+529,1.3295118808746338,2,2,What is the relationship between 'Lascivious (For the Love of Gods Book 2)' and 'Through a Broken Window'?
+517,0.5481650829315186,2,2,What is the relationship between 'Chance Chambers' and 'Bleed'?
+522,0.6496644020080566,2,2,What is the relationship between 'Miseres Du Desir' and 'Fleur Hana'?
+518,0.5879321098327637,2,2,What is the relationship between 'The Riders' and 'Jessica Shirvington'?
+532,0.8193488121032715,2,2,What is the relationship between 'Lightspeed Magazine, January 2011' and 'Return to Mars (Barsoom, #4-6)'?
+524,0.624077558517456,2,2,What is the relationship between 'Lizzie Newton : Victorian Mysteries' and 'When Love is Blooming'?
+527,0.9319353103637695,2,2,What is the relationship between '哥伦比亚的倒影' and 'Jiang Xun'?
+521,0.7576878070831299,2,2,What is the relationship between 'Witte honger' and 'Peirene Press'?
+546,1.2828395366668701,2,2,What is the relationship between 'Kaya Raya Selamanya, Pecahan-Pecahan Kaca Kejernihan dari Puncak Gunung Kehidupan' and 'Mira W.'?
+551,1.4451148509979248,2,2,What is the relationship between 'The Art of Reading: Mengapa 90% Buku yang Dibeli Tidak (Habis) Dibaca dan Cara Mengatasinya' and 'What Sisters Do Best/What Brothers Do Best'?
+522,0.6774635314941406,2,2,What is the relationship between 'Frederick May' and 'Il caso di Charles Dexter Ward'?
+530,0.7049283981323242,2,2,What is the relationship between 'Vidia and the Fairy Crown ; Vidia dan Mahkota Peri' and 'Richard Thaler'?
+532,0.674034595489502,2,2,What is the relationship between 'Dany Salvatierra' and 'Por el corazón de mi dama (Medieval Hearts, #1)'?
+541,0.9428925514221191,2,2,What is the relationship between 'Autumn in the City of Lights (Autumn, #3)' and 'Murder in the Abbey (Maggie Newberry Mysteries, #8)'?
+525,0.6512389183044434,2,2,What is the relationship between 'J. Alison James' and 'Forgive the River, Forgive the Sky'?
+539,0.78139328956604,2,2,What is the relationship between 'Breakaway Amish: Growing Up with the Bergholz Beard Cutters' and 'Most Likely to Die (Kate Jasper Mystery, #7)'?
+519,0.9226996898651123,2,2,What is the relationship between 'DI Hillary Greene' and 'Friends and Lovers'?
+523,0.5720736980438232,2,2,What is the relationship between 'Wondrous Strange: Tales of the Uncanny' and 'Kevin Ross'?
+518,0.683147668838501,2,2,What is the relationship between 'Kate Kingsbury' and 'Captain Rawson'?
+521,0.812868595123291,2,2,What is the relationship between 'The Year of Pleasures' and 'Rick Tramonto'?
+534,0.9666979312896729,3,3,Have the authors 'Renee Raudman' and 'Ilona Andrews' ever published books in the same publishers? If so, tell me some examples.
+532,0.5566089153289795,3,3,Have the authors 'Robert Klanten' and 'Sven Ehmann' ever published books in the same publishers? If so, tell me some examples.
+536,0.6163434982299805,3,3,Have the authors 'Th Hsyn' and '`bs mHmwd l`qd' ever published books in the same publishers? If so, tell me some examples.
+536,1.1392161846160889,3,3,Have the authors 'slm@ mws~' and ''Hmd 'myn' ever published books in the same publishers? If so, tell me some examples.
+535,0.6076796054840088,3,3,Have the authors 'Niccolo Machiavelli' and 'Friedrich Nietzsche' ever published books in the same publishers? If so, tell me some examples.
+538,0.5898475646972656,3,3,Have the authors 'Rubem Fonseca' and 'Lygia Fagundes Telles' ever published books in the same publishers? If so, tell me some examples.
+532,0.7377114295959473,3,3,Have the authors 'Gregory Benford' and 'Philip Jose Farmer' ever published books in the same publishers? If so, tell me some examples.
+531,0.6439180374145508,3,3,Have the authors 'Jennifer Apodaca' and 'Jennifer Lyon' ever published books in the same publishers? If so, tell me some examples.
+536,1.2704226970672607,3,3,Have the authors 'J.D. Salinger' and 'Vladimir Nabokov' ever published books in the same publishers? If so, tell me some examples.
+530,1.1869556903839111,3,3,Have the authors 'Anthony Burgess' and 'Franz Kafka' ever published books in the same publishers? If so, tell me some examples.
+532,0.5979213714599609,3,3,Have the authors 'Ellen Conford' and 'Lois Duncan' ever published books in the same publishers? If so, tell me some examples.
+530,1.0727992057800293,3,3,Have the authors 'Shannon West' and 'Victoria Sue' ever published books in the same publishers? If so, tell me some examples.
+533,0.7322609424591064,3,3,Have the authors 'Herman Melville' and 'Jules Verne' ever published books in the same publishers? If so, tell me some examples.
+532,0.6243610382080078,3,3,Have the authors 'Bill Pronzini' and 'Arthur Conan Doyle' ever published books in the same publishers? If so, tell me some examples.
+533,0.6658146381378174,3,3,Have the authors 'Scientific American' and 'Sharon Guynup' ever published books in the same publishers? If so, tell me some examples.
+538,0.6842772960662842,3,3,Have the authors 'syd mhdy shj`y' and 'Hmd `zyzy' ever published books in the same publishers? If so, tell me some examples.
+537,0.6513104438781738,3,3,Have the authors 'mHsn khZmy' and 'fDl nZry' ever published books in the same publishers? If so, tell me some examples.
+532,0.7515559196472168,3,3,Have the authors 'Lewis Trondheim' and 'P. Craig Russell' ever published books in the same publishers? If so, tell me some examples.
+532,0.774871826171875,3,3,Have the authors 'Joann Sfar' and 'Oscar Wilde' ever published books in the same publishers? If so, tell me some examples.
+534,0.7602710723876953,3,3,Have the authors 'Wawa Taufik' and 'Farisya Natasha' ever published books in the same publishers? If so, tell me some examples.
+533,0.9026076793670654,3,3,Do the publishers 'Adelphi' and 'dr 'sm@' have any authors publishing books in both of them and what are the publications and authors?
+536,0.6681718826293945,3,3,Do the publishers 'Atria Books' and 'Ica Bokforlag' have any authors publishing books in both of them and what are the publications and authors?
+536,0.714339017868042,3,3,Do the publishers 'HarperCollins Publishers' and 'Canterbury Press Norwich' have any authors publishing books in both of them and what are the publications and authors?
+534,0.7958571910858154,3,3,Do the publishers 'Blood Pudding Press' and 'Caketrain' have any authors publishing books in both of them and what are the publications and authors?
+533,0.6151220798492432,3,3,Do the publishers 'Scholastic Inc.' and 'Klutz' have any authors publishing books in both of them and what are the publications and authors?
+539,0.8951272964477539,3,3,Do the publishers 'Companhia das Letras' and 'Companhia das letras' have any authors publishing books in both of them and what are the publications and authors?
+534,0.6973261833190918,3,3,Do the publishers 'Penquin Group' and 'www.storywitch.com/community' have any authors publishing books in both of them and what are the publications and authors?
+532,0.7084038257598877,3,3,Do the publishers 'Einaudi' and 'MEDIAfashion' have any authors publishing books in both of them and what are the publications and authors?
+534,0.9006485939025879,3,3,Do the publishers 'Pinnacle' and 'M. William Phelps, LLC' have any authors publishing books in both of them and what are the publications and authors?
+548,1.15592360496521,3,3,Do the publishers 'Thomas Nelson Publishers' and 'IERON ESUKhASTERION <<AGIOS IOANNES O PRODROMOS>>' have any authors publishing books in both of them and what are the publications and authors?
+536,0.8772845268249512,3,3,Do the publishers 'Compendium Inc' and 'Compendium Publishing & Communications' have any authors publishing books in both of them and what are the publications and authors?
+530,1.1967616081237793,3,3,Do the publishers 'Marvel' and 'millarworld' have any authors publishing books in both of them and what are the publications and authors?
+535,0.5574402809143066,3,3,Do the publishers 'Tor Books' and 'Berkley Publishing Corporation (NY)' have any authors publishing books in both of them and what are the publications and authors?
+532,0.7642431259155273,3,3,Do the publishers 'Ballantine Books' and 'Jennifer Lyon Books' have any authors publishing books in both of them and what are the publications and authors?
+535,0.9420466423034668,3,3,Do the publishers 'Tindal Street Press' and 'Tindal Street' have any authors publishing books in both of them and what are the publications and authors?
+532,0.5901024341583252,3,3,Do the publishers 'Bantam Books' and 'GAZA' have any authors publishing books in both of them and what are the publications and authors?
+535,0.6643915176391602,3,3,Do the publishers 'Harper' and 'Otvorena knjiga' have any authors publishing books in both of them and what are the publications and authors?
+533,0.7056488990783691,3,3,Do the publishers 'Harper Voyager' and 'Boing Boing' have any authors publishing books in both of them and what are the publications and authors?
+535,0.90167236328125,3,3,Do the publishers 'Vintage' and 'ailtehaasphablichching' have any authors publishing books in both of them and what are the publications and authors?
+546,0.8595011234283447,3,3,Do the publishers 'lhyy'@ lmSry@ l`m@ llktb' and 'ktb l'hly' have any authors publishing books in both of them and what are the publications and authors?
+537,0.7853949069976807,3,3,Do the publishers 'St. Martin's Paperbacks' and 'Macmillan Audio' have books that belong to the same series, and if so, what are those books?
+537,1.0831232070922852,3,3,Do the publishers 'St. Martin's Griffin' and 'St. Martin's Press' have books that belong to the same series, and if so, what are those books?
+531,0.6585044860839844,3,3,Do the publishers 'Longanesi' and 'Century' have books that belong to the same series, and if so, what are those books?
+536,0.5876901149749756,3,3,Do the publishers 'Knopf' and 'Vintage Crime/Black Lizard' have books that belong to the same series, and if so, what are those books?
+540,0.9906361103057861,3,3,Do the publishers 'Oxford University Press, USA' and 'Gramedia Pustaka Utama' have books that belong to the same series, and if so, what are those books?
+534,0.9513635635375977,3,3,Do the publishers 'Oxford University Press' and 'Public Domain Books' have books that belong to the same series, and if so, what are those books?
+532,0.6497220993041992,3,3,Do the publishers 'Tantor Media' and 'Createspace' have books that belong to the same series, and if so, what are those books?
+533,0.7591257095336914,3,3,Do the publishers 'Collector's Library' and 'Penguin Books' have books that belong to the same series, and if so, what are those books?
+535,0.9248318672180176,3,3,Do the publishers 'Tantor Audio' and 'Createspace Independent Publishing Platform' have books that belong to the same series, and if so, what are those books?
+535,0.5840320587158203,3,3,Do the publishers 'Book-of-the-Month Club' and 'Penguin' have books that belong to the same series, and if so, what are those books?
+534,0.5770862102508545,3,3,Do the publishers 'Random House Audio' and 'Headline Book Publishing' have books that belong to the same series, and if so, what are those books?
+534,0.7093675136566162,3,3,Do the publishers 'Feedbooks' and 'HarperCollins Publishers' have books that belong to the same series, and if so, what are those books?
+533,0.7774574756622314,3,3,Do the publishers 'Zahar' and 'Dover Publications' have books that belong to the same series, and if so, what are those books?
+533,0.8248445987701416,3,3,Do the publishers 'Audible Studios' and 'AudioGO Ltd.' have books that belong to the same series, and if so, what are those books?
+532,0.7978768348693848,3,3,Do the publishers 'Project Gutenberg' and 'Dodo Press' have books that belong to the same series, and if so, what are those books?
+532,0.6392562389373779,3,3,Do the publishers 'Norstedts' and 'Headline' have books that belong to the same series, and if so, what are those books?
+537,0.5910120010375977,3,3,Do the publishers 'HarperCollins e-books' and 'Harper Paperbacks' have books that belong to the same series, and if so, what are those books?
+534,0.8619012832641602,3,3,Do the publishers 'Recorded Books' and 'HarperCollins' have books that belong to the same series, and if so, what are those books?
+532,0.6622681617736816,3,3,Do the publishers 'Pocket Books' and 'Washington Square Press' have books that belong to the same series, and if so, what are those books?
+537,0.7125062942504883,3,3,Do the publishers 'Anagrama' and 'W. W. Norton  Company' have books that belong to the same series, and if so, what are those books?
+538,1.2128980159759521,3,3,Do the series 'Hard Case Crime' and 'De complete avonturen van Sherlock Holmes' contain books that are published by the same publisher? If so, tell me about them.
+536,0.7278165817260742,3,3,Do the series 'Camp Half-Blood Chronicles' and 'The Heroes of Olympus' contain books that are published by the same publisher? If so, tell me about them.
+544,1.2723455429077148,3,3,Do the series 'Annika Bengtzon (Published Order)' and 'Annika Bengtzon (Chronological Order)' contain books that are published by the same publisher? If so, tell me about them.
+539,0.700939416885376,3,3,Do the series 'Le Chardon et le Tartan' and 'La saga di Claire Randall' contain books that are published by the same publisher? If so, tell me about them.
+542,0.9323279857635498,3,3,Do the series 'Vorkosigan Saga (Chronological)' and 'Vorkosigan Saga (Publication)' contain books that are published by the same publisher? If so, tell me about them.
+537,0.6894512176513672,3,3,Do the series 'Ariadne Oliver' and 'Hercule Poirot' contain books that are published by the same publisher? If so, tell me about them.
+534,0.6026089191436768,3,3,Do the series 'Extraordinary Voyages' and 'Captain Nemo' contain books that are published by the same publisher? If so, tell me about them.
+545,0.8829154968261719,3,3,Do the series 'Les Rougon-Macquart (recommended reading order)' and 'Les Rougon-Macquart' contain books that are published by the same publisher? If so, tell me about them.
+545,0.6983866691589355,3,3,Do the series 'The Montgomery/Taggert Family (Chronological order)' and 'Velvet Montgomery Annuals Quadrilogy' contain books that are published by the same publisher? If so, tell me about them.
+541,0.7801754474639893,3,3,Do the series 'La biblioteca Argentina. Serie Clasicos' and 'Los siete locos' contain books that are published by the same publisher? If so, tell me about them.
+539,0.6703200340270996,3,3,Do the series 'Bibliotheke tou Tromou' and 'Rosemary's Baby' contain books that are published by the same publisher? If so, tell me about them.
+532,0.7656633853912354,3,3,Do the series 'Joe Pike' and 'Elvis Cole' contain books that are published by the same publisher? If so, tell me about them.
+537,0.6970245838165283,3,3,Do the series 'James Bond - Extended Series' and 'James Bond (Original Series)' contain books that are published by the same publisher? If so, tell me about them.
+536,0.9865419864654541,3,3,Do the series 'rororo' and 'The Inspector Barlach Mysteries' contain books that are published by the same publisher? If so, tell me about them.
+542,0.9552304744720459,3,3,Do the series 'Star Wars Disney Canon Novel' and 'Journey to Star Wars: The Force Awakens' contain books that are published by the same publisher? If so, tell me about them.
+538,0.6276957988739014,3,3,Do the series 'Amber: The Corwin Cycle' and 'The Chronicles of Amber' contain books that are published by the same publisher? If so, tell me about them.
+537,0.7100727558135986,3,3,Do the series 'Tales from Temerant' and 'The Kingkiller Chronicle' contain books that are published by the same publisher? If so, tell me about them.
+542,0.5721147060394287,3,3,Do the series 'La trilogie des jumeaux' and 'The Book of Lies - Twins Trilogy' contain books that are published by the same publisher? If so, tell me about them.
+535,1.0066144466400146,3,3,Do the series 'The Old Kingdom Trilogy' and 'Abhorsen' contain books that are published by the same publisher? If so, tell me about them.
+539,0.7935822010040283,3,3,Do the series 'Waylander' and 'Ciclo Drenai (chronological order)' contain books that are published by the same publisher? If so, tell me about them.

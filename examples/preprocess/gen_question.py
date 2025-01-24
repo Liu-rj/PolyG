@@ -858,7 +858,7 @@ def gen_multi_entity_concrete(
                     line["name1"]: line["id1"],
                     line["name2"]: line["id2"],
                 },
-                "type": "single_entity_concrete",
+                "type": "multi_entity_concrete",
                 "hops": n_hop,
                 "answer": "N/A",
             }
