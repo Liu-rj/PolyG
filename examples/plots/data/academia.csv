@@ -1,0 +1,10 @@
+e2e time (s)	BFS	guided traversal	PPR	CoT	top-k shortest path	top-k constrained shorest path	selected	overhead	TAG
+single_entity_abstract	10.25	N/A	32.84	41.67	N/A	N/A	10.25	0.76	11.01
+single_entity_concrete	5.13	11.33	28.18	44.14	N/A	N/A	11.33	0.78	12.11
+multi_entity_abstract	7.6	N/A	28.78	57.11	25.5	16.21	25.50	0.81	26.31
+multi_entity_concrete	77.84	N/A	27.42	72.14	9.89	19.46	19.46	0.78	20.24
+token counts	BFS	guided traversal	PPR	CoT	top-k shortest path	top-k constrained shorest path	selected	overhead	TAG
+single_entity_abstract	8,412	N/A	73,041	30,767	N/A	N/A	8,412	519	8,931
+single_entity_concrete	7,789	1,127	64,816	42,352	N/A	N/A	1,127	524	1,651
+multi_entity_abstract	13,352	N/A	72,218	48,929	1,107	1,346	1,107	533	1,640
+multi_entity_concrete	44,637	N/A	55,738	164,723	661	1,873	1,873	533	2,406
