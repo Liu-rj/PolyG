@@ -2,7 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 test_cache.json
 run_test*.py
-nano_graphrag_cache*/
+polyg_cache*/
 *.txt
 examples/benchmarks/fixtures/
 tests/original_workflow.txt

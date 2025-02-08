@@ -7,7 +7,7 @@ with open("readme.md", "r") as fh:
 
 vars2find = ["__author__", "__version__", "__url__"]
 vars2readme = {}
-with open("./nano_graphrag/__init__.py") as f:
+with open("./polyg/__init__.py") as f:
     for line in f.readlines():
         for v in vars2find:
             if line.startswith(v):
@@ -22,11 +22,11 @@ with open("./requirements.txt") as f:
         deps.append(line.strip())
 
 setuptools.setup(
-    name="nano-graphrag",
+    name="polyg",
     url=vars2readme["__url__"],
     version=vars2readme["__version__"],
     author=vars2readme["__author__"],
-    description="A simple, easy-to-hack GraphRAG implementation",
+    description="An Effective and Efficient Framework for GraphRAG with Adaptive Graph Traversal",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),

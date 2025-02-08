@@ -1,9 +1,9 @@
 import os
 import logging
 import numpy as np
-from nano_graphrag import GraphRAG, QueryParam
-from nano_graphrag._storage import HNSWVectorStorage, Neo4jStorage
-from nano_graphrag._utils import wrap_embedding_func_with_attrs
+from polyg import GraphRAG, QueryParam
+from polyg._storage import HNSWVectorStorage, Neo4jStorage
+from polyg._utils import wrap_embedding_func_with_attrs
 from sentence_transformers import SentenceTransformer
 from typing import List
 import torch
@@ -12,7 +12,7 @@ import argparse
 import jsonlines
 
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("nano-graphrag").setLevel(logging.INFO)
+logging.getLogger("polyg").setLevel(logging.INFO)
 
 
 argparser = argparse.ArgumentParser()
@@ -25,9 +25,7 @@ argparser.add_argument(
 args = argparser.parse_args()
 
 DATASET_DIR = args.data_dir
-WORKING_DIR = (
-    f"checkpoints/nano_graphrag_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
-)
+WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
 RESULT_DIR = f"results/{DATASET_DIR.split('/')[-1]}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 100000

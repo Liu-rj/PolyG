@@ -1,9 +1,9 @@
 import os
 import logging
 import numpy as np
-from nano_graphrag import GraphRAG, QueryParam
-from nano_graphrag._storage import HNSWVectorStorage, Neo4jStorage
-from nano_graphrag._utils import wrap_embedding_func_with_attrs
+from polyg import GraphRAG, QueryParam
+from polyg._storage import HNSWVectorStorage, Neo4jStorage
+from polyg._utils import wrap_embedding_func_with_attrs
 from sentence_transformers import SentenceTransformer
 from typing import List
 from time import time
@@ -13,7 +13,7 @@ import boto3
 import argparse
 
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("nano-graphrag").setLevel(logging.INFO)
+logging.getLogger("polyg").setLevel(logging.INFO)
 
 
 argparser = argparse.ArgumentParser()
@@ -27,7 +27,7 @@ args = argparser.parse_args()
 # DATASET_DIR = "datasets/amazon"
 # DATASET_DIR = "datasets/goodreads"
 DATASET_DIR = args.path
-WORKING_DIR = f"checkpoints/nano_graphrag_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
+WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 100000
 MAX_OUTPUT_TOKENS = 5000
@@ -194,7 +194,7 @@ def cypher_path_search():
         # "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of venues and papers in those venues?",
         # "What is the relationship between 'J. Koll' and 'Z. Staykova' regarding common venues they have published in?",
         # {"J. Koll": "2928888091", "Z. Staykova": "2063960414"},
-        # "What is the relationship between 'Tomonori Usuda' and 'Ryuji Suzuki' regarding common collaborators?", 
+        # "What is the relationship between 'Tomonori Usuda' and 'Ryuji Suzuki' regarding common collaborators?",
         # {"Tomonori Usuda": "3079978247", "Ryuji Suzuki": "2988145096"},
         "What is the relationship between 'G. S. Nusinovich' and 'Christopher T. Russell' regarding common venues they have published in?",
         {"G. S. Nusinovich": "2985974166", "Christopher T. Russell": "2122965386"},

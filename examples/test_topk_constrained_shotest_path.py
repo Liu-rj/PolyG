@@ -1,10 +1,10 @@
 import logging
 import boto3
 from typing import List
-from nano_graphrag.prompt import PROMPTS
+from polyg.prompt import PROMPTS
 
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("nano-graphrag").setLevel(logging.INFO)
+logging.getLogger("polyg").setLevel(logging.INFO)
 
 
 MAX_MODEL_LEN = 128000

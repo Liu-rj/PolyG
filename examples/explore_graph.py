@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 
 DATASET_DIR = "datasets/maple/Physics"
-WORKING_DIR = f"./nano_graphrag_vllm_and_local_embedding_{DATASET_DIR.split('/')[-1]}"
+WORKING_DIR = f"./polyg_vllm_and_local_embedding_{DATASET_DIR.split('/')[-1]}"
 
 # Load the graph
 graph: nx.Graph = pickle.load(

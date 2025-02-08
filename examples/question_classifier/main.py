@@ -7,7 +7,7 @@ from collections import defaultdict
 import tiktoken
 
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("nano-graphrag").setLevel(logging.INFO)
+logging.getLogger("polyg").setLevel(logging.INFO)
 
 
 MAX_MODEL_LEN = 128000

@@ -1,9 +1,9 @@
 import os
 import logging
 import numpy as np
-from nano_graphrag import GraphRAG
-from nano_graphrag._storage import HNSWVectorStorage, Neo4jStorage
-from nano_graphrag._utils import wrap_embedding_func_with_attrs
+from polyg import GraphRAG
+from polyg._storage import HNSWVectorStorage, Neo4jStorage
+from polyg._utils import wrap_embedding_func_with_attrs
 from sentence_transformers import SentenceTransformer
 from typing import List
 from time import time
@@ -13,7 +13,7 @@ import boto3
 import argparse
 
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("nano-graphrag").setLevel(logging.INFO)
+logging.getLogger("polyg").setLevel(logging.INFO)
 
 
 argparser = argparse.ArgumentParser()
@@ -23,9 +23,7 @@ argparser.add_argument(
 args = argparser.parse_args()
 
 DATASET_DIR = args.path
-WORKING_DIR = (
-    f"../checkpoints/nano_graphrag_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
-)
+WORKING_DIR = f"../checkpoints/polyg_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 100000
 MAX_OUTPUT_TOKENS = 5000

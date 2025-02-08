@@ -1,9 +1,9 @@
 import os
 import logging
 import numpy as np
-from nano_graphrag import GraphRAG, QueryParam
-from nano_graphrag._storage import HNSWVectorStorage
-from nano_graphrag._utils import wrap_embedding_func_with_attrs
+from polyg import GraphRAG, QueryParam
+from polyg._storage import HNSWVectorStorage
+from polyg._utils import wrap_embedding_func_with_attrs
 from sentence_transformers import SentenceTransformer
 from vllm import LLM, SamplingParams
 from typing import List
@@ -11,11 +11,11 @@ import pickle
 import torch
 
 logging.basicConfig(level=logging.WARNING)
-logging.getLogger("nano-graphrag").setLevel(logging.INFO)
+logging.getLogger("polyg").setLevel(logging.INFO)
 
 
 DATASET_DIR = "datasets/maple/physics"
-WORKING_DIR = f"./nano_graphrag_vllm_and_local_embedding_{DATASET_DIR.split('/')[-1]}"
+WORKING_DIR = f"./polyg_vllm_and_local_embedding_{DATASET_DIR.split('/')[-1]}"
 MAX_MODEL_LEN = 15000
 MAX_CONTEXT_TOKENS = 7000
 MAX_OUTPUT_TOKENS = 5000

@@ -1,1 +1,1 @@
-This is the repo for graphrag query planner.
+This is the repo for PolyG (graphrag query planner).

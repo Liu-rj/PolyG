@@ -53,7 +53,7 @@ from .base import (
 @dataclass
 class GraphRAG:
     working_dir: str = field(
-        default_factory=lambda: f"./nano_graphrag_cache_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}"
+        default_factory=lambda: f"./polyg_cache_{datetime.now().strftime('%Y-%m-%d-%H:%M:%S')}"
     )
     # graph mode
     enable_local: bool = True

@@ -1,7 +1,7 @@
 import dspy
 from pydantic import BaseModel, Field
-from nano_graphrag._utils import clean_str
-from nano_graphrag._utils import logger
+from polyg._utils import clean_str
+from polyg._utils import logger
 
 
 """

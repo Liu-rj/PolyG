@@ -4,15 +4,15 @@ import asyncio
 from openai import BadRequestError
 from collections import defaultdict
 import dspy
-from nano_graphrag.base import (
+from polyg.base import (
     BaseGraphStorage,
     BaseVectorStorage,
     TextChunkSchema,
 )
-from nano_graphrag.prompt import PROMPTS
-from nano_graphrag._utils import logger, compute_mdhash_id
-from nano_graphrag.entity_extraction.module import TypedEntityRelationshipExtractor
-from nano_graphrag._op import _merge_edges_then_upsert, _merge_nodes_then_upsert
+from polyg.prompt import PROMPTS
+from polyg._utils import logger, compute_mdhash_id
+from polyg.entity_extraction.module import TypedEntityRelationshipExtractor
+from polyg._op import _merge_edges_then_upsert, _merge_nodes_then_upsert
 
 
 async def generate_dataset(

@@ -1,5 +1,5 @@
 import dspy
-from nano_graphrag.entity_extraction.module import Relationship
+from polyg.entity_extraction.module import Relationship
 
 
 class AssessRelationships(dspy.Signature):
