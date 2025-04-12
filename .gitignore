@@ -185,3 +185,4 @@ datasets
 tests
 checkpoints
 archive
+*.env

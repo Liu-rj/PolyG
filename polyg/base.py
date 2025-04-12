@@ -25,7 +25,12 @@ class QueryParam:
     edge_depth: int = 1
     local_context_length: int = 10000
     traversal_type: Literal[
-        "FBS", "shortest_path", "cypher_query", "cypher_path_search"
+        "FBS",
+        "shortest_path",
+        "all_shortest_paths",
+        "cypher_query",
+        "cypher_path_search",
+        "direct_cypher",
     ] = "BFS"
     # global search
     global_min_community_rating: float = 0

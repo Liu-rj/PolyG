@@ -24,8 +24,9 @@ from ._op import (
     generate_community_report,
     get_chunks,
     local_query,
-    local_query_cypher,
-    local_query_cypher_path_search,
+    direct_cypher,
+    guided_walk,
+    topk_csp,
     batch_local_query,
 )
 from ._storage import (
@@ -235,44 +236,32 @@ class GraphRAG:
             raise ValueError("enable_naive_rag is False, cannot query in naive mode")
         if param.mode == "local":
             tic = time.time()
-            answer_list = "N/A"
+
             if param.traversal_type == "cypher_query":
-                response, token_len, api_calls, answer_list = await local_query_cypher(
-                    query,
-                    id_mapping,
-                    self.chunk_entity_relation_graph,
-                    self.entities_vdb,
-                    self.community_reports,
-                    self.text_chunks,
-                    param,
-                    asdict(self),
-                )
+                func = guided_walk
             elif param.traversal_type == "cypher_path_search":
-                response, token_len, api_calls = await local_query_cypher_path_search(
-                    query,
-                    id_mapping,
-                    self.chunk_entity_relation_graph,
-                    self.entities_vdb,
-                    self.community_reports,
-                    self.text_chunks,
-                    param,
-                    asdict(self),
-                )
+                func = topk_csp
+            elif param.traversal_type in ["BFS", "shortest_path", "all_shortest_paths"]:
+                func = local_query
+            elif param.traversal_type == "direct_cypher":
+                func = direct_cypher
             else:
-                response, token_len, api_calls = await local_query(
-                    query,
-                    id_mapping,
-                    self.chunk_entity_relation_graph,
-                    self.entities_vdb,
-                    self.community_reports,
-                    self.text_chunks,
-                    param,
-                    asdict(self),
-                )
+                raise ValueError(f"Unsupported traversal type {param.traversal_type}")
+
+            response, token_len, api_calls, answer_list = await func(
+                query,
+                id_mapping,
+                self.chunk_entity_relation_graph,
+                self.entities_vdb,
+                self.community_reports,
+                self.text_chunks,
+                param,
+                asdict(self),
+            )
             duration = time.time() - tic
             print(f"Query time: {duration:.2f}s")
         else:
-            raise ValueError(f"Unknown mode {param.mode}")
+            raise ValueError(f"Unsupported mode {param.mode}")
         await self._query_done()
         return response, duration, token_len, api_calls, answer_list
 
@@ -290,9 +279,11 @@ class GraphRAG:
         ]
         data_for_vdb = {
             compute_mdhash_id(dp["name"], prefix="ent-"): {
-                "content": dp["name"] + "; " + dp["abstract"]
-                if dp["node_type"] == "paper"
-                else dp["name"],
+                "content": (
+                    dp["name"] + "; " + dp["abstract"]
+                    if dp["node_type"] == "paper"
+                    else dp["name"]
+                ),
                 "name": dp["name"],
                 "node_id": id,
             }

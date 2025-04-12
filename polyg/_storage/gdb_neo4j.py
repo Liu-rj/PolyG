@@ -148,6 +148,8 @@ class Neo4jStorage(BaseGraphStorage):
                 target_id=target_node_id,
             )
             record = await result.single()
+            if not record:
+                return None
             return {"relation": record["edge_data"]}
 
     async def get_node_edges(
