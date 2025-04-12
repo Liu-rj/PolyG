@@ -1,0 +1,148 @@
+import os
+import argparse
+import jsonlines
+import random
+from typing import List
+from openai import OpenAI
+from pydantic import SecretStr
+from dotenv import load_dotenv
+
+load_dotenv("../.env")
+
+argparser = argparse.ArgumentParser()
+argparser.add_argument(
+    "--benchmark_dir", type=str, default="benchmarks/physics", required=True
+)
+args = argparser.parse_args()
+
+client = OpenAI(
+    api_key=SecretStr(os.getenv("DEEPSEEK_API_KEY")),
+    base_url="https://api.deepseek.com",
+)
+
+# PROMPT = """
+# You are a linguistics expert, please paraphrase the given question template without changing any semantic meaning of it.
+
+# Note that content '{{}}' (in single quotes) is an template entity name placeholder which will be used to match entities in the knowledge graph, so do not change the '{{}}' part.
+# Also, in your returned paraphrased question, please keep the '{{}}' part unchanged.
+
+# Question: {}:
+
+# You are required to return 4 paraphrased questions in the following format:
+# Result:
+# <paraphrased question1>
+# <paraphrased question2>
+# <paraphrased question3>
+# <paraphrased question4>
+# """
+
+PROMPT = """
+You are a linguistics expert, please paraphrase the given question without changing any semantic meaning of it.
+
+Note that the contents in '' (single quotes) is an exact entity name which will be used to match entities in the knowledge graph, so do not change any word in the single quote '' part.
+Also, in your returned paraphrased question, please keep the contents in '' part unchanged.
+
+Question: {}:
+
+You are required to return 4 paraphrased questions in the following format (enclose the question in square brackets):
+1. [<paraphrased question1>]
+2. [<paraphrased question2>]
+3. [<paraphrased question3>]
+4. [<paraphrased question4>]
+"""
+
+ERROR_PROMPT = """
+When generating the paraphrased questions, you have made a mistake and caused an error.
+
+Your previous response: {response}
+
+Error: {error}
+
+Please fix the error and generate the paraphrased questions again.
+
+You are required to return 4 paraphrased questions in the following format (enclose the question in square brackets):
+1. [<paraphrased question1>]
+2. [<paraphrased question2>]
+3. [<paraphrased question3>]
+4. [<paraphrased question4>]
+"""
+
+
+print(f"Benchmark dir: {args.benchmark_dir}")
+
+
+def print_outputs(outputs):
+    print("=" * 80)
+    print("Generated reponse:")
+    print(outputs)
+    print("-" * 80)
+
+
+def openai_generator(
+    prompt: str,
+    system_prompt: str = None,
+    history_messages: List[dict] = [],
+    **kwargs,
+) -> str:
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    messages.extend(history_messages)
+    messages.append({"role": "user", "content": prompt})
+
+    response = client.chat.completions.create(
+        model="deepseek-chat", messages=messages, stream=False, temperature=1.0
+    )
+    return response.choices[0].message.content
+
+
+if __name__ == "__main__":
+    question_types = [
+        "single_entity_abstract",
+        "single_entity_concrete",
+        "multi_entity_abstract",
+        "multi_entity_concrete",
+    ]
+    for question_type in question_types:
+        output_file = os.path.join(
+            args.benchmark_dir, f"{question_type}_rephrased.jsonl"
+        )
+
+        contents = []
+        with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
+            for item in jsonlines.Reader(f):
+                contents.append(item)
+
+        for item in contents:
+            question, id_mapping = item["question"], item["entity"]
+            error_msg = ""
+
+            while True:
+                try:
+                    response = openai_generator(
+                        PROMPT.format(question) + "\n\n" + error_msg
+                    )
+                    print(response)
+
+                    paraphrased_questions = [question]
+                    for line in response.split("\n"):
+                        paraphrased_questions.append(line.split("[")[1].split("]")[0])
+
+                    break
+                except Exception as e:
+                    print(f"Response: {response}, Error: {str(e)}")
+                    error_msg = ERROR_PROMPT.format(response=response, error=str(e))
+
+            print(paraphrased_questions)
+
+            num = random.randint(0, 4)
+            paraphrased_question = paraphrased_questions[num]
+            print(f"Selected paraphrased question: {paraphrased_question}")
+
+            rephrased_item = item.copy()
+            rephrased_item["question"] = paraphrased_question
+
+            # write the rephrased question to the output file
+            with jsonlines.open(output_file, "a") as writer:
+                writer.write(rephrased_item)
