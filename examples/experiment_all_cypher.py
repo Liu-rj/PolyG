@@ -9,10 +9,8 @@ from typing import List
 from polyg import GraphRAG, QueryParam
 from polyg._storage import HNSWVectorStorage, Neo4jStorage
 from polyg._utils import wrap_embedding_func_with_attrs
-from polyg.prompt import PHYSICS_GRAPH_SCHEMA
 from sentence_transformers import SentenceTransformer
 from openai import OpenAI
-from pydantic import SecretStr
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,8 +28,7 @@ argparser.add_argument(
         "gpt-4o",
         "gpt-4o-mini",
         "claude-3.5-sonnet",
-        "claude-3.7-sonnet",
-        "deepseek",
+        "deepseek-chat",
     ],
     required=True,
 )
@@ -121,11 +118,8 @@ async def openai_generator(
     messages.extend(history_messages)
     messages.append({"role": "user", "content": prompt})
 
-    # response = client.chat.completions.create(
-    #     model="deepseek-chat", messages=messages, stream=False
-    # )
     response = client.chat.completions.create(
-        model="gpt-4o-mini", messages=messages, stream=False
+        model=args.model, messages=messages, stream=False
     )
     return response.choices[0].message.content
 
@@ -151,11 +145,9 @@ async def local_embedding(
 rag = GraphRAG(
     working_dir=WORKING_DIR,
     enable_llm_cache=False,
-    best_model_func=bedrock_generator,
-    cheap_model_func=bedrock_generator,
+    model_func=bedrock_generator,
     embedding_func=local_embedding,
-    best_model_max_token_size=MAX_MODEL_LEN,
-    cheap_model_max_token_size=MAX_MODEL_LEN,
+    model_max_token_size=MAX_MODEL_LEN,
     vector_db_storage_cls=HNSWVectorStorage,
     graph_storage_cls=Neo4jStorage,
     addon_params=neo4j_config,

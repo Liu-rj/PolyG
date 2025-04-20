@@ -107,10 +107,10 @@ def insert():
     rag = GraphRAG(
         working_dir=WORKING_DIR,
         enable_llm_cache=True,
-        best_model_func=bedrock_generator,
+        model_func=bedrock_generator,
         cheap_model_func=bedrock_generator,
         embedding_func=local_embedding,
-        best_model_max_token_size=MAX_CONTEXT_TOKENS,
+        model_max_token_size=MAX_CONTEXT_TOKENS,
         cheap_model_max_token_size=MAX_CONTEXT_TOKENS,
         vector_db_storage_cls=HNSWVectorStorage,
         graph_storage_cls=Neo4jStorage,

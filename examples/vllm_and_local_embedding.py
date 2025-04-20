@@ -113,11 +113,9 @@ def insert():
     rag = GraphRAG(
         working_dir=WORKING_DIR,
         enable_llm_cache=True,
-        best_model_func=vllm_llama_model,
-        cheap_model_func=vllm_llama_model,
+        model_func=vllm_llama_model,
         embedding_func=local_embedding,
-        best_model_max_token_size=MAX_CONTEXT_TOKENS,
-        cheap_model_max_token_size=MAX_CONTEXT_TOKENS,
+        model_max_token_size=MAX_CONTEXT_TOKENS,
         vector_db_storage_cls=HNSWVectorStorage,
         vector_db_storage_cls_kwargs={
             "max_elements": 10000000,
@@ -143,11 +141,9 @@ def query():
     rag = GraphRAG(
         working_dir=WORKING_DIR,
         enable_llm_cache=False,
-        best_model_func=vllm_llama_model_batch_inference,
-        cheap_model_func=vllm_llama_model_batch_inference,
+        model_func=vllm_llama_model_batch_inference,
         embedding_func=local_embedding,
-        best_model_max_token_size=MAX_MODEL_LEN,
-        cheap_model_max_token_size=MAX_MODEL_LEN,
+        model_max_token_size=MAX_MODEL_LEN,
         vector_db_storage_cls=HNSWVectorStorage,
         vector_db_storage_cls_kwargs={
             "max_elements": 10000000,
