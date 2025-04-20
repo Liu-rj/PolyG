@@ -2,6 +2,7 @@ import os
 import argparse
 import jsonlines
 import random
+import boto3
 from typing import List
 from openai import OpenAI
 from pydantic import SecretStr
@@ -70,12 +71,32 @@ You are required to return 4 paraphrased questions in the following format (encl
 
 print(f"Benchmark dir: {args.benchmark_dir}")
 
+bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
+MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
 
 def print_outputs(outputs):
     print("=" * 80)
     print("Generated reponse:")
     print(outputs)
     print("-" * 80)
+
+
+def bedrock_generator(
+    prompt: str,
+    system_prompt: str = None,
+    history_messages: List[dict] = [],
+    **kwargs,
+) -> str:
+    messages, system = [], []
+    if system_prompt:
+        system.append({"text": system_prompt})
+
+    messages.extend(history_messages)
+    messages.append({"role": "user", "content": [{"text": prompt}]})
+
+    response = bedrock_cli.converse(modelId=MODEL_ID, messages=messages, system=system)
+    return response["output"]["message"]["content"][0]["text"]
 
 
 def openai_generator(
@@ -103,6 +124,7 @@ if __name__ == "__main__":
         "single_entity_concrete",
         "multi_entity_abstract",
         "multi_entity_concrete",
+        "nested_question",
     ]
     for question_type in question_types:
         output_file = os.path.join(
@@ -118,16 +140,29 @@ if __name__ == "__main__":
             question, id_mapping = item["question"], item["entity"]
             error_msg = ""
 
+            key_strs = [f"'{key}'" for key in id_mapping.keys()]
+
             while True:
                 try:
-                    response = openai_generator(
+                    response = bedrock_generator(
                         PROMPT.format(question) + "\n\n" + error_msg
                     )
                     print(response)
 
                     paraphrased_questions = [question]
                     for line in response.split("\n"):
-                        paraphrased_questions.append(line.split("[")[1].split("]")[0])
+                        try:
+                            new_question = line.split("[")[1].split("]")[0]
+                        except IndexError as e:
+                            print(f"Error parsing line: {line}, Error: {str(e)}")
+                            continue
+
+                        for key_str in key_strs:
+                            if key_str not in new_question:
+                                raise ValueError(
+                                    f"Entity name '{key_str}' not found in rephrased question."
+                                )
+                        paraphrased_questions.append(new_question)
 
                     break
                 except Exception as e:

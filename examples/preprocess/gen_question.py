@@ -568,6 +568,68 @@ multi_entity_concrete_template = {
     },
 }
 
+nested_question_template = {
+    "physics": {
+        "Tell me about the academic contributions of the academic collaborators of the scholar '{}'.": {
+            "cypher_template": """
+        MATCH (author:physics:author)
+        WITH author ORDER BY rand() LIMIT 100
+
+        MATCH (author)-[:paper]->(:physics:paper)-[:author]->(collaborator:physics:author)
+        WHERE author <> collaborator
+        WITH author, count(DISTINCT collaborator) AS numCollaborators
+        WHERE numCollaborators >= 5 AND numCollaborators <= 20
+        WITH author.name AS name1, author.id AS id1
+        RETURN name1, id1
+        LIMIT 1
+        """,
+        },
+        "What is the relationship between the scholar '{}' and the authors of the paper '{}'?": {
+            "cypher_template": """
+        MATCH (paper:physics:paper)
+        WITH paper ORDER BY rand() LIMIT 1
+
+        MATCH (paper)-[:author]->(author:physics:author)-[*3]->(anotherAuthor:physics:author)
+        WHERE anotherAuthor <> author
+        RETURN DISTINCT anotherAuthor.name AS name1, anotherAuthor.id AS id1, paper.name AS name2, paper.id AS id2
+        LIMIT 1
+        """,
+        },
+        "Have the scholars '{}' and '{}' both published work at the venue having the paper '{}'?": {
+            "cypher_template": """
+        MATCH (paper:physics:paper)-[:venue]->(venue:physics:venue)
+        WITH DISTINCT venue, paper ORDER BY rand() LIMIT 1
+
+        MATCH (author1:physics:author)
+        -[:paper]->(paper1:physics:paper)
+        -[:venue]->(venue:physics:venue)
+        -[:paper]->(paper2:physics:paper)
+        -[:author]->(author2:physics:author)
+        WHERE paper1 <> paper2 AND author1 <> author2 AND NOT (author1)-[:paper]->(paper) AND NOT (author2)-[:paper]->(paper)
+        RETURN DISTINCT author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2, paper.name AS name3, paper.id AS id3
+        LIMIT 1
+        """,
+        },
+        "Who are the academic collaborators of the author who writes both the paper '{}' and paper '{}'?": {
+            "cypher_template": """
+        MATCH (a:physics:author)
+        WITH a ORDER BY rand() LIMIT 100
+
+        MATCH (a)-[:paper]->(:physics:paper)-[:author]->(coAuthor:physics:author)
+        WHERE coAuthor <> a
+        WITH a, collect(DISTINCT coAuthor) AS collaborators
+        WHERE size(collaborators) >= 5 AND size(collaborators) <= 20
+        WITH a ORDER BY rand()
+
+        MATCH (p1:physics:paper)-[:author]->(a), (p2:physics:paper)-[:author]->(a)
+        WHERE p1 <> p2
+        RETURN DISTINCT p1.name AS name1, p1.id AS id1, p2.name AS name2, p2.id AS id2
+        LIMIT 1
+        """,
+        },
+    },
+}
+
 
 def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
     all_nodes = list(graph.nodes())
@@ -595,7 +657,7 @@ def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
         name_set.add(node_data["name"])
         print(q_entity)
         i += 1
-    with jsonlines.open(output_path, "w") as writer:
+    with jsonlines.open(output_path, "a") as writer:
         for row in questions:
             writer.write(row)
 
@@ -614,9 +676,7 @@ def choose_random_node(neo4j_driver, namespace):
         return node["name"], node["id"]
 
 
-def gen_single_entity_concrete(
-    graph: nx.Graph, n: int, graph_name: str, output_path: str
-):
+def gen_single_entity_concrete(n: int, graph_name: str, output_path: str):
     neo4j_url = neo4j_config["neo4j_url"]
     neo4j_auth = neo4j_config["neo4j_auth"]
     driver = GraphDatabase.driver(
@@ -696,7 +756,7 @@ def gen_single_entity_concrete(
                 print(q_entity)
                 i += 1
 
-    with jsonlines.open(output_path, "w") as writer:
+    with jsonlines.open(output_path, "a") as writer:
         for row in questions:
             writer.write(row)
 
@@ -747,7 +807,7 @@ def gen_multi_entity_abstract(
             print(q_entity)
             i += 1
 
-    with jsonlines.open(output_path, "w") as writer:
+    with jsonlines.open(output_path, "a") as writer:
         for row in questions:
             writer.write(row)
 
@@ -773,9 +833,7 @@ def all_shortest_paths(
         return paths
 
 
-def gen_multi_entity_concrete(
-    graph: nx.Graph, n: int, graph_name: str, output_path: str
-):
+def gen_multi_entity_concrete(n: int, graph_name: str, output_path: str):
     neo4j_url = neo4j_config["neo4j_url"]
     neo4j_auth = neo4j_config["neo4j_auth"]
     driver = GraphDatabase.driver(
@@ -865,7 +923,65 @@ def gen_multi_entity_concrete(
             questions.append(q_entity)
             print(q_entity)
 
-    with jsonlines.open(output_path, "w") as writer:
+    with jsonlines.open(output_path, "a") as writer:
+        for row in questions:
+            writer.write(row)
+
+
+def gen_nested_question(n: int, graph_name: str, output_path: str):
+    neo4j_url = neo4j_config["neo4j_url"]
+    neo4j_auth = neo4j_config["neo4j_auth"]
+    driver = GraphDatabase.driver(
+        neo4j_url,
+        auth=neo4j_auth,
+        max_connection_pool_size=100,
+        connection_timeout=60,
+    )
+    q_templates = nested_question_template[graph_name]
+    questions = []
+    for it, (q, content) in enumerate(q_templates.items()):
+        q_cypher_t = content["cypher_template"]
+
+        result_list = []
+        with driver.session() as session:
+            while len(result_list) < n:
+                print(
+                    f"Getting the next record for question: {q}, {len(result_list)}/{n}"
+                )
+                results = session.run(q_cypher_t)
+                record = results.single()
+                if record is not None:
+                    result_list.append(record)
+
+        for line in result_list:
+            if "name3" in line.keys():
+                question = q.format(line["name1"], line["name2"], line["name3"])
+                entity_mappings = {
+                    line["name1"]: line["id1"],
+                    line["name2"]: line["id2"],
+                    line["name3"]: line["id3"],
+                }
+            elif "name2" in line.keys():
+                question = q.format(line["name1"], line["name2"])
+                entity_mappings = {
+                    line["name1"]: line["id1"],
+                    line["name2"]: line["id2"],
+                }
+            else:
+                question = q.format(line["name1"])
+                entity_mappings = {line["name1"]: line["id1"]}
+
+            q_entity = {
+                "qid": len(questions),
+                "question": question,
+                "entity": entity_mappings,
+                "type": "nested_question",
+                "answer": "N/A",
+            }
+            questions.append(q_entity)
+            print(q_entity)
+
+    with jsonlines.open(output_path, "a") as writer:
         for row in questions:
             writer.write(row)
 
@@ -875,7 +991,7 @@ argparser.add_argument(
     "--path", type=str, default="../datasets/maple/Physics", required=True
 )
 argparser.add_argument(
-    "--output-path", type=str, default="../benchmarks/hysics", required=True
+    "--output-path", type=str, default="../benchmarks/physics", required=True
 )
 args = argparser.parse_args()
 print(args)
@@ -883,32 +999,37 @@ print(args)
 dataset_name = os.path.basename(args.path).lower()
 
 # load the graph
-graph = pickle.load(open(os.path.join(args.path, "graph.pkl"), "rb"))
-print("NetworkX graph loaded")
-print("# nodes:", graph.number_of_nodes())
-print("# edges:", graph.number_of_edges())
+# graph = pickle.load(open(os.path.join(args.path, "graph.pkl"), "rb"))
+# print("NetworkX graph loaded")
+# print("# nodes:", graph.number_of_nodes())
+# print("# edges:", graph.number_of_edges())
+graph = None
+
 
 # generate questions
-gen_single_entity_abstract(
-    graph,
-    80,
-    os.path.join(args.output_path, "single_entity_abstract.jsonl"),
-)
-gen_single_entity_concrete(
-    graph,
-    10,
-    dataset_name,
-    os.path.join(args.output_path, "single_entity_concrete.jsonl"),
-)
-gen_multi_entity_abstract(
-    graph,
+# gen_single_entity_abstract(
+#     graph,
+#     80,
+#     os.path.join(args.output_path, "single_entity_abstract.jsonl"),
+# )
+# gen_single_entity_concrete(
+#     10,
+#     dataset_name,
+#     os.path.join(args.output_path, "single_entity_concrete.jsonl"),
+# )
+# gen_multi_entity_abstract(
+#     graph,
+#     20,
+#     [2, 3, 4, 5],
+#     os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
+# )
+# gen_multi_entity_concrete(
+#     20,
+#     dataset_name,
+#     os.path.join(args.output_path, "multi_entity_concrete.jsonl"),
+# )
+gen_nested_question(
     20,
-    [2, 3, 4, 5],
-    os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
-)
-gen_multi_entity_concrete(
-    graph,
-    20,
     dataset_name,
-    os.path.join(args.output_path, "multi_entity_concrete.jsonl"),
+    os.path.join(args.output_path, "nested_question.jsonl"),
 )
