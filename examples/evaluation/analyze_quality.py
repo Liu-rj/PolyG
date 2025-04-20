@@ -1,9 +1,9 @@
 import jsonlines
 
 
-# LLM_JUDGE_PATH = "../results/Physics/judgements.jsonl"
+LLM_JUDGE_PATH = "../results/Physics/claude-3.5-sonnet/judgements_nested_rephrased.jsonl"
 # LLM_JUDGE_PATH = "../results/goodreads/judgements.jsonl"
-LLM_JUDGE_PATH = "../results/amazon/judgements.jsonl"
+# LLM_JUDGE_PATH = "../results/amazon/judgements.jsonl"
 
 
 judgements = []
@@ -19,6 +19,7 @@ question_types = [
     "single_entity_concrete",
     "multi_entity_abstract",
     "multi_entity_concrete",
+    "nested_question",
 ]
 question_judgement = {key: [] for key in question_types}
 for judgement in judgements:
@@ -27,11 +28,13 @@ for judgement in judgements:
 criteria = ["Comprehensiveness", "Diversity", "Empowerment", "Overall Winner"]
 method_names = [
     "BFS",
-    "Fastgraphrag_PPR",
     "cypher_single_entity",
+    "Fastgraphrag_PPR",
+    "GraphCoT",
     "shortest_paths",
     "cypher_multi_entity",
-    "GraphCoT",
+    "direct_cypher",
+    "adaptive",
 ]
 for question_type in question_types:
     method_wins = {name: {method: 0 for method in method_names} for name in criteria}
@@ -56,7 +59,7 @@ for question_type in question_types:
     print(method_wins)
 
     # print it as csv format
-    print(",".join([""] + method_names))
+    print(",".join(method_names))
     for criterion in criteria:
         print(
             ",".join([str(method_wins[criterion][method]) for method in method_names])

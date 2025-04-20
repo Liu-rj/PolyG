@@ -3,25 +3,26 @@ import jsonlines
 from collections import defaultdict
 
 
-# ANSWER_PATH = [
-#     "/home/ubuntu/graphrag_planner/examples/results/Physics/results.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
-# ]
+ANSWER_PATH = [
+    "/home/ubuntu/PolyG/examples/results/Physics/results.jsonl",
+    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results.jsonl",
+    "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
+    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
+]
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/graphrag_planner/examples/results/goodreads/results.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/goodreads/results.jsonl",
 #     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
 #     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
 # ]
 
-ANSWER_PATH = [
-    "/home/ubuntu/graphrag_planner/examples/results/amazon/results.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/amazon/results.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results.jsonl",
-]
+# ANSWER_PATH = [
+#     "/home/ubuntu/PolyG/examples/results/amazon/results.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/amazon/results.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results.jsonl",
+# ]
 
-CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 
 SYSTEM_ROLE = """
 ---Role---
@@ -91,11 +92,13 @@ print(f"Number of questions: {len(question_answer)}")
 
 method_names = [
     "BFS",
-    "Fastgraphrag_PPR",
     "cypher_single_entity",
+    "Fastgraphrag_PPR",
+    "GraphCoT",
     "shortest_paths",
     "cypher_multi_entity",
-    "GraphCoT",
+    "direct_cypher",
+    "adaptive",
 ]
 method_precision = {method: 0 for method in method_names}
 method_recall = {method: 0 for method in method_names}
