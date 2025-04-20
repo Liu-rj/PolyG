@@ -300,7 +300,7 @@ async def extract_entities(
     entity_vdb: BaseVectorStorage,
     global_config: dict,
 ) -> Union[BaseGraphStorage, None]:
-    use_llm_func: callable = global_config["best_model_func"]
+    use_llm_func: callable = global_config["model_func"]
     entity_extract_max_gleaning = global_config["entity_extract_max_gleaning"]
 
     ordered_chunks = list(chunks.items())
@@ -603,7 +603,7 @@ async def generate_community_report(
     global_config: dict,
 ):
     llm_extra_kwargs = global_config["special_community_report_llm_kwargs"]
-    use_llm_func: callable = global_config["best_model_func"]
+    use_llm_func: callable = global_config["model_func"]
     use_string_json_convert_func: callable = global_config[
         "convert_response_to_json_func"
     ]
@@ -624,7 +624,7 @@ async def generate_community_report(
         describe = await _pack_single_community_describe(
             knwoledge_graph_inst,
             community,
-            max_token_size=global_config["best_model_max_token_size"],
+            max_token_size=global_config["model_max_token_size"],
             already_reports=already_reports,
             global_config=global_config,
         )
@@ -786,12 +786,12 @@ async def _find_most_related_text_unit_from_entities(
 
 
 async def _find_most_related_edges_from_entities(
-    entry_nodes: list[dict],
+    id_mapping: dict[str, str],
     query_param: QueryParam,
     kg_inst: BaseGraphStorage,
 ):
-    all_nodes = set(entry_nodes.values())
-    entry_ids = list(entry_nodes.values())
+    all_nodes = set(id_mapping.values())
+    entry_ids = list(id_mapping.values())
 
     tic = time.time()
     print(f"Number of nodes before traversal: {len(all_nodes)}")
@@ -842,6 +842,8 @@ async def _find_most_related_edges_from_entities(
         {**n, "rank": d} for n, d in zip(node_datas, node_degrees) if n is not None
     ]
     node_datas = sorted(node_datas, key=lambda x: x["rank"], reverse=True)
+    for it, node_data in enumerate(node_datas):
+        id_mapping[node_data["name"]] = node_data["id"]
     print(f"Get node data time: {time.time() - tic:.2f}s")
 
     if query_param.traversal_type == "BFS":
@@ -1006,19 +1008,23 @@ async def local_query(
     query_param: QueryParam,
     global_config: dict,
 ) -> tuple[str, int, int, str]:
-    use_model_func = global_config["best_model_func"]
-    tic = time.time()
-    context = await _build_local_query_context(
-        query,
-        id_mapping,
-        kg_inst,
-        entities_vdb,
-        community_reports,
-        text_chunks_db,
-        query_param,
-        global_config,
-    )
-    print(f"Build context time: {time.time() - tic:.2f}s")
+    use_model_func = global_config["model_func"]
+    try:
+        tic = time.time()
+        context = await _build_local_query_context(
+            query,
+            id_mapping,
+            kg_inst,
+            entities_vdb,
+            community_reports,
+            text_chunks_db,
+            query_param,
+            global_config,
+        )
+        print(f"Build context time: {time.time() - tic:.2f}s")
+    except Exception as e:
+        logger.error(f"Error in building local query context: {e}")
+        return PROMPTS["fail_response"], 0, 0, "N/A"
 
     if query_param.only_need_context:
         return context
@@ -1033,7 +1039,7 @@ async def local_query(
 
     form_response_tokens = num_tokens(sys_prompt + query)
     print(f"Context length: {form_response_tokens}")
-    assert form_response_tokens < global_config["best_model_max_token_size"]
+    assert form_response_tokens < global_config["model_max_token_size"]
 
     tic = time.time()
     response = await use_model_func(
@@ -1115,7 +1121,7 @@ async def direct_cypher(
     query_param: QueryParam,
     global_config: dict,
 ) -> tuple[str, int, int, str]:
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
 
     sys_prompt = PROMPTS["direct_cypher_query"]
     if "Physics" in global_config["working_dir"]:
@@ -1135,9 +1141,6 @@ async def direct_cypher(
         try:
             tic = time.time()
             prompt = f"query: {query}, id mapping: {id_mapping}"
-            # cur_token_len = num_tokens(sys_prompt + prompt) + sum(
-            #     [num_tokens(m["content"]) for m in history_msgs]
-            # )
             cur_token_len = num_tokens(sys_prompt + prompt) + sum(
                 [num_tokens(m["content"][0]["text"]) for m in history_msgs]
             )
@@ -1153,6 +1156,8 @@ async def direct_cypher(
 
             tic = time.time()
             results = await kg_inst.exec_query(cypher_query)
+            if results is None:
+                return PROMPTS["fail_response"], token_len, 1, "N/A"
             all_edges = [(r["source"], r["target"]) for r in results]
             print(f"Query execution time: {time.time() - tic:.2f}s")
 
@@ -1160,13 +1165,6 @@ async def direct_cypher(
         except Exception as e:
             retry_count += 1
             logger.error(f"Error: {e}")
-            # history_msgs.extend(
-            #     [
-            #         {"role": "user", "content": prompt},
-            #         {"role": "assistant", "content": response},
-            #         {"role": "user", "content": PROMPTS["error_retry"].format(str(e))},
-            #     ]
-            # )
             history_msgs.extend(
                 [
                     {"role": "user", "content": [{"text": prompt}]},
@@ -1202,7 +1200,7 @@ async def direct_cypher(
 
     form_reponse_tokens = num_tokens(sys_prompt + query)
     print(f"Token length: {form_reponse_tokens}")
-    assert form_reponse_tokens < global_config["best_model_max_token_size"]
+    assert form_reponse_tokens < global_config["model_max_token_size"]
 
     tic = time.time()
     response = await use_model_func(
@@ -1223,7 +1221,7 @@ async def guided_walk(
     query_param: QueryParam,
     global_config: dict,
 ) -> tuple[str, int, int, str]:
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
 
     tic = time.time()
     sys_prompt = PROMPTS["cypher_query_prompt"]
@@ -1259,16 +1257,23 @@ async def guided_walk(
 
             tic = time.time()
             results = await kg_inst.exec_query(cypher_query)
+            if results is None:
+                return PROMPTS["fail_response"], token_len, 1, "N/A"
             ret_ids = [r["id"] for r in results]
             print(f"Query execution time: {time.time() - tic:.2f}s")
+
+            break
         except Exception as e:
             retry_count += 1
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
-                    {"role": "user", "content": prompt},
-                    {"role": "assistant", "content": response},
-                    {"role": "user", "content": PROMPTS["error_retry"].format(str(e))},
+                    {"role": "user", "content": [{"text": prompt}]},
+                    {"role": "assistant", "content": [{"text": response}]},
+                    {
+                        "role": "user",
+                        "content": [{"text": PROMPTS["error_retry"].format(str(e))}],
+                    },
                 ]
             )
 
@@ -1280,6 +1285,8 @@ async def guided_walk(
         entry_ids = list(id_mapping.values())
         ret_ids = entry_ids + ret_ids
         node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in ret_ids])
+        for item in node_datas:
+            id_mapping[item["name"]] = item["id"]
         ret_names = [n["name"] for n in node_datas[len(entry_ids) :]]
         if not all([n is not None for n in node_datas]):
             logger.warning("Some nodes are missing, maybe the storage is damaged")
@@ -1309,7 +1316,7 @@ async def guided_walk(
 
     form_reponse_tokens = num_tokens(sys_prompt + query)
     print(f"Token length: {form_reponse_tokens}")
-    assert form_reponse_tokens < global_config["best_model_max_token_size"]
+    assert form_reponse_tokens < global_config["model_max_token_size"]
 
     tic = time.time()
     response = await use_model_func(
@@ -1330,7 +1337,7 @@ async def topk_csp(
     query_param: QueryParam,
     global_config: dict,
 ) -> tuple[str, int, int, str]:
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
 
     tic = time.time()
     if "Physics" in global_config["working_dir"]:
@@ -1366,20 +1373,29 @@ async def topk_csp(
             )
             cypher_query = response.split("```")[1].strip("cypher")
             print(f"Cypher query generation time: {time.time() - tic:.2f}s")
-            print("Generated cypher query:", cypher_query)
             print(f"Token length: {cur_token_len}")
+            print("Generated cypher query:", cypher_query)
 
             tic = time.time()
-            context = await kg_inst.exec_query_and_get_path(cypher_query)
+            context, nodes = await kg_inst.exec_query_and_get_path(cypher_query)
+            if context is None:
+                return PROMPTS["fail_response"], token_len, 1, "N/A"
+            for node in nodes:
+                id_mapping[node["name"]] = node["id"]
             print(f"Query execution time: {time.time() - tic:.2f}s")
+
+            break
         except Exception as e:
             retry_count += 1
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
-                    {"role": "user", "content": prompt},
-                    {"role": "assistant", "content": response},
-                    {"role": "user", "content": PROMPTS["error_retry"].format(str(e))},
+                    {"role": "user", "content": [{"text": prompt}]},
+                    {"role": "assistant", "content": [{"text": response}]},
+                    {
+                        "role": "user",
+                        "content": [{"text": PROMPTS["error_retry"].format(str(e))}],
+                    },
                 ]
             )
 
@@ -1395,7 +1411,7 @@ async def topk_csp(
 
     form_reponse_tokens = num_tokens(sys_prompt + query)
     print(f"Token length: {form_reponse_tokens}")
-    assert form_reponse_tokens < global_config["best_model_max_token_size"]
+    assert form_reponse_tokens < global_config["model_max_token_size"]
 
     tic = time.time()
     final_response = await use_model_func(
@@ -1415,7 +1431,7 @@ def batch_local_query(
     query_param: QueryParam,
     global_config: dict,
 ) -> List[str]:
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
     tic = time.time()
     loop = always_get_an_event_loop()
     batch_context = loop.run_until_complete(
@@ -1437,7 +1453,7 @@ def batch_local_query(
     print(f"Build context time: {time.time() - tic:.2f}s")
     for c in batch_context:
         assert (
-            num_tokens(c) < global_config["best_model_max_token_size"]
+            num_tokens(c) < global_config["model_max_token_size"]
         ), f"context length: {num_tokens(c)}"
         print(f"context: {c}")
         print(f"Context length: {num_tokens(c)} tokens")
@@ -1477,7 +1493,7 @@ async def _map_global_communities(
     global_config: dict,
 ):
     use_string_json_convert_func = global_config["convert_response_to_json_func"]
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
     community_groups = []
     while len(communities_data):
         this_group = truncate_list_by_token_size(
@@ -1530,7 +1546,7 @@ async def global_query(
     }
     if not len(community_schema):
         return PROMPTS["fail_response"]
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
 
     sorted_community_schemas = sorted(
         community_schema.items(),
@@ -1610,7 +1626,7 @@ async def naive_query(
     query_param: QueryParam,
     global_config: dict,
 ):
-    use_model_func = global_config["best_model_func"]
+    use_model_func = global_config["model_func"]
     results = await chunks_vdb.query(query, top_k=query_param.top_k)
     if not len(results):
         return PROMPTS["fail_response"]

@@ -7,12 +7,24 @@ from typing import Union
 from ..base import BaseGraphStorage, SingleCommunitySchema
 from .._utils import logger
 from ..prompt import GRAPH_FIELD_SEP
+from contextlib import asynccontextmanager
 
 neo4j_lock = asyncio.Lock()
 
 
 def make_path_idable(path):
     return path.replace(".", "_").replace("/", "__").replace("-", "_")
+
+
+@asynccontextmanager
+async def transaction_context(session, **kwargs):
+    tx = await session.begin_transaction(**kwargs)
+    try:
+        yield tx
+        await tx.commit()
+    except Exception:
+        await tx.rollback()
+        raise
 
 
 @dataclass
@@ -147,7 +159,7 @@ class Neo4jStorage(BaseGraphStorage):
                 source_id=source_node_id,
                 target_id=target_node_id,
             )
-            record = await result.single()
+            record = await result.peek()
             if not record:
                 return None
             return {"relation": record["edge_data"]}
@@ -392,52 +404,72 @@ class Neo4jStorage(BaseGraphStorage):
                 raise
 
     async def exec_query(self, query: str):
-        async with self.async_driver.session() as session:
-            result = await session.run(query)
+        result_list = []
 
-            result_list = []
-            async for record in result:
-                result_list.append(record)
+        async with self.async_driver.session() as session:
+            try:
+                async with transaction_context(session, timeout=60) as tx:
+                    results = await tx.run(query)
+
+                    async for record in results:
+                        result_list.append(record)
+            except Exception as e:
+                print(f"Error executing query: {e}")
+                return None
+
             return result_list
 
     async def exec_query_and_get_path(self, query: str):
+        paths = []
+        nodes = []
+
         async with self.async_driver.session() as session:
-            result = await session.run(query)
+            try:
+                async with transaction_context(session, timeout=60) as tx:
+                    results = await tx.run(query)
 
-            paths = []
-            # Iterate through the results asynchronously
-            async for record in result:
-                path = record["path"]  # Get the Path object
-                path_repr = []
+                    # Iterate through the results asynchronously
+                    async for record in results:
+                        path = record["path"]  # Get the Path object
+                        path_repr = []
 
-                # Process nodes and relationships in the path
-                for i, node in enumerate(path.nodes):
-                    path_repr.append(node["name"])  # Add node name
-                    if i < len(
-                        path.relationships
-                    ):  # Add relationship type if not the last node
-                        rel = path.relationships[i]
-                        path_repr.append(f"({rel.type})")  # Relationship type
+                        # Process nodes and relationships in the path
+                        for i, node in enumerate(path.nodes):
+                            nodes.append(node)  # Add node
+                            path_repr.append(node["name"])  # Add node name
+                            if i < len(path.relationships):
+                                rel = path.relationships[i]
+                                path_repr.append(f"({rel.type})")  # Relationship type
 
-                # Join the path representation as a readable string
-                paths.append(" -> ".join(path_repr))
+                        # Join the path representation as a readable string
+                        paths.append(" -> ".join(path_repr))
+            except Exception as e:
+                print(f"Error executing query: {e}")
+                return None, None
 
-            return paths
+            return paths, nodes
 
     async def all_shortest_paths(self, source: str, target: str) -> list[list[str]]:
-        async with self.async_driver.session() as session:
-            result = await session.run(
-                f"""
-                MATCH p = SHORTEST 10 (s:{self.namespace} {{id: $source_id}})
-                -[*]->(t:{self.namespace} {{id: $target_id}})
-                RETURN [n in nodes(p) | n.id] AS path
-                """,
-                source_id=source,
-                target_id=target,
-            )
+        paths = []
 
-            paths = []
-            async for record in result:
-                node_id = record["path"]
-                paths.append(node_id)
+        async with self.async_driver.session() as session:
+            try:
+                async with transaction_context(session, timeout=60) as tx:
+                    results = await tx.run(
+                        f"""
+                        MATCH p = SHORTEST 10 (s:{self.namespace} {{id: $source_id}})
+                        -[*]->(t:{self.namespace} {{id: $target_id}})
+                        RETURN [n in nodes(p) | n.id] AS path
+                        """,
+                        source_id=source,
+                        target_id=target,
+                    )
+
+                    async for record in results:
+                        node_id = record["path"]
+                        paths.append(node_id)
+            except Exception as e:
+                print(f"Error executing query: {e}")
+                return None
+
             return paths

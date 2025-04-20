@@ -31,7 +31,9 @@ class QueryParam:
         "cypher_query",
         "cypher_path_search",
         "direct_cypher",
-    ] = "BFS"
+        "adaptive",
+    ] = "adaptive"
+    question_classification_result: str = None
     # global search
     global_min_community_rating: float = 0
     global_max_consider_community: float = 512

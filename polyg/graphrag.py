@@ -1,13 +1,16 @@
 import asyncio
 import os
-from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from functools import partial
-from typing import Callable, Dict, List, Optional, Type, Union, cast
-from tqdm import tqdm
 import networkx as nx
 import tiktoken
 import time
+import json
+from dataclasses import asdict, dataclass, field
+from datetime import datetime
+from functools import partial
+from typing import Callable, Dict, List, Optional, Type, Union, cast, Tuple
+from tqdm import tqdm
+from .prompt import PROMPTS
+from ._utils import num_tokens
 
 
 from ._llm import (
@@ -110,12 +113,9 @@ class GraphRAG:
 
     # LLM
     using_azure_openai: bool = False
-    best_model_func: callable = gpt_4o_complete
-    best_model_max_token_size: int = 32768
-    best_model_max_async: int = 16
-    cheap_model_func: callable = gpt_4o_mini_complete
-    cheap_model_max_token_size: int = 32768
-    cheap_model_max_async: int = 16
+    model_func: callable = gpt_4o_complete
+    model_max_token_size: int = 32768
+    model_max_async: int = 16
 
     # entity extraction
     entity_extraction_func: callable = extract_entities
@@ -138,10 +138,8 @@ class GraphRAG:
 
         if self.using_azure_openai:
             # If there's no OpenAI API key, use Azure OpenAI
-            if self.best_model_func == gpt_4o_complete:
-                self.best_model_func = azure_gpt_4o_complete
-            if self.cheap_model_func == gpt_4o_mini_complete:
-                self.cheap_model_func = azure_gpt_4o_mini_complete
+            if self.model_func == gpt_4o_complete:
+                self.model_func = azure_gpt_4o_complete
             if self.embedding_func == openai_embedding:
                 self.embedding_func = azure_openai_embedding
             logger.info(
@@ -198,18 +196,17 @@ class GraphRAG:
             else None
         )
 
-        self.best_model_func = limit_async_func_call(self.best_model_max_async)(
-            partial(self.best_model_func, hashing_kv=self.llm_response_cache)
-        )
-        self.cheap_model_func = limit_async_func_call(self.cheap_model_max_async)(
-            partial(self.cheap_model_func, hashing_kv=self.llm_response_cache)
+        self.model_func = limit_async_func_call(self.model_max_async)(
+            partial(self.model_func, hashing_kv=self.llm_response_cache)
         )
 
     def insert(self, string_or_strings):
         loop = always_get_an_event_loop()
         return loop.run_until_complete(self.ainsert(string_or_strings))
 
-    def query(self, query: str, id_mapping: dict, param: QueryParam = QueryParam()):
+    def query(
+        self, query: str, id_mapping: dict, param: QueryParam = QueryParam()
+    ) -> tuple[str, float, int, int, list]:
         loop = always_get_an_event_loop()
         return loop.run_until_complete(self.aquery(query, id_mapping, param))
 
@@ -229,41 +226,210 @@ class GraphRAG:
 
     async def aquery(
         self, query: str, id_mapping: dict, param: QueryParam = QueryParam()
-    ):
-        if param.mode == "local" and not self.enable_local:
-            raise ValueError("enable_local is False, cannot query in local mode")
-        if param.mode == "naive" and not self.enable_naive_rag:
-            raise ValueError("enable_naive_rag is False, cannot query in naive mode")
-        if param.mode == "local":
-            tic = time.time()
+    ) -> tuple[str, float, int, int, list]:
+        assert param.mode == "local", "Only local mode is supported"
 
-            if param.traversal_type == "cypher_query":
-                func = guided_walk
-            elif param.traversal_type == "cypher_path_search":
-                func = topk_csp
-            elif param.traversal_type in ["BFS", "shortest_path", "all_shortest_paths"]:
-                func = local_query
-            elif param.traversal_type == "direct_cypher":
-                func = direct_cypher
-            else:
-                raise ValueError(f"Unsupported traversal type {param.traversal_type}")
+        total_api_calls = 0
+        total_tokens = 0
+        global_traversal_type = param.traversal_type
+        start = time.time()
 
-            response, token_len, api_calls, answer_list = await func(
-                query,
-                id_mapping,
-                self.chunk_entity_relation_graph,
-                self.entities_vdb,
-                self.community_reports,
-                self.text_chunks,
-                param,
-                asdict(self),
+        tic = time.time()
+        if global_traversal_type == "adaptive":
+            global_traversal_type, token_len = await self.determine_traversal_type(
+                query, param
             )
-            duration = time.time() - tic
-            print(f"Query time: {duration:.2f}s")
+            total_api_calls += 1
+            total_tokens += token_len
+        print(f"Question classification time: {time.time() - tic:.2f}s")
+        print(f"Traversal type: {global_traversal_type}")
+
+        if global_traversal_type == "nested":
+            query_plan, steps, token_len = await self.decompose_nested_query(query)
+            total_api_calls += 1
+            total_tokens += token_len
+            print(f"Query plan: {query_plan}")
+            print(f"Num of all steps: {steps}")
         else:
-            raise ValueError(f"Unsupported mode {param.mode}")
+            steps = 1
+
+        history = []
+        global_question = query
+        for step in range(steps):
+            if global_traversal_type == "nested":
+                subqueries, traversal_type, token_len = await self.instantiate_query(
+                    global_question, query_plan, step, history, id_mapping
+                )
+                total_api_calls += 1
+                total_tokens += token_len
+            else:
+                traversal_type = global_traversal_type
+                subqueries = {
+                    "question1": {"question": query, "id_mapping": id_mapping}
+                }
+
+            param.traversal_type = traversal_type
+            print(f"Step {step + 1}/{steps}, traversal_type: {traversal_type}")
+            print(f"Step {step + 1}/{steps}, history: {history}")
+            print(f"Step {step + 1}/{steps}, subqueries: {subqueries}")
+
+            for query_dict in subqueries.values():
+                subquery = query_dict["question"]
+                sub_id_mapping = query_dict["id_mapping"]
+                print(f"Subquery: {subquery}, id_mapping: {sub_id_mapping}")
+
+                if traversal_type == "cypher_query":
+                    func = guided_walk
+                elif traversal_type == "cypher_path_search":
+                    func = topk_csp
+                elif traversal_type in ["BFS", "shortest_path", "all_shortest_paths"]:
+                    func = local_query
+                elif traversal_type == "direct_cypher":
+                    func = direct_cypher
+                else:
+                    logger.error(f"Unsupported traversal type: {traversal_type}")
+                    return (
+                        PROMPTS["fail_response"],
+                        time.time() - start,
+                        total_api_calls,
+                        0,
+                        "N/A",
+                    )
+
+                response, token_len, api_calls, answer_list = await func(
+                    subquery,
+                    sub_id_mapping,
+                    self.chunk_entity_relation_graph,
+                    self.entities_vdb,
+                    self.community_reports,
+                    self.text_chunks,
+                    param,
+                    asdict(self),
+                )
+
+                total_api_calls += api_calls
+                total_tokens += token_len
+                id_mapping.update(sub_id_mapping)
+                history.append({"question": subquery, "response": response})
+
+        if global_traversal_type == "nested":
+            # combine the steps and generate a final summary to the global question
+            print("ALl history:", history)
+            prompt = PROMPTS["nested_query_summarization"].format(
+                question=global_question,
+                query_plan=query_plan,
+                history=history,
+            )
+            response = await self.model_func(prompt=prompt)
+            token_len = num_tokens(prompt)
+            total_api_calls += 1
+            total_tokens += token_len
+
+        duration = time.time() - start
+        print(f"Query time: {duration:.2f}s")
         await self._query_done()
-        return response, duration, token_len, api_calls, answer_list
+        return response, duration, total_tokens, total_api_calls, answer_list
+
+    async def determine_traversal_type(
+        self, query: str, query_param: QueryParam = None
+    ) -> str:
+        """
+        Determine the traversal type based on the query by LLM.
+        """
+        traversal_types = [
+            "BFS",
+            "cypher_query",
+            "all_shortest_paths",
+            "cypher_path_search",
+        ]
+        use_model_func = self.model_func
+        prompt = PROMPTS["question_classification"].format(query)
+
+        response = await use_model_func(prompt=prompt)
+        query_param.question_classification_result = response
+        token_len = num_tokens(prompt)
+        print(response)
+
+        try:
+            num = int(response.split(":")[0].split("\n")[0])
+            if num != -1:
+                return traversal_types[num], token_len
+            else:
+                return "nested", token_len
+        except Exception as e:
+            logger.error(f"Error in determining traversal type: {e}")
+            return None, token_len
+
+    async def decompose_nested_query(self, query: str) -> List[Tuple[str, int]]:
+        """
+        Decompose the nested query into sub-queries.
+        """
+        prompt = PROMPTS["nested_query_decomposition"].format(query)
+        response = await self.model_func(prompt=prompt)
+        decompose_plan = response.split("```")[1].strip("plan").replace("\n\n", "\n")
+        steps = len(decompose_plan.split("\n")) - 2
+        token_len = num_tokens(prompt)
+        return decompose_plan, steps, token_len
+
+    async def instantiate_query(
+        self,
+        global_query: str,
+        query_plan: str,
+        step: int,
+        history: List[str],
+        id_mapping: dict[str, str],
+    ) -> Tuple[Dict[str, Dict], str, int]:
+        """
+        Instantiate the query based on the query plan and step.
+        """
+        mapping = {
+            "<s,*,*>": "BFS",
+            "<s,p,*>": "cypher_query",
+            "<s,*,o>": "all_shortest_paths",
+            "<s,p,o>": "cypher_path_search",
+        }
+        # extract the traversal type from the query plan
+        current_step = query_plan.split("\n")[step + 1]
+        traversal_type = mapping[current_step.split(":")[0].split(".")[1].strip()]
+
+        history_str = ""
+        for i, h in enumerate(history):
+            history_str += f"Response for step {i + 1}: {h}\n"
+
+        total_tokens = 0
+        history_msgs = []
+        prompt = PROMPTS["nested_query_instantiation"].format(
+            question=global_query,
+            query_plan=query_plan,
+            step=step + 1,
+            history=history_str,
+            mapping=id_mapping,
+        )
+        for i in range(3):
+            try:
+                response = await self.model_func(
+                    prompt=prompt, history_messages=history_msgs
+                )
+
+                concrete_queries = response.split("```")[1].strip("json")
+                concrete_queries = json.loads(concrete_queries)
+                for k, v in concrete_queries.items():
+                    if isinstance(v["id_mapping"], str):
+                        id_mapping = v["id_mapping"].replace("'", '"')
+                        concrete_queries[k]["id_mapping"] = json.loads(id_mapping)
+
+                total_tokens += num_tokens(prompt)
+                break
+            except Exception as e:
+                logger.error(f"Error in instantiating query: {e}")
+                history_msgs.extend(
+                    [
+                        {"role": "user", "content": [{"text": prompt}]},
+                        {"role": "assistant", "content": [{"text": response}]},
+                    ]
+                )
+                prompt = PROMPTS["error_retry"].format(str(e))
+        return concrete_queries, traversal_type, total_tokens
 
     def insert_from_networkx_graph(self, graph: nx.Graph):
         loop = always_get_an_event_loop()
