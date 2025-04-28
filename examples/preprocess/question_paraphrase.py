@@ -3,6 +3,7 @@ import argparse
 import jsonlines
 import random
 import boto3
+import re
 from typing import List
 from openai import OpenAI
 from pydantic import SecretStr
@@ -39,6 +40,7 @@ client = OpenAI(
 
 PROMPT = """
 You are a linguistics expert, please paraphrase the given question without changing any semantic meaning of it.
+For example, "Give a broad discription of the the finder of 'Higgs boson'." is not equal to "Who is the finder of 'Higgs boson'?", since the former one asks about general information while what the latter inquires about is vague and can just be the finder name.
 
 Note that the contents in '' (single quotes) is an exact entity name which will be used to match entities in the knowledge graph, so do not change any word in the single quote '' part.
 Also, in your returned paraphrased question, please keep the contents in '' part unchanged.
@@ -120,10 +122,10 @@ def openai_generator(
 
 if __name__ == "__main__":
     question_types = [
-        "single_entity_abstract",
-        "single_entity_concrete",
-        "multi_entity_abstract",
-        "multi_entity_concrete",
+        # "single_entity_abstract",
+        # "single_entity_concrete",
+        # "multi_entity_abstract",
+        # "multi_entity_concrete",
         "nested_question",
     ]
     for question_type in question_types:
@@ -152,7 +154,10 @@ if __name__ == "__main__":
                     paraphrased_questions = [question]
                     for line in response.split("\n"):
                         try:
-                            new_question = line.split("[")[1].split("]")[0]
+                            match = re.match(r"^\d\.\s?\[", line)
+                            if not match:
+                                continue
+                            new_question = line[match.end() :].strip().strip("]")
                         except IndexError as e:
                             print(f"Error parsing line: {line}, Error: {str(e)}")
                             continue
@@ -160,7 +165,7 @@ if __name__ == "__main__":
                         for key_str in key_strs:
                             if key_str not in new_question:
                                 raise ValueError(
-                                    f"Entity name '{key_str}' not found in rephrased question."
+                                    f"Entity name {key_str} not found in rephrased question."
                                 )
                         paraphrased_questions.append(new_question)
 
@@ -172,7 +177,11 @@ if __name__ == "__main__":
             print(paraphrased_questions)
 
             num = random.randint(0, 4)
-            paraphrased_question = paraphrased_questions[num]
+            len_q = len(paraphrased_questions)
+            if len_q < 5:
+                print(f"Warning: Only {len_q} paraphrased questions generated")
+                continue
+            paraphrased_question = paraphrased_questions[num % len_q]
             print(f"Selected paraphrased question: {paraphrased_question}")
 
             rephrased_item = item.copy()

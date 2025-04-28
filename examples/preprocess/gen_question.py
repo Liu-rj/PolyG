@@ -579,9 +579,31 @@ nested_question_template = {
         WHERE author <> collaborator
         WITH author, count(DISTINCT collaborator) AS numCollaborators
         WHERE numCollaborators >= 5 AND numCollaborators <= 20
-        WITH author.name AS name1, author.id AS id1
-        RETURN name1, id1
+        RETURN author.name AS name1, author.id AS id1
         LIMIT 1
+        """,
+        },
+        "Who are the academic collaborators of the author who writes both the paper '{}' and paper '{}'?": {
+            "cypher_template": """
+        MATCH (a:physics:author)
+        WITH a ORDER BY rand() LIMIT 100
+
+        MATCH (a)-[:paper]->(:physics:paper)-[:author]->(coAuthor:physics:author)
+        WHERE coAuthor <> a
+        WITH a, collect(DISTINCT coAuthor) AS collaborators
+        WHERE size(collaborators) >= 5 AND size(collaborators) <= 20
+        WITH a ORDER BY rand()
+
+        MATCH (p1:physics:paper)-[:author]->(a), (p2:physics:paper)-[:author]->(a)
+        WHERE p1 <> p2
+        RETURN DISTINCT p1.name AS name1, p1.id AS id1, p2.name AS name2, p2.id AS id2
+        LIMIT 1
+        """,
+            "cypher": """
+        MATCH (p1:physics:paper {{id: '{}'}})-[:author]->(a:physics:author), (p2:physics:paper {{id: '{}'}})-[:author]->(a)
+        MATCH (a)-[:paper]->(:physics:paper)-[:author]->(coAuthor:physics:author)
+        WHERE coAuthor <> a
+        RETURN DISTINCT coAuthor.name AS name
         """,
         },
         "What is the relationship between the scholar '{}' and the authors of the paper '{}'?": {
@@ -610,22 +632,126 @@ nested_question_template = {
         LIMIT 1
         """,
         },
-        "Who are the academic collaborators of the author who writes both the paper '{}' and paper '{}'?": {
+    },
+    "amazon": {
+        "Give a broad introduction about the brands that are bought together with items of the brand '{}'?": {
             "cypher_template": """
-        MATCH (a:physics:author)
-        WITH a ORDER BY rand() LIMIT 100
+        MATCH (i:amazon:brand)
+        WITH i ORDER BY rand() LIMIT 100
 
-        MATCH (a)-[:paper]->(:physics:paper)-[:author]->(coAuthor:physics:author)
-        WHERE coAuthor <> a
-        WITH a, collect(DISTINCT coAuthor) AS collaborators
-        WHERE size(collaborators) >= 5 AND size(collaborators) <= 20
-        WITH a ORDER BY rand()
-
-        MATCH (p1:physics:paper)-[:author]->(a), (p2:physics:paper)-[:author]->(a)
-        WHERE p1 <> p2
-        RETURN DISTINCT p1.name AS name1, p1.id AS id1, p2.name AS name2, p2.id AS id2
+        MATCH (i)-[:item]->(item:amazon:item)-[:bought_together_item]->(related:amazon:item)-[:brand]->(b:amazon:brand)-[:item]->(other:amazon:item)
+        WITH i, count(DISTINCT b) AS numBrands, count(DISTINCT other) AS numItems
+        WHERE numBrands >= 5 AND numBrands <= 20 AND numItems <= 100
+        RETURN DISTINCT i.name AS name1, i.id AS id1
         LIMIT 1
         """,
+        },
+        "What are the brands that are commonly viewed with the brands '{}' and also bought together with the brand '{}'?": {
+            "cypher_template": """
+        MATCH (target:amazon:brand)
+        WITH target ORDER BY rand() LIMIT 1
+
+        MATCH (b1:amazon:brand)-[:item]->(:amazon:item)-[:also_viewed_item]->(:amazon:item)-[:brand]->(target:amazon:brand)
+              -[:item]->(:amazon:item)-[:bought_together_item]->(:amazon:item)-[:brand]->(b2:amazon:brand)
+        WHERE target <> b1 AND target <> b2 AND b1 <> b2
+        WITH b1, b2, count(DISTINCT target) AS numBrands
+        WHERE numBrands >= 1 AND numBrands <= 20
+        RETURN DISTINCT b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2
+        LIMIT 1
+        """,
+            "cypher": """
+        MATCH (b1:amazon:brand {{id: '{}'}})-[:item]->(:amazon:item)-[:also_viewed_item]->(:amazon:item)-[:brand]->(target:amazon:brand)
+              -[:item]->(:amazon:item)-[:bought_together_item]->(:amazon:item)-[:brand]->(b2:amazon:brand {{id: '{}'}})
+
+        RETURN DISTINCT target.name AS name
+        """,
+        },
+        "What is the relationship between the brand '{}' and the brand which has the item '{}'?": {
+            "cypher_template": """
+        MATCH (item:amazon:item)
+        WITH item ORDER BY rand() LIMIT 1
+
+        MATCH (item:amazon:item)-[:brand]->(brand1:amazon:brand)-[*3]->(brand2:amazon:brand)
+        WHERE brand1 <> brand2
+        RETURN DISTINCT brand2.name AS name1, brand2.id AS id1, item.name AS name2, item.id AS id2
+        LIMIT 1
+        """,
+        },
+        "Have the items of the brands '{}' and '{}' ever been also viewed with the items that are bought together with the item '{}'?": {
+            "cypher_template": """
+        MATCH (target:amazon:item)-[:bought_together_item]->(related:amazon:item)
+        WITH target, related ORDER BY rand() LIMIT 1
+
+        MATCH (related)<-[:also_viewed_item]-(i1:amazon:item)-[:brand]->(b1:amazon:brand),
+              (related)<-[:also_viewed_item]-(i2:amazon:item)-[:brand]->(b2:amazon:brand)
+        WHERE b1 <> b2
+        RETURN DISTINCT b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2, target.name AS name3, target.id AS id3
+        LIMIT 1
+        """,
+        },
+    },
+    "goodreads": {
+        "Provide a comprehensive overview about the series whose books are similar to the publications of author '{}'?": {
+            "cypher_template": """
+        MATCH (author:goodreads:author)
+        WITH author ORDER BY rand() LIMIT 100
+
+        MATCH (author)-[:book]->(b:goodreads:book)-[:similar_books]->(:goodreads:book)-[:series]->(s:goodreads:series)
+        WITH author, count(DISTINCT s) AS numSeries
+        WHERE numSeries >= 5 AND numSeries <= 20
+        RETURN DISTINCT author.name AS name1, author.id AS id1
+        LIMIT 1
+        """,
+        },
+        "What books are published by the collaborators of the author who has both the book '{}' and '{}'?": {
+            "cypher_template": """
+        MATCH (a:goodreads:author)
+        WITH DISTINCT a ORDER BY rand() LIMIT 10
+
+        MATCH (a)-[:book]->(:goodreads:book)<-[:book]-(coauthor:goodreads:author),
+              (coauthor)-[:book]->(coBook:goodreads:book)
+        WHERE coauthor <> a
+        WITH a, collect(DISTINCT coBook) AS numCoBooks
+        WHERE size(numCoBooks) >= 5 AND size(numCoBooks) <= 20
+        WITH a ORDER BY rand()
+
+        MATCH (b1:goodreads:book)-[:author]->(a),
+              (b2:goodreads:book)-[:author]->(a)
+        WHERE b1 <> b2
+        RETURN DISTINCT b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2
+        LIMIT 1
+        """,
+            "cypher": """
+        MATCH (b1:goodreads:book {{id: '{}'}})-[:author]->(a:goodreads:author), (b2:goodreads:book {{id: '{}'}})-[:author]->(a)
+        MATCH (a)-[:book]->(:goodreads:book)-[:author]->(coauthor:goodreads:author)
+        WHERE coauthor <> a
+        MATCH (coauthor)-[:book]->(otherBook:goodreads:book)
+        RETURN DISTINCT otherBook.name as name
+        """,
+        },
+        "What is the relationship between the author '{}' and the author who has the book '{}'?": {
+            "cypher_template": """
+        MATCH (targetBook:goodreads:book)
+        WITH targetBook ORDER BY rand() LIMIT 1
+
+        MATCH (targetBook)-[:author]->(targetAuthor:goodreads:author)-[*3]->(otherAuthor:goodreads:author)
+        WHERE otherAuthor <> targetAuthor
+        RETURN DISTINCT otherAuthor.name AS name1, otherAuthor.id AS id1, targetBook.name AS name2, targetBook.id AS id2
+        LIMIT 1
+        """,
+        },
+        "Have the authors '{}' and '{}' ever published books in the same publisher that has the series '{}'?": {
+            "cypher_template": """
+        MATCH (p:goodreads:publisher)
+        WITH p ORDER BY rand() LIMIT 1
+
+        MATCH (p)-[:book]->(book1:goodreads:book)-[:author]->(a1:goodreads:author),
+              (p)-[:book]->(book2:goodreads:book)-[:author]->(a2:goodreads:author)
+        WHERE a1 <> a2 AND book1 <> book2
+        MATCH (p)-[:book]->(book1)-[:series]->(s:goodreads:series)
+        RETURN DISTINCT a1.name AS name1, a1.id AS id1, a2.name AS name2, a2.id AS id2, s.name AS name3, s.id AS id3
+        LIMIT 1
+        """
         },
     },
 }
@@ -644,7 +770,7 @@ def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
         # if it has no neighbors, skip
         if graph.degree(node) < 10:
             continue
-        question = f"Tell me about '{node_data['name']}'."
+        question = f"Give me a broad introduction about '{node_data['name']}'."
         q_entity = {
             "qid": i,
             "question": question,
@@ -749,7 +875,7 @@ def gen_single_entity_concrete(n: int, graph_name: str, output_path: str):
                     "entity": {node_name: node},
                     "type": "single_entity_concrete",
                     "hops": n_hop,
-                    "answer": ", ".join(result_names),
+                    "answer": result_names,
                 }
                 questions.append(q_entity)
                 selected_nodes.add(node_name)
@@ -941,19 +1067,51 @@ def gen_nested_question(n: int, graph_name: str, output_path: str):
     questions = []
     for it, (q, content) in enumerate(q_templates.items()):
         q_cypher_t = content["cypher_template"]
+        q_cypher = content["cypher"] if "cypher" in content else None
 
         result_list = []
+        answer_list = []
         with driver.session() as session:
             while len(result_list) < n:
                 print(
                     f"Getting the next record for question: {q}, {len(result_list)}/{n}"
                 )
-                results = session.run(q_cypher_t)
-                record = results.single()
+                record = None
+                try:
+                    with session.begin_transaction(timeout=60) as tx:
+                        results = tx.run(q_cypher_t)
+                        record = results.single()
+                        if record is None:
+                            print("No record found, retry")
+                            continue
+                except Exception as e:
+                    print(f"Query failed: {e}")
+                    continue
+
+                values = []
+                for key in record.keys():
+                    if key.startswith("id"):
+                        values.append(record[key])
+                answer = "N/A"
+                if q_cypher is not None:
+                    answer = []
+                    try:
+                        print("Validating the cypher query")
+                        with session.begin_transaction(timeout=30) as tx:
+                            ret = tx.run(q_cypher.format(*values))
+                            for ele in ret:
+                                if len(answer) > 20:
+                                    raise Exception("Too many results")
+                                answer.append(ele["name"])
+                    except Exception as e:
+                        print(f"Query failed: {e}")
+                        continue
+
                 if record is not None:
                     result_list.append(record)
+                    answer_list.append(answer)
 
-        for line in result_list:
+        for line, answer in zip(result_list, answer_list):
             if "name3" in line.keys():
                 question = q.format(line["name1"], line["name2"], line["name3"])
                 entity_mappings = {
@@ -976,7 +1134,7 @@ def gen_nested_question(n: int, graph_name: str, output_path: str):
                 "question": question,
                 "entity": entity_mappings,
                 "type": "nested_question",
-                "answer": "N/A",
+                "answer": answer,
             }
             questions.append(q_entity)
             print(q_entity)
@@ -996,38 +1154,37 @@ argparser.add_argument(
 args = argparser.parse_args()
 print(args)
 
-dataset_name = os.path.basename(args.path).lower()
+dataset_name = os.path.basename(args.path.strip("/")).lower()
 
 # load the graph
-# graph = pickle.load(open(os.path.join(args.path, "graph.pkl"), "rb"))
-# print("NetworkX graph loaded")
-# print("# nodes:", graph.number_of_nodes())
-# print("# edges:", graph.number_of_edges())
-graph = None
+graph = pickle.load(open(os.path.join(args.path, "graph.pkl"), "rb"))
+print("NetworkX graph loaded")
+print("# nodes:", graph.number_of_nodes())
+print("# edges:", graph.number_of_edges())
 
 
 # generate questions
-# gen_single_entity_abstract(
-#     graph,
-#     80,
-#     os.path.join(args.output_path, "single_entity_abstract.jsonl"),
-# )
-# gen_single_entity_concrete(
-#     10,
-#     dataset_name,
-#     os.path.join(args.output_path, "single_entity_concrete.jsonl"),
-# )
-# gen_multi_entity_abstract(
-#     graph,
-#     20,
-#     [2, 3, 4, 5],
-#     os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
-# )
-# gen_multi_entity_concrete(
-#     20,
-#     dataset_name,
-#     os.path.join(args.output_path, "multi_entity_concrete.jsonl"),
-# )
+gen_single_entity_abstract(
+    graph,
+    80,
+    os.path.join(args.output_path, "single_entity_abstract.jsonl"),
+)
+gen_single_entity_concrete(
+    10,
+    dataset_name,
+    os.path.join(args.output_path, "single_entity_concrete.jsonl"),
+)
+gen_multi_entity_abstract(
+    graph,
+    20,
+    [2, 3, 4, 5],
+    os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
+)
+gen_multi_entity_concrete(
+    20,
+    dataset_name,
+    os.path.join(args.output_path, "multi_entity_concrete.jsonl"),
+)
 gen_nested_question(
     20,
     dataset_name,
