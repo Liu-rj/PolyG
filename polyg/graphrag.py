@@ -9,7 +9,12 @@ from datetime import datetime
 from functools import partial
 from typing import Callable, Dict, List, Optional, Type, Union, cast, Tuple
 from tqdm import tqdm
-from .prompt import PROMPTS
+from .prompt import (
+    PROMPTS,
+    PHYSICS_GRAPH_SCHEMA,
+    AMAZON_GRAPH_SCHEMA,
+    GOODREADS_GRAPH_SCHEMA,
+)
 from ._utils import num_tokens
 
 
@@ -232,6 +237,7 @@ class GraphRAG:
         total_api_calls = 0
         total_tokens = 0
         global_traversal_type = param.traversal_type
+        global_question = query
         start = time.time()
 
         tic = time.time()
@@ -248,13 +254,12 @@ class GraphRAG:
             query_plan, steps, token_len = await self.decompose_nested_query(query)
             total_api_calls += 1
             total_tokens += token_len
-            print(f"Query plan: {query_plan}")
+            print(f"Query plan: \n{'\n'.join(query_plan)}")
             print(f"Num of all steps: {steps}")
         else:
             steps = 1
 
         history = []
-        global_question = query
         for step in range(steps):
             if global_traversal_type == "nested":
                 subqueries, traversal_type, token_len = await self.instantiate_query(
@@ -265,7 +270,7 @@ class GraphRAG:
             else:
                 traversal_type = global_traversal_type
                 subqueries = {
-                    "question1": {"question": query, "id_mapping": id_mapping}
+                    "question1": {"question": global_question, "id_mapping": id_mapping}
                 }
 
             param.traversal_type = traversal_type
@@ -360,21 +365,39 @@ class GraphRAG:
             logger.error(f"Error in determining traversal type: {e}")
             return None, token_len
 
-    async def decompose_nested_query(self, query: str) -> List[Tuple[str, int]]:
+    async def decompose_nested_query(
+        self, query: str
+    ) -> List[Tuple[List[str], int, int]]:
         """
         Decompose the nested query into sub-queries.
         """
-        prompt = PROMPTS["nested_query_decomposition"].format(query)
+        if "Physics" in self.working_dir:
+            graph_schema = PHYSICS_GRAPH_SCHEMA
+        elif "amazon" in self.working_dir:
+            graph_schema = AMAZON_GRAPH_SCHEMA
+        elif "goodreads" in self.working_dir:
+            graph_schema = GOODREADS_GRAPH_SCHEMA
+        else:
+            raise NotImplementedError
+        prompt = PROMPTS["nested_query_decomposition"].format(
+            graph_schema=graph_schema, query=query
+        )
         response = await self.model_func(prompt=prompt)
         decompose_plan = response.split("```")[1].strip("plan").replace("\n\n", "\n")
-        steps = len(decompose_plan.split("\n")) - 2
-        token_len = num_tokens(prompt)
-        return decompose_plan, steps, token_len
+        decompose_plan = decompose_plan.strip("\n").split("\n")
+        return decompose_plan, len(decompose_plan), num_tokens(prompt)
+
+    async def merge_query(self, query_plan: List[str]):
+        for i, step in enumerate(query_plan):
+            traversal_type = step.split(":")[0].split(".")[1].strip()
+            if traversal_type != "<s,p,*>":
+                return None
+        return "cypher_query"
 
     async def instantiate_query(
         self,
         global_query: str,
-        query_plan: str,
+        query_plan: List[str],
         step: int,
         history: List[str],
         id_mapping: dict[str, str],
@@ -389,7 +412,7 @@ class GraphRAG:
             "<s,p,o>": "cypher_path_search",
         }
         # extract the traversal type from the query plan
-        current_step = query_plan.split("\n")[step + 1]
+        current_step = query_plan[step]
         traversal_type = mapping[current_step.split(":")[0].split(".")[1].strip()]
 
         history_str = ""

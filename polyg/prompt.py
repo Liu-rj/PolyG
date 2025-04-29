@@ -126,13 +126,15 @@ PROMPTS[
     "cypher_answer_summary"
 ] = """---Role---
 
-You are a helpful assistant responding to questions about data in the tables provided.
+You are a helpful assistant summarize a comprehensive answer to questions using the answer tables provided.
 
 ---Setting---
 
-The rows in the data table are answer entities to user questions given by cypher queries, please give a summary based on the answers.
+You will be provided with an answer table, which contains the answer entities to the user question as each row in the answer table. The concrete relations between the entities and the question entities are not given in the answer table, you don't need to infer or disclaim them.
 
-For example, if the question is "Who is the the author of the book 'xxx'?", then the author information is already listed as rows in the answer table.
+You should give a comprehensive summary based on the answers in naturally languages with rich founding knowledge and informative contents based on the attributes of the rows in the data table.
+
+For example, if the question is "Who are the the authors of the book 'xxx'?", then the rows in the answer table are the author entities as the answers and the book entities. Based on the answer table, you should give a summary to introduce who are the authors with contents in the answer table.
 
 You don't need to come up with the answers yourself as they are already given, just give a summary based on the answers.
 
@@ -140,7 +142,7 @@ Note: Keep the name of answer entities as they are in the answer table, do not c
 
 ---Goal---
 
-The summary should be comprehensive, diverse and empowerful, which can thoroughly cover diverse aspects, enable the reader to understand the topic and make informed judgments.
+The summary should be comprehensive, diverse and empowerful, which can thoroughly cover diverse aspects. Provide as much detail as you can from the data table, and enable the reader to understand the topic and make informed judgments.
 
 ---Target response length and format---
 
@@ -430,21 +432,23 @@ We have four types of questions, where s is the subject, p is the predicate, o i
 
 The four types of questions are:
 - **<s,*,*> (0):**
-  In this type, the object and concrete predicate are both missing in the facts and question asks about the general or abstract information of the subject (e.g., themes, concepts, or a general description).
+  In this type, the object and concrete predicate are both missing in the facts and question asks about the general or broad information of the subject (e.g., themes, concepts, or a general description).
   Examples:
   - "Tell me about 'The Woman in Black: A Ghost Play'."
-  - "Tell me about 'Frankenstein, or The Modern Prometheus'."
+  - "Give a broad description about 'Frankenstein, or The Modern Prometheus'."
   - "Who is 'Barack Obama'?"
   - "Who is flo from progressive?"
 - **<s,p,*> (1):**
-  In this type, the object is missing in the facts and question focuses on finding the object, which is some specific and concrete details related to the subject (e.g., relations or other direct attributes) with a concrete predicate p. There can be multiple predicates and subjects in the question, containing time or counting constraints.
+  In this type, the object is missing in the facts and question focuses on finding the object, with specific and concrete relations and attributes to the subject are provided by a concrete predicate p.
+  Note that this type of question can have multiple predicates and subjects, and containing time or counting constraints in the predicates.
   Examples:
   - "Who are the authors of the book 'Sunshine for the Latter-Day Sa'?"
   - "What series have the author of the book 'Cookies for the Dragon (Saint Lakes, #2.1)' published?"
-  - "What are the authors of the books that are published by the publishers that have published books of the series 'Shifter Justice'?"
+  - "Who are the authors of the books that are published by the publishers that have published books of the series 'Shifter Justice'?"
   - "What are the 5 biggest cities in the usa?"
   - "During what war did abraham lincoln serve as president?"
   - "which city held the summer olympics twice?"
+  - Example for multiple subjects and predicates: "What are the 5 biggest cities in the usa and have a population of more than 1 million?"
 - **<s,*,o> (2):**
   In this type, both the subject and object are given but the predicate is missing. Question asks about their relationships or interactions (e.g., conceptual connections, influences).
   Examples:
@@ -456,16 +460,24 @@ The four types of questions are:
 - **<s,p,o> (3):**
   In this question, the subject, predicates object are all given. Questions either inquires about particular aspects of the relationship between the entities or verifies whether a specific relationship exists.
   Examples:
-  - "Have the authors 'Rubem Fonseca' and 'Lygia Fagundes Telles' ever published books in the same publishers? If so, tell me some examples."
-  - "Do the publishers 'Scholastic Inc.' and 'Klutz' have any authors publishing books in both of them and what are the publications and authors?"
+  - "Have the authors 'Rubem Fonseca' and 'Lygia Fagundes Telles' ever published books in the same publishers?"
+  - "Do the publishers 'Scholastic Inc.' and 'Klutz' have any authors publishing books in both of them?"
+
+**Differences between <s,p,*> and <s,p,o>:**
+In the case of multiple predicates and subjects, <s,p,*> questions may sound similar to <s,p,o> questions, but they are different in what they inquiry about.
+If the question asks for some concrete entities, for example "What is/are the entities that ...?", then that is <s,p,*> question.
+If the questions focus on checking the existence of a relationship between two entities, for example "Do A and B share ...?", then that is <s,p,o> question.
 
 **Instruction:**
 When given a question, analyze it based on the definitions above. If the question belongs to any of the four types, then return **only a single number** corresponding to the type of the question.
 However, note that not every question can be directly classified into the above four classes, where the question is nested and asks about different types of relations, in which case you should return **-1**.
-For example, when the question asks about the relationship between two relations but one entity needs to be determined by another query embeded in the overall question, it is a nested question and should be classified as -1.
+For example, when the question asks about the relationship between two entities or inquiry about general information about some entities, but the entities need to be determined by another query embeded in the overall question, it is a nested question and should be classified as -1.
+
+Especially, nested questions can only be in the form where the overall quesiton is one of <s,*,*>, <s,*,o>, <s,p,o> question nested with <s,p,*> question.
+In the case of multiple sequential <s,p,*> sub-questions, you should merge them into one single <s,p,*> question and classify the overall question as 1 for <s,p,*>, as consecutive <s,p,*> questions can always be merged into one single <s,p,*> question with multiple predicates and subjects. For example, the question "What are the authors of the books that are published in the publisher 'xxx' and belong to the series 'xxx'?" is a nested question and should be classified as 1 for <s,p,*>.
 
 Some concrete example:
-- "Tell me about the academic collaborators of the scholar 'L. Foldy'.": 1. the first step is a <s,p,*> question, finding the collaborators of 'L. Foldy'. 2. the second step is a <s,*,*> question: gather general information for the collaborators.
+- "Provide some concrete information about the academic collaborators of the scholar 'L. Foldy'.": 1. the first step is a <s,p,*> question, finding the collaborators of 'L. Foldy'. 2. the second step is a <s,*,*> question: gather general and broad information for the collaborators.
 - "Have the scholars 'S. Chiku' and 'A. I. Sanda' both published work at the venue having the paper 'weyl groups in ads3 cft2'?": 1. the first step is a <s,p,o> question, finding the venue having the paper 'weyl groups in ads3 cft2'. 2. the second step is a <s,p,o> question, finding the path validating whether the authors both published work in the venue found in the previous step.
 - "In what way is the scholar 'Liang Wu' linked to the writers of 'bound states of breathing airy gaussian beams in nonlocal nonlinear medium'?" 1. the first step is a <s,p,*> question: find the authors of the paper 'bound states of breathing airy gaussian beams in nonlocal nonlinear medium'. 2. then a <s,*,o> question: find the path validating whether 'Liang Wu' is linked to the authors found in the previous step.
 
@@ -494,21 +506,23 @@ We have four types of unit questions, where s is the subject, p is the predicate
 
 The four types of questions are:
 - **<s,*,*> (0):**
-  In this type, the object and concrete predicate are both missing in the facts and question asks about the general or abstract information of the subject (e.g., themes, concepts, or a general description).
+  In this type, the object and concrete predicate are both missing in the facts and question asks about the general or broad information of the subject (e.g., themes, concepts, or a general description).
   Examples:
   - "Tell me about 'The Woman in Black: A Ghost Play'."
-  - "Tell me about 'Frankenstein, or The Modern Prometheus'."
+  - "Give a broad description about 'Frankenstein, or The Modern Prometheus'."
   - "Who is 'Barack Obama'?"
   - "Who is flo from progressive?"
 - **<s,p,*> (1):**
-  In this type, the object is missing in the facts and question focuses on finding the object, which is some specific and concrete details related to the subject (e.g., relations or other direct attributes) with a concrete predicate p. There can be multiple predicates and subjects in the question, containing time or counting constraints.
+  In this type, the object is missing in the facts and question focuses on finding the object, with specific and concrete relations and attributes to the subject are provided by a concrete predicate p.
+  Note that this type of question can have multiple predicates and subjects, and containing time or counting constraints in the predicates.
   Examples:
   - "Who are the authors of the book 'Sunshine for the Latter-Day Sa'?"
   - "What series have the author of the book 'Cookies for the Dragon (Saint Lakes, #2.1)' published?"
-  - "What are the authors of the books that are published by the publishers that have published books of the series 'Shifter Justice'?"
+  - "Who are the authors of the books that are published by the publishers that have published books of the series 'Shifter Justice'?"
   - "What are the 5 biggest cities in the usa?"
   - "During what war did abraham lincoln serve as president?"
   - "which city held the summer olympics twice?"
+  - Example for multiple subjects and predicates: "What are the 5 biggest cities in the usa and have a population of more than 1 million?"
 - **<s,*,o> (2):**
   In this type, both the subject and object are given but the predicate is missing. Question asks about their relationships or interactions (e.g., conceptual connections, influences).
   Examples:
@@ -520,11 +534,17 @@ The four types of questions are:
 - **<s,p,o> (3):**
   In this question, the subject, predicates object are all given. Questions either inquires about particular aspects of the relationship between the entities or verifies whether a specific relationship exists.
   Examples:
-  - "Have the authors 'Rubem Fonseca' and 'Lygia Fagundes Telles' ever published books in the same publishers? If so, tell me some examples."
-  - "Do the publishers 'Scholastic Inc.' and 'Klutz' have any authors publishing books in both of them and what are the publications and authors?"
+  - "Have the authors 'Rubem Fonseca' and 'Lygia Fagundes Telles' ever published books in the same publishers?"
+  - "Do the publishers 'Scholastic Inc.' and 'Klutz' have any authors publishing books in both of them?"
+
+**Differences between <s,p,*> and <s,p,o>:**
+In the case of multiple predicates and subjects, <s,p,*> questions may sound similar to <s,p,o> questions, but they are different in what they inquiry about.
+If the question asks for some concrete entities, for example "What is/are the entities that ...?", then that is <s,p,*> question.
+If the questions focus on checking the existence of a relationship between two entities, for example "Do A and B share ...?", then that is <s,p,o> question.
 
 **Instruction:**
 When given a nested question that can not be directly classified into one of the four types, decompose it into a plan of several sub-questions with each being a unit question based on the definitions above.
+We will also provide you the graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected. This will help you to identify the sub-questions and generate a description for each step of the decomposition plan.
 For each step of the decomposition plan, you should first identify the type of the sub-question and then generate a description which will further guide the instantiation of the concrete sub-question.
 
 For example:
@@ -540,10 +560,15 @@ Decomposition:
 
 Question: "Have the scholars 'S. Chiku' and 'A. I. Sanda' both published work at the venue having the paper 'weyl groups in ads3 cft2'?"
 Decomposition:
-1. <s,p,o>: find the venue having the paper 'weyl groups in ads3 cft2'.
+1. <s,p,*>: find the venue having the paper 'weyl groups in ads3 cft2'.
 2. <s,p,o>: find the path validating whether the authors both published work in the venue found in the previous step.
 
-**Question:** {}
+Important Note: Always avoid consecutive <s,p,*> steps, they can be merged into one single <s,p,*> question with a chain of relations (multi-hop), and you should merge them into one step, just like the examples shown in demonstration of the <s,p,*> question ("Who are the authors of the books that are published by the publishers that have published books of the series 'Shifter Justice'?").
+
+**Graph Schema:**
+{graph_schema}
+
+**Question:** {query}
 
 Return your answer in the following format:
 ```plan
@@ -562,7 +587,7 @@ You are an intelligent assistant tasked with instantiating concrete questions fo
 You should generate a list of conrete questions based on the current step of the plan and also a corresponding entity id-name mapping for the entities in each question.
 
 **Instruction:**
-The input will be four parts:
+The input will be five parts:
 1. The nested question, which is the original overall question that needs to be answered.
 2. The question plan, which is a list of steps with each step being a description for a unit question.
 3. The step we are in, indicating which step of the plan we should generate this concrete question for.
@@ -571,8 +596,8 @@ The input will be four parts:
 
 **Note:**
 - In the following question type, s means subject, p means predicate, o means object, and * means the missing part.
-- For <s,*,*> question, you can merge several questions into one question. For example, "Tell me about 'A'." and "Tell me about 'B'." can be merged into "Tell me about 'A' and 'B'.". And you should give both the id mapping for 'A' and 'B'.
-- For other types of questions, you need to generate a seperate concrete question for each entity. For example, "What is the relation between 'L. Foldy' and 'A'?" and "What is the relation between 'L. Foldy' and 'B'?" should be generated as two separate questions. And you should give a seperate id mapping for each concrete question.
+- For <s,*,*> and <s,p,*> question, you can merge several questions into one question. For example two <s,*,*> questions, "Tell me about 'A'." and "Tell me about 'B'." can be merged into "Tell me about 'A' and 'B'.". And you should give both the id mapping for 'A' and 'B'. Same for <s,p,*> questions, for example "Who is the collaborator of both 'A' and 'B'?".
+- For other two types of questions <s,*,o> and <s,p,o>, you need to generate a seperate concrete question for each entity. For example, "What is the relation between 'L. Foldy' and 'A'?" and "What is the relation between 'L. Foldy' and 'B'?" should be generated as two separate questions. And you should give a seperate id mapping for each concrete question.
 
 **Example:**
 
