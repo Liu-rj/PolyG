@@ -4,25 +4,26 @@ from collections import defaultdict
 
 
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/Physics/results.jsonl",
-    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/Physics/results.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results.jsonl",
+    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_new.jsonl",
+    # "/home/ubuntu/fast-graphrag/examples/results/Physics/results_rephrased.jsonl",
+    # "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
 ]
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/goodreads/results.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased.jsonl",
 # ]
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/amazon/results.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/amazon/results.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/amazon/results_rephrased.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased.jsonl",
 # ]
 
-CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+# CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+# CHAT_MODEL_ID = "us.deepseek.r1-v1:0"
 
 SYSTEM_ROLE = """
 ---Role---
@@ -82,24 +83,22 @@ for path in ANSWER_PATH:
         for item in jsonlines.Reader(f):
             answers.append(item)
 
-question_answer = defaultdict(list)
-for item in answers:
-    if item["question_type"] != "single_entity_concrete":
-        continue
-    question_answer[item["question"]].append(item)
-
-print(f"Number of questions: {len(question_answer)}")
-
 method_names = [
     "BFS",
     "cypher_single_entity",
     "Fastgraphrag_PPR",
     "GraphCoT",
-    "shortest_paths",
-    "cypher_multi_entity",
-    "direct_cypher",
+    "cypher_only",
     "adaptive",
 ]
+question_answer = defaultdict(list)
+for item in answers:
+    if item["gt_answer"] == "N/A" or item["method"] not in method_names:
+        continue
+    question_answer[item["question"]].append(item)
+
+print(f"Number of questions: {len(question_answer)}")
+
 method_precision = {method: 0 for method in method_names}
 method_recall = {method: 0 for method in method_names}
 method_f1 = {method: 0 for method in method_names}
@@ -107,12 +106,17 @@ method_counts = {method: 0 for method in method_names}
 for it, (question, answers) in enumerate(question_answer.items()):
     print(f"Question {it+1}: {question}, Number of answers: {len(answers)}")
     for answer in answers:
-        method, gt = answer["method"], answer["gt_answer"].split(", ")
+        assert answer["question_type"] in [
+            "single_entity_concrete_rephrased",
+            "nested_question_rephrased",
+        ]
+        method, gt = answer["method"], answer["gt_answer"]
         answer = (
             answer["answer_list"]
             if "answer_list" in answer and answer["answer_list"] != "N/A"
             else answer["model_answer"]
         )
+        # answer = answer["model_answer"]
 
         result = bedrock_generator(
             prompt=PROMPT.format(query=question, reponse=answer),

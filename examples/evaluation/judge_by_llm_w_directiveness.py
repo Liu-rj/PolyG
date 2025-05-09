@@ -30,25 +30,32 @@ client = OpenAI()
 
 if args.dataset == "physics":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/Physics/results_rephrased.jsonl",
+        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_new.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased.jsonl",
         "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased.jsonl"
+    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
 elif args.dataset == "amazon":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/amazon/results_rephrased.jsonl",
+        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_new.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
         "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/judgements_rephrased.jsonl"
+    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
+        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_new.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
         "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/judgements_rephrased.jsonl"
+    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
+
+    # ANSWER_PATH = [
+    #     "/home/ubuntu/PolyG/examples/results/goodreads/gpt-4o-mini/results_rephrased.jsonl",
+    #     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
+    #     # "/home/ubuntu/Graph-CoT/Graph-CoT/results/gpt-4o-mini/goodreads/results_rephrased.jsonl",
+    # ]
+    # OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/gpt-4o-mini/judgements_rephrased.jsonl"
 
 SYSTEM_ROLE = """
 ---Role---
@@ -61,6 +68,7 @@ You will evaluate multiple responses to the same question based on three criteri
 - **Comprehensiveness**: How much detail does the answer provide to cover all aspects and details of the question? A comprehensive answer should be thorough and complete, without being redundant or irrelevant. For example, if the question is ’What are the benefits and drawbacks of nuclear energy?’, a comprehensive answer would provide both the positive and negative aspects of nuclear energy, such as its efficiency, environmental impact, safety, cost, etc. A comprehensive answer should not leave out any important points or provide irrelevant information. For example, an incomplete answer would only provide the benefits of nuclear energy without describing the drawbacks, or a redundant answer would repeat the same information multiple times.
 - **Diversity**: How varied and rich is the answer in providing different perspectives and insights on the question? A diverse answer should be multi-faceted and multi-dimensional, offering different viewpoints and angles on the question. For example, if the question is ’What are the causes and effects of climate change?’, a diverse answer would provide different causes and effects of climate change, such as greenhouse gas emissions, deforestation, natural disasters, biodiversity loss, etc. A diverse answer should also provide different sources and evidence to support the answer. For example, a single-source answer would only cite one source or evidence, or a biased answer would only provide one perspective or opinion.
 - **Empowerment**: How well does the answer help the reader understand and make informed judgements about the topic without being misled or making fallacious assumptions? Evaluate each answer on the quality of answer as it relates to clearly explaining and providing reasoning and sources behind the claims in the answer.
+- **Directness**: How specifically and clearly does the answer address the question? A direct answer should provide a clear and concise answer to the question. For example, if the question is ’What is the capital of France?’, a direct answer would be ’Paris’. A direct answer should not provide any irrelevant or unnecessary information that does not answer the question. For example, an indirect answer would be ’The capital of France is located on the river Seine’.
 
 For each criterion, choose the best response(s) and explain the reason for this decision.
 Then, select the overall winner(s) by jointly consider the above four criteria and their importance to the question. For example, if the question is about a specific topic, the overall winner should prefer the response that is most relevant and directly answers the question. If the question is more open-ended, the overall winner should prefer the response that is most comprehensive and diverse in its coverage of the topic.
@@ -100,6 +108,10 @@ Output your evaluation in the following JSON format (wrap the JSON in triple bac
         "Winner": "[Method name 1], [Method name 2], ...",
         "Explanation": "[Provide explanation here]"
     }},
+    "Directness": {{
+        "Winner": "[Method name 1], [Method name 2], ...",
+        "Explanation": "[Provide explanation here]"
+    }},
     "Overall Winner": {{
         "Winner": "[Method name 1], [Method name 2], ...",
         "Explanation": "[Summarize why this answer is the overall winner based on all criteria]"
@@ -114,6 +126,7 @@ You will evaluate multiple responses to the same question based on three criteri
 - **Comprehensiveness**: How much detail does the answer provide to cover all aspects and details of the question? A comprehensive answer should be thorough and complete, without being redundant or irrelevant. For example, if the question is ’What are the benefits and drawbacks of nuclear energy?’, a comprehensive answer would provide both the positive and negative aspects of nuclear energy, such as its efficiency, environmental impact, safety, cost, etc. A comprehensive answer should not leave out any important points or provide irrelevant information. For example, an incomplete answer would only provide the benefits of nuclear energy without describing the drawbacks, or a redundant answer would repeat the same information multiple times.
 - **Diversity**: How varied and rich is the answer in providing different perspectives and insights on the question? A diverse answer should be multi-faceted and multi-dimensional, offering different viewpoints and angles on the question. For example, if the question is ’What are the causes and effects of climate change?’, a diverse answer would provide different causes and effects of climate change, such as greenhouse gas emissions, deforestation, natural disasters, biodiversity loss, etc. A diverse answer should also provide different sources and evidence to support the answer. For example, a single-source answer would only cite one source or evidence, or a biased answer would only provide one perspective or opinion.
 - **Empowerment**: How well does the answer help the reader understand and make informed judgements about the topic without being misled or making fallacious assumptions? Evaluate each answer on the quality of answer as it relates to clearly explaining and providing reasoning and sources behind the claims in the answer.
+- **Directness**: How specifically and clearly does the answer address the question? A direct answer should provide a clear and concise answer to the question. For example, if the question is ’What is the capital of France?’, a direct answer would be ’Paris’. A direct answer should not provide any irrelevant or unnecessary information that does not answer the question. For example, an indirect answer would be ’The capital of France is located on the river Seine’.
 
 For each criterion, choose the best response(s) and explain the reason for this decision.
 Then, select the overall winner(s) by jointly consider the above four criteria and their importance to the question. For example, if the question is about a specific topic, the overall winner should prefer the response that is most relevant and directly answers the question. If the question is more open-ended, the overall winner should prefer the response that is most comprehensive and diverse in its coverage of the topic.
@@ -146,6 +159,10 @@ Output your evaluation in the following JSON format (wrap the JSON in triple bac
         "Explanation": "[Provide explanation here]"
     }},
     "Empowerment": {{
+        "Winner": "[Method name 1], [Method name 2], ...",
+        "Explanation": "[Provide explanation here]"
+    }},
+    "Directness": {{
         "Winner": "[Method name 1], [Method name 2], ...",
         "Explanation": "[Provide explanation here]"
     }},
@@ -203,7 +220,7 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 question_types = [
-    "single_entity_abstract_rephrased",
+    # "single_entity_abstract_rephrased",
     "single_entity_concrete_rephrased",
     "multi_entity_abstract_rephrased",
     "multi_entity_concrete_rephrased",
@@ -221,7 +238,7 @@ criteria = [
     "Comprehensiveness",
     "Diversity",
     "Empowerment",
-    # "Directness",
+    "Directness",
     "Overall Winner",
 ]
 method_names = [
@@ -238,6 +255,8 @@ all_method_wins = {}
 for question_type in question_types:
     method_wins = {name: {method: 0 for method in method_names} for name in criteria}
     for it, (question, answers) in enumerate(question_answer[question_type].items()):
+        if question_type == "single_entity_concrete_rephrased" and it < 33:
+            continue
 
         question = question.replace('"', "'")
         print(f"Question {it + 1}: {question}")
@@ -266,10 +285,7 @@ for question_type in question_types:
                     history_messages=history_msgs,
                 )
                 print(result)
-                try:
-                    result = result.split("```")[1].strip("json")
-                except Exception as e:
-                    print(f"Error: {e}")
+                result = result.split("```")[1].strip("json")
 
                 # Regular expression to extract the Explanation parts
                 pattern1 = re.compile(r'"Explanation":\s*"(.*?)"\n')
