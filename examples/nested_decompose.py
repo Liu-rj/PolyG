@@ -193,16 +193,12 @@ if __name__ == "__main__":
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
-    question_types = ["nested_question"]
+    question_types = ["nested_question_rephrased"]
     for question_type in question_types:
         contents = []
-        with open(
-            os.path.join(args.benchmark_dir, f"{question_type}_rephrased.jsonl"), "r"
-        ) as f:
+        with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
             for item in jsonlines.Reader(f):
                 contents.append(item)
-
-        contents = contents[47:]
 
         for item in contents:
             results = []

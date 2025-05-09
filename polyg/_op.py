@@ -1039,7 +1039,11 @@ async def local_query(
 
     form_response_tokens = num_tokens(sys_prompt + query)
     print(f"Context length: {form_response_tokens}")
-    assert form_response_tokens < global_config["model_max_token_size"]
+    if form_response_tokens >= global_config["model_max_token_size"]:
+        logger.error(
+            f"Context length {form_response_tokens} exceeds the limit {global_config['model_max_token_size']}"
+        )
+        return PROMPTS["fail_response"], 0, 0, "N/A"
 
     tic = time.time()
     response = await use_model_func(
@@ -1136,13 +1140,14 @@ async def direct_cypher(
     retry_count = 0
     token_len = 0
     history_msgs = []
+    response = None
 
-    while retry_count <= 1:
+    while retry_count <= query_param.failure_retries:
         try:
             tic = time.time()
             prompt = f"query: {query}, id mapping: {id_mapping}"
             cur_token_len = num_tokens(sys_prompt + prompt) + sum(
-                [num_tokens(m["content"][0]["text"]) for m in history_msgs]
+                [num_tokens(m[1]) for m in history_msgs]
             )
             token_len += cur_token_len
             response = await use_model_func(
@@ -1167,12 +1172,9 @@ async def direct_cypher(
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
-                    {"role": "user", "content": [{"text": prompt}]},
-                    {"role": "assistant", "content": [{"text": response}]},
-                    {
-                        "role": "user",
-                        "content": [{"text": PROMPTS["error_retry"].format(str(e))}],
-                    },
+                    ("user", prompt),
+                    ("assistant", response),
+                    ("user", PROMPTS["error_retry"].format(str(e))),
                 ]
             )
 
@@ -1187,10 +1189,8 @@ async def direct_cypher(
         print(f"Error: {e}")
         return PROMPTS["fail_response"], token_len, 1, "N/A"
 
-    if query_param.only_need_context:
-        return context
     if context is None:
-        return PROMPTS["fail_response"]
+        return PROMPTS["fail_response"], token_len, 1, "N/A"
     tic = time.time()
     sys_prompt_temp = PROMPTS["local_rag_response"]
     sys_prompt = sys_prompt_temp.format(
@@ -1200,7 +1200,11 @@ async def direct_cypher(
 
     form_reponse_tokens = num_tokens(sys_prompt + query)
     print(f"Token length: {form_reponse_tokens}")
-    assert form_reponse_tokens < global_config["model_max_token_size"]
+    if form_reponse_tokens >= global_config["model_max_token_size"]:
+        logger.error(
+            f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
+        )
+        return PROMPTS["fail_response"], token_len, 1, "N/A"
 
     tic = time.time()
     response = await use_model_func(
@@ -1237,12 +1241,13 @@ async def guided_walk(
     retry_count = 0
     token_len = 0
     history_msgs = []
+    response = None
 
-    while retry_count <= 1:
+    while retry_count <= query_param.failure_retries:
         try:
             prompt = f"query: {query}, id mapping: {id_mapping}"
             cur_token_len = num_tokens(sys_prompt + prompt) + sum(
-                [num_tokens(m["content"]) for m in history_msgs]
+                [num_tokens(m[1]) for m in history_msgs]
             )
             token_len += cur_token_len
             response = await use_model_func(
@@ -1268,12 +1273,9 @@ async def guided_walk(
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
-                    {"role": "user", "content": [{"text": prompt}]},
-                    {"role": "assistant", "content": [{"text": response}]},
-                    {
-                        "role": "user",
-                        "content": [{"text": PROMPTS["error_retry"].format(str(e))}],
-                    },
+                    ("user", prompt),
+                    ("assistant", response),
+                    ("user", PROMPTS["error_retry"].format(str(e))),
                 ]
             )
 
@@ -1316,7 +1318,11 @@ async def guided_walk(
 
     form_reponse_tokens = num_tokens(sys_prompt + query)
     print(f"Token length: {form_reponse_tokens}")
-    assert form_reponse_tokens < global_config["model_max_token_size"]
+    if form_reponse_tokens >= global_config["model_max_token_size"]:
+        logger.error(
+            f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
+        )
+        return PROMPTS["fail_response"], token_len, 1, "N/A"
 
     tic = time.time()
     response = await use_model_func(
@@ -1358,12 +1364,13 @@ async def topk_csp(
     retry_count = 0
     token_len = 0
     history_msgs = []
+    response = None
 
-    while retry_count <= 1:
+    while retry_count <= query_param.failure_retries:
         try:
             prompt = f"query: {query}, id mapping: {id_mapping}"
             cur_token_len = num_tokens(sys_prompt + prompt) + sum(
-                [num_tokens(m["content"]) for m in history_msgs]
+                [num_tokens(m[1]) for m in history_msgs]
             )
             token_len += cur_token_len
             response = await use_model_func(
@@ -1390,12 +1397,9 @@ async def topk_csp(
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
-                    {"role": "user", "content": [{"text": prompt}]},
-                    {"role": "assistant", "content": [{"text": response}]},
-                    {
-                        "role": "user",
-                        "content": [{"text": PROMPTS["error_retry"].format(str(e))}],
-                    },
+                    ("user", prompt),
+                    ("assistant", response),
+                    ("user", PROMPTS["error_retry"].format(str(e))),
                 ]
             )
 
@@ -1411,7 +1415,11 @@ async def topk_csp(
 
     form_reponse_tokens = num_tokens(sys_prompt + query)
     print(f"Token length: {form_reponse_tokens}")
-    assert form_reponse_tokens < global_config["model_max_token_size"]
+    if form_reponse_tokens >= global_config["model_max_token_size"]:
+        logger.error(
+            f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
+        )
+        return PROMPTS["fail_response"], token_len, 1, "N/A"
 
     tic = time.time()
     final_response = await use_model_func(

@@ -5,12 +5,13 @@ import torch
 import boto3
 import argparse
 import jsonlines
+import time
 from openai import OpenAI
 from polyg import GraphRAG, QueryParam
 from polyg._storage import HNSWVectorStorage, Neo4jStorage
 from polyg._utils import wrap_embedding_func_with_attrs
 from sentence_transformers import SentenceTransformer
-from typing import List
+from typing import List, Tuple
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -29,6 +30,7 @@ argparser.add_argument(
         "gpt-4o-mini",
         "claude-3.5-sonnet",
         "deepseek-chat",
+        "llama-3.1-70b",
     ],
     required=True,
 )
@@ -94,12 +96,16 @@ def print_outputs(outputs):
 async def bedrock_generator(
     prompt: str,
     system_prompt: str = None,
-    history_messages: List[dict] = [],
+    history_messages: List[Tuple] = [],
     **kwargs,
 ) -> str:
     messages, system = [], []
     if system_prompt:
         system.append({"text": system_prompt})
+
+    history_messages = [
+        {"role": r, "content": [{"text": m}]} for r, m in history_messages
+    ]
 
     messages.extend(history_messages)
     messages.append({"role": "user", "content": [{"text": prompt}]})
@@ -117,6 +123,8 @@ async def openai_generator(
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
+
+    history_messages = [{"role": r, "content": m} for r, m in history_messages]
 
     messages.extend(history_messages)
     messages.append({"role": "user", "content": prompt})
@@ -137,7 +145,12 @@ elif args.model == "deepseek-chat":
     generator = openai_generator
 elif args.model == "claude-3.5-sonnet":
     bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-    MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    # MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+    generator = bedrock_generator
+elif args.model == "llama-3.1-70b":
+    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
+    MODEL_ID = "meta.llama3-1-70b-instruct-v1:0"
     generator = bedrock_generator
 else:
     raise ValueError(f"Unsupported model: {args.model}")
@@ -173,29 +186,11 @@ def BFS(question, id_mapping):
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
             local_token_ratio_for_node=0.6,
             local_token_ratio_for_edge=0.4,
+            failure_retries=0,
         ),
     )
     print_outputs(response)
     return "BFS", response, duration, token_len, api_calls, answer_list
-
-
-def shortest_path(question, id_mapping):
-    print(f"Question: {question}")
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=QueryParam(
-            mode="local",
-            edge_depth=1,
-            local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="all_shortest_paths",
-            response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.6,
-            local_token_ratio_for_edge=0.4,
-        ),
-    )
-    print_outputs(response)
-    return "shortest_paths", response, duration, token_len, api_calls, answer_list
 
 
 def cypher_single_entity(question, id_mapping):
@@ -210,31 +205,14 @@ def cypher_single_entity(question, id_mapping):
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
             local_token_ratio_for_node=0.6,
             local_token_ratio_for_edge=0.4,
+            failure_retries=0,
         ),
     )
     print_outputs(response)
     return "cypher_single_entity", response, duration, token_len, api_calls, answer_list
 
 
-def cypher_multi_entity(question, id_mapping):
-    print(f"Question: {question}")
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=QueryParam(
-            mode="local",
-            local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="cypher_path_search",
-            response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.6,
-            local_token_ratio_for_edge=0.4,
-        ),
-    )
-    print_outputs(response)
-    return "cypher_multi_entity", response, duration, token_len, api_calls, answer_list
-
-
-def direct_cypher(question, id_mapping):
+def cypher_only(question, id_mapping):
     print(f"Question: {question}")
     response, duration, token_len, api_calls, answer_list = rag.query(
         question,
@@ -246,10 +224,11 @@ def direct_cypher(question, id_mapping):
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
             local_token_ratio_for_node=0.6,
             local_token_ratio_for_edge=0.4,
+            failure_retries=0,
         ),
     )
     print_outputs(response)
-    return "direct_cypher", response, duration, token_len, api_calls, answer_list
+    return "cypher_only", response, duration, token_len, api_calls, answer_list
 
 
 def adaptive(question, id_mapping):
@@ -262,6 +241,7 @@ def adaptive(question, id_mapping):
         response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
         local_token_ratio_for_node=0.6,
         local_token_ratio_for_edge=0.4,
+        failure_retries=1,
     )
     response, duration, token_len, api_calls, answer_list = rag.query(
         question,
@@ -281,21 +261,20 @@ def adaptive(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_rephrased.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_rephrased_single_cyonly.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
     question_types = [
-        # "single_entity_abstract",
-        # "single_entity_concrete",
-        # "multi_entity_abstract",
-        "multi_entity_concrete",
+        "single_entity_abstract_rephrased",
+        "single_entity_concrete_rephrased",
+        "multi_entity_abstract_rephrased",
+        "multi_entity_concrete_rephrased",
+        "nested_question_rephrased",
     ]
     for question_type in question_types:
         contents = []
-        with open(
-            os.path.join(args.benchmark_dir, f"{question_type}_rephrased.jsonl"), "r"
-        ) as f:
+        with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
             for item in jsonlines.Reader(f):
                 contents.append(item)
 
@@ -303,18 +282,10 @@ if __name__ == "__main__":
             results = []
             question, id_mapping = item["question"], item["entity"]
 
-            results.append(adaptive(question, id_mapping))
-            results.append(direct_cypher(question, id_mapping))
-
-            if question_type == "single_entity_abstract":
-                results.append(BFS(question, id_mapping))
-            elif question_type == "single_entity_concrete":
-                results.append(BFS(question, id_mapping))
-                results.append(cypher_single_entity(question, id_mapping))
-            else:
-                results.append(BFS(question, id_mapping))
-                results.append(cypher_multi_entity(question, id_mapping))
-                results.append(shortest_path(question, id_mapping))
+            results.append(adaptive(question, id_mapping.copy()))
+            results.append(BFS(question, id_mapping.copy()))
+            results.append(cypher_single_entity(question, id_mapping.copy()))
+            results.append(cypher_only(question, id_mapping.copy()))
 
             result_entrees = []
             for result in results:

@@ -251,10 +251,12 @@ class GraphRAG:
         print(f"Traversal type: {global_traversal_type}")
 
         if global_traversal_type == "nested":
-            query_plan, steps, token_len = await self.decompose_nested_query(query)
+            query_plan_str, query_plan, steps, token_len = (
+                await self.decompose_nested_query(query, param)
+            )
             total_api_calls += 1
             total_tokens += token_len
-            print(f"Query plan: \n{'\n'.join(query_plan)}")
+            print(f"Query plan: \n{query_plan_str}")
             print(f"Num of all steps: {steps}")
         else:
             steps = 1
@@ -263,7 +265,13 @@ class GraphRAG:
         for step in range(steps):
             if global_traversal_type == "nested":
                 subqueries, traversal_type, token_len = await self.instantiate_query(
-                    global_question, query_plan, step, history, id_mapping
+                    global_question,
+                    query_plan_str,
+                    query_plan,
+                    step,
+                    history,
+                    id_mapping,
+                    param,
                 )
                 total_api_calls += 1
                 total_tokens += token_len
@@ -322,7 +330,7 @@ class GraphRAG:
             print("ALl history:", history)
             prompt = PROMPTS["nested_query_summarization"].format(
                 question=global_question,
-                query_plan=query_plan,
+                query_plan=query_plan_str,
                 history=history,
             )
             response = await self.model_func(prompt=prompt)
@@ -356,7 +364,7 @@ class GraphRAG:
         print(response)
 
         try:
-            num = int(response.split(":")[0].split("\n")[0])
+            num = int(response.split(":")[0].strip("\n").strip())
             if num != -1:
                 return traversal_types[num], token_len
             else:
@@ -366,8 +374,8 @@ class GraphRAG:
             return None, token_len
 
     async def decompose_nested_query(
-        self, query: str
-    ) -> List[Tuple[List[str], int, int]]:
+        self, query: str, query_param: QueryParam
+    ) -> Tuple[str, List[Tuple[str, str]], int, int]:
         """
         Decompose the nested query into sub-queries.
         """
@@ -379,28 +387,52 @@ class GraphRAG:
             graph_schema = GOODREADS_GRAPH_SCHEMA
         else:
             raise NotImplementedError
+
+        total_tokens = 0
+        history_msgs = []
         prompt = PROMPTS["nested_query_decomposition"].format(
             graph_schema=graph_schema, query=query
         )
-        response = await self.model_func(prompt=prompt)
-        decompose_plan = response.split("```")[1].strip("plan").replace("\n\n", "\n")
-        decompose_plan = decompose_plan.strip("\n").split("\n")
-        return decompose_plan, len(decompose_plan), num_tokens(prompt)
+        for i in range(query_param.failure_retries):
+            try:
+                response = await self.model_func(
+                    prompt=prompt, history_messages=history_msgs
+                )
+                plan_str = response.split("```")[1].strip("plan").replace("\n\n", "\n")
+                plan = plan_str.strip("\n").split("\n")
+                for i, step in enumerate(plan):
+                    traversal = step.split(":")[0]
+                    description = step[len(traversal) + 1 :]
+                    plan[i] = (traversal.split(".")[1].strip(), description.strip())
 
-    async def merge_query(self, query_plan: List[str]):
+                total_tokens += num_tokens(prompt)
+                break
+            except Exception as e:
+                logger.error(f"Error in decomposing query: {e}")
+                history_msgs.extend(
+                    [
+                        ("user", prompt),
+                        ("assistant", response),
+                    ]
+                )
+                prompt = PROMPTS["error_retry"].format(str(e))
+        return plan_str, plan, len(plan), total_tokens
+
+    async def merge_query(self, query_plan: List[Tuple[str, str]]):
         for i, step in enumerate(query_plan):
-            traversal_type = step.split(":")[0].split(".")[1].strip()
-            if traversal_type != "<s,p,*>":
+            if step[0] != "<s,p,*>":
                 return None
         return "cypher_query"
 
     async def instantiate_query(
         self,
         global_query: str,
-        query_plan: List[str],
+        query_plan_str: str,
+        query_plan: List[Tuple[str, str]],
         step: int,
         history: List[str],
         id_mapping: dict[str, str],
+        query_param: QueryParam,
     ) -> Tuple[Dict[str, Dict], str, int]:
         """
         Instantiate the query based on the query plan and step.
@@ -412,8 +444,7 @@ class GraphRAG:
             "<s,p,o>": "cypher_path_search",
         }
         # extract the traversal type from the query plan
-        current_step = query_plan[step]
-        traversal_type = mapping[current_step.split(":")[0].split(".")[1].strip()]
+        traversal_type = mapping[query_plan[step][0]]
 
         history_str = ""
         for i, h in enumerate(history):
@@ -423,12 +454,12 @@ class GraphRAG:
         history_msgs = []
         prompt = PROMPTS["nested_query_instantiation"].format(
             question=global_query,
-            query_plan=query_plan,
+            query_plan=query_plan_str,
             step=step + 1,
             history=history_str,
             mapping=id_mapping,
         )
-        for i in range(3):
+        for i in range(query_param.failure_retries):
             try:
                 response = await self.model_func(
                     prompt=prompt, history_messages=history_msgs
@@ -447,8 +478,8 @@ class GraphRAG:
                 logger.error(f"Error in instantiating query: {e}")
                 history_msgs.extend(
                     [
-                        {"role": "user", "content": [{"text": prompt}]},
-                        {"role": "assistant", "content": [{"text": response}]},
+                        ("user", prompt),
+                        ("assistant", response),
                     ]
                 )
                 prompt = PROMPTS["error_retry"].format(str(e))

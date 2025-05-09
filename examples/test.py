@@ -91,60 +91,98 @@
 # with jsonlines.open("results/goodreads/results.jsonl", "w") as writer:
 #     writer.write_all(answers)
 
-import logging
-import boto3
-from typing import List
-import time
+# import logging
+# import boto3
+# from typing import List
+# import time
 
-logging.basicConfig(level=logging.WARNING)
-logging.getLogger("polyg").setLevel(logging.INFO)
-
-
-MAX_MODEL_LEN = 128000
-MAX_CONTEXT_TOKENS = 100000
-MAX_OUTPUT_TOKENS = 5000
-
-CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+# logging.basicConfig(level=logging.WARNING)
+# logging.getLogger("polyg").setLevel(logging.INFO)
 
 
-def print_outputs(outputs):
-    print("=" * 80)
-    print("Generated reponse:")
-    print(outputs)
-    print("-" * 80)
+# MAX_MODEL_LEN = 128000
+# MAX_CONTEXT_TOKENS = 100000
+# MAX_OUTPUT_TOKENS = 5000
+
+# CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 
-def bedrock_generator(
-    prompt: str,
-    system_prompt: str = None,
-    history_messages: List[dict] = [],
-    **kwargs,
-) -> str:
-    bedrock_cli = boto3.client(
-        service_name="bedrock-runtime",
-        region_name="us-west-2",
-    )
-
-    messages, system = [], []
-    if system_prompt:
-        system.append({"text": system_prompt})
-
-    messages.append({"role": "user", "content": [{"text": prompt}]})
-
-    response = bedrock_cli.converse(
-        modelId=CHAT_MODEL_ID, messages=messages, system=system
-    )
-    return response["output"]["message"]["content"][0]["text"]
+# def print_outputs(outputs):
+#     print("=" * 80)
+#     print("Generated reponse:")
+#     print(outputs)
+#     print("-" * 80)
 
 
-def generate_response():
-    prompt = "[place holder]Just return yes or no." * 10000
-    question = "Is new york city the capital of new york?"
-    tic = time.time()
-    response = bedrock_generator(question, prompt)
-    print(f"Duration: {time.time() - tic}")
-    print_outputs(response)
+# def bedrock_generator(
+#     prompt: str,
+#     system_prompt: str = None,
+#     history_messages: List[dict] = [],
+#     **kwargs,
+# ) -> str:
+#     bedrock_cli = boto3.client(
+#         service_name="bedrock-runtime",
+#         region_name="us-west-2",
+#     )
+
+#     messages, system = [], []
+#     if system_prompt:
+#         system.append({"text": system_prompt})
+
+#     messages.append({"role": "user", "content": [{"text": prompt}]})
+
+#     response = bedrock_cli.converse(
+#         modelId=CHAT_MODEL_ID, messages=messages, system=system
+#     )
+#     return response["output"]["message"]["content"][0]["text"]
 
 
-if __name__ == "__main__":
-    generate_response()
+# def generate_response():
+#     prompt = "[place holder]Just return yes or no." * 10000
+#     question = "Is new york city the capital of new york?"
+#     tic = time.time()
+#     response = bedrock_generator(question, prompt)
+#     print(f"Duration: {time.time() - tic}")
+#     print_outputs(response)
+
+
+# if __name__ == "__main__":
+#     generate_response()
+
+
+import jsonlines
+from collections import defaultdict
+
+
+ANSWER_PATH = [
+    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased.jsonl",
+    "/home/ubuntu/fast-graphrag/examples/results/Physics/results_rephrased.jsonl",
+    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
+]
+OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased.jsonl"
+
+
+answers = []
+for path in ANSWER_PATH:
+    with open(path, "r") as f:
+        for item in jsonlines.Reader(f):
+            answers.append(item)
+
+question_types = [
+    "single_entity_abstract_rephrased",
+    # "single_entity_concrete_rephrased",
+    # "multi_entity_abstract_rephrased",
+    # "multi_entity_concrete_rephrased",
+    # "nested_question_rephrased",
+]
+question_answer = {key: defaultdict(list) for key in question_types}
+type_counts = 0
+for item in answers:
+    if item["question_type"] not in question_answer.keys():
+        continue
+    if item["method"] != "adaptive":
+        continue
+    if item["question_classification_result"] == "0":
+        type_counts += 1
+    # question_answer[item["question_type"]][item["question"]].append(item)
+print(type_counts)

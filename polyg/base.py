@@ -41,6 +41,7 @@ class QueryParam:
     global_special_community_map_llm_kwargs: dict = field(
         default_factory=lambda: {"response_format": {"type": "json_object"}}
     )
+    failure_retries: int = 1
 
 
 TextChunkSchema = TypedDict(
