@@ -703,30 +703,27 @@ nested_question_template = {
         LIMIT 1
         """,
         },
-        "What books are published by the collaborators of the author who has both the book '{}' and '{}'?": {
+        "What books are published by the collaborators of both the author '{}' and '{}'?": {
             "cypher_template": """
         MATCH (a:goodreads:author)
         WITH DISTINCT a ORDER BY rand() LIMIT 10
 
-        MATCH (a)-[:book]->(:goodreads:book)<-[:book]-(coauthor:goodreads:author),
-              (coauthor)-[:book]->(coBook:goodreads:book)
-        WHERE coauthor <> a
-        WITH a, collect(DISTINCT coBook) AS numCoBooks
-        WHERE size(numCoBooks) >= 5 AND size(numCoBooks) <= 20
-        WITH a ORDER BY rand()
+        MATCH (a)-[:book]->(book:goodreads:book)
+        WITH a, collect(DISTINCT book) AS books
+        WHERE size(books) >= 5 AND size(books) <= 20
 
-        MATCH (b1:goodreads:book)-[:author]->(a),
-              (b2:goodreads:book)-[:author]->(a)
-        WHERE b1 <> b2
-        RETURN DISTINCT b1.name AS name1, b1.id AS id1, b2.name AS name2, b2.id AS id2
+        MATCH (a)-[:book]->(:goodreads:book)<-[:book]-(coauthor1:goodreads:author),
+              (a)-[:book]->(:goodreads:book)<-[:book]-(coauthor2:goodreads:author)
+        WHERE coauthor1 <> a AND coauthor2 <> a AND coauthor1 <> coauthor2
+        RETURN DISTINCT coauthor1.name AS name1, coauthor1.id AS id1, coauthor2.name AS name2, coauthor2.id AS id2
         LIMIT 1
         """,
             "cypher": """
-        MATCH (b1:goodreads:book {{id: '{}'}})-[:author]->(a:goodreads:author), (b2:goodreads:book {{id: '{}'}})-[:author]->(a)
-        MATCH (a)-[:book]->(:goodreads:book)-[:author]->(coauthor:goodreads:author)
-        WHERE coauthor <> a
-        MATCH (coauthor)-[:book]->(otherBook:goodreads:book)
-        RETURN DISTINCT otherBook.name as name
+        MATCH (a1:goodreads:author {{id: '{}'}})-[:book]->(:goodreads:book)-[:author]->(target:goodreads:author),
+              (a2:goodreads:author {{id: '{}'}})-[:book]->(:goodreads:book)-[:author]->(target)
+        WHERE target <> a1 AND target <> a2
+        MATCH (target)-[:book]->(book:goodreads:book)
+        RETURN DISTINCT book.name AS name
         """,
         },
         "What is the relationship between the author '{}' and the author who has the book '{}'?": {

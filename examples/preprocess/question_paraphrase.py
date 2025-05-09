@@ -122,10 +122,10 @@ def openai_generator(
 
 if __name__ == "__main__":
     question_types = [
-        # "single_entity_abstract",
-        # "single_entity_concrete",
-        # "multi_entity_abstract",
-        # "multi_entity_concrete",
+        "single_entity_abstract",
+        "single_entity_concrete",
+        "multi_entity_abstract",
+        "multi_entity_concrete",
         "nested_question",
     ]
     for question_type in question_types:
