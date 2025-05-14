@@ -146,7 +146,6 @@ elif args.model == "deepseek-chat":
 elif args.model == "claude-3.5-sonnet":
     bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
     MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-    # MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
     generator = bedrock_generator
 elif args.model == "llama-3.1-70b":
     bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
