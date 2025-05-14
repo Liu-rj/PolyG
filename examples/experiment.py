@@ -266,7 +266,7 @@ if __name__ == "__main__":
     #     os.remove(output_file)
 
     question_types = [
-        # "single_entity_abstract_rephrased",
+        "single_entity_abstract_rephrased",
         "single_entity_concrete_rephrased",
         "multi_entity_abstract_rephrased",
         "multi_entity_concrete_rephrased",
@@ -285,9 +285,9 @@ if __name__ == "__main__":
             question, id_mapping = item["question"], item["entity"]
 
             results.append(adaptive(question, id_mapping.copy()))
-            # results.append(BFS(question, id_mapping.copy()))
-            # results.append(cypher_single_entity(question, id_mapping.copy()))
-            # results.append(cypher_only(question, id_mapping.copy()))
+            results.append(BFS(question, id_mapping.copy()))
+            results.append(cypher_single_entity(question, id_mapping.copy()))
+            results.append(cypher_only(question, id_mapping.copy()))
 
             result_entrees = []
             for result in results:
