@@ -97,7 +97,7 @@ The data tables may appear in one of the two forms:
 1. Two tables are provided: one being the entity node and one being the edge relationship.
 2. Multiple reasoning paths are provided, indicating relations between entities.
 
-Questions can be about node inquries or relations between nodes.
+Questions can be about node inquiries or relations between nodes.
 
 Entities in the question may not have direct relationship and answering the question will need to consider multi-hop relations.
 
@@ -163,7 +163,7 @@ You are a helpful assistant that can generate trustful reasoning paths with the 
 
 You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
 
-User questions are about node inquries which involve multi-hop relation paths.
+User questions are about node inquiries which involve multi-hop relation paths.
 
 ---Goal---
 
@@ -474,7 +474,8 @@ However, note that not every question can be directly classified into the above 
 For example, when the question asks about the relationship between two entities or inquiry about general information about some entities, but the entities need to be determined by another query embeded in the overall question, it is a nested question and should be classified as -1.
 
 Especially, nested questions can only be in the form where the overall quesiton is one of <s,*,*>, <s,*,o>, <s,p,o> question nested with <s,p,*> question.
-In the case of multiple sequential <s,p,*> sub-questions, you should merge them into one single <s,p,*> question and classify the overall question as 1 for <s,p,*>, as consecutive <s,p,*> questions can always be merged into one single <s,p,*> question with multiple predicates and subjects. For example, the question "What are the authors of the books that are published in the publisher 'xxx' and belong to the series 'xxx'?" is a nested question and should be classified as 1 for <s,p,*>.
+If the question reveals a chain of specific relations (multi-hop predicates) from one specific entity (subject), it is not a nested question and should be classified as <s,p,*> question and output 1.
+In the case of multiple sequential <s,p,*> sub-questions with different subjects, you can merge them into one single <s,p,*> question and classify the overall question as 1 for <s,p,*>, as consecutive <s,p,*> questions can always be merged into one single <s,p,*> question with multiple predicates and subjects.
 
 Some concrete example:
 - "Provide some concrete information about the academic collaborators of the scholar 'L. Foldy'.": 1. the first step is a <s,p,*> question, finding the collaborators of 'L. Foldy'. 2. the second step is a <s,*,*> question: gather general and broad information for the collaborators.
@@ -574,8 +575,8 @@ Return your answer in the following format:
 ```plan
 1. question-type: desciption 1
 2. question-type: desciption 2
-```
 ...
+```
 """
 
 PROMPTS[

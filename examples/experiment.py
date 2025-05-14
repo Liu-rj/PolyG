@@ -241,7 +241,7 @@ def adaptive(question, id_mapping):
         response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
         local_token_ratio_for_node=0.6,
         local_token_ratio_for_edge=0.4,
-        failure_retries=1,
+        failure_retries=0,
     )
     response, duration, token_len, api_calls, answer_list = rag.query(
         question,
@@ -261,12 +261,12 @@ def adaptive(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_rephrased_single_cyonly.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_rephrased_retry_0.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
     question_types = [
-        "single_entity_abstract_rephrased",
+        # "single_entity_abstract_rephrased",
         "single_entity_concrete_rephrased",
         "multi_entity_abstract_rephrased",
         "multi_entity_concrete_rephrased",
@@ -277,15 +277,17 @@ if __name__ == "__main__":
         with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
             for item in jsonlines.Reader(f):
                 contents.append(item)
+        if question_type == "single_entity_concrete_rephrased":
+            contents = contents[30:]
 
         for item in contents:
             results = []
             question, id_mapping = item["question"], item["entity"]
 
             results.append(adaptive(question, id_mapping.copy()))
-            results.append(BFS(question, id_mapping.copy()))
-            results.append(cypher_single_entity(question, id_mapping.copy()))
-            results.append(cypher_only(question, id_mapping.copy()))
+            # results.append(BFS(question, id_mapping.copy()))
+            # results.append(cypher_single_entity(question, id_mapping.copy()))
+            # results.append(cypher_only(question, id_mapping.copy()))
 
             result_entrees = []
             for result in results:

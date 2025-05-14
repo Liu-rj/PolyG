@@ -1,12 +1,12 @@
 import jsonlines
 
 
-# LLM_JUDGE_PATH = "../results/Physics/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
-# LLM_JUDGE_PATH = "../results/goodreads/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
-LLM_JUDGE_PATH = "../results/amazon/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
+# LLM_JUDGE_PATH = "../results/Physics/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
+# LLM_JUDGE_PATH = "../results/goodreads/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
+# LLM_JUDGE_PATH = "../results/amazon/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
 
 # LLM_JUDGE_PATH = "../results/Physics/claude-3.5-sonnet/judgements_rephrased.jsonl"
-# LLM_JUDGE_PATH = "../results/goodreads/gpt-4o-mini/judgements_rephrased.jsonl"
+LLM_JUDGE_PATH = "../results/goodreads/gpt-4o-mini/judgements_rephrased.jsonl"
 # LLM_JUDGE_PATH = "../results/amazon/claude-3.5-sonnet/judgements_rephrased.jsonl"
 
 
@@ -41,8 +41,6 @@ method_names = [
     "cypher_single_entity",
     "Fastgraphrag_PPR",
     "GraphCoT",
-    # "shortest_paths",
-    # "cypher_multi_entity",
     "cypher_only",
     "adaptive",
 ]
@@ -78,8 +76,6 @@ for question_type in question_types:
         print(
             ",".join([str(method_wins[criterion][method]) for method in method_names])
         )
-        for method in method_names:
-            global_method_wins[criterion][method] += method_wins[criterion][method]
     print("-" * 80)
 
 print("=" * 80)

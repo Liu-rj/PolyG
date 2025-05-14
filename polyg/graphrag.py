@@ -258,6 +258,16 @@ class GraphRAG:
             total_tokens += token_len
             print(f"Query plan: \n{query_plan_str}")
             print(f"Num of all steps: {steps}")
+
+            if query_plan_str is None:
+                logger.error("Failed to decompose the query")
+                return (
+                    PROMPTS["fail_response"],
+                    time.time() - start,
+                    total_api_calls,
+                    0,
+                    "N/A",
+                )
         else:
             steps = 1
 
@@ -393,6 +403,7 @@ class GraphRAG:
         prompt = PROMPTS["nested_query_decomposition"].format(
             graph_schema=graph_schema, query=query
         )
+        plan_str, plan = None, []
         for i in range(query_param.failure_retries):
             try:
                 response = await self.model_func(

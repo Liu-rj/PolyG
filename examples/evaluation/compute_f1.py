@@ -4,21 +4,21 @@ from collections import defaultdict
 
 
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_new.jsonl",
-    # "/home/ubuntu/fast-graphrag/examples/results/Physics/results_rephrased.jsonl",
-    # "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
+    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    # "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    # "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased_final.jsonl",
 ]
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased_final.jsonl",
 # ]
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/amazon/results_rephrased.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased_final.jsonl",
 # ]
 
 CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
@@ -84,16 +84,18 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 method_names = [
-    "BFS",
+    # "BFS",
     "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
-    "adaptive",
+    # "Fastgraphrag_PPR",
+    # "GraphCoT",
+    # "cypher_only",
+    # "adaptive",
 ]
 question_answer = defaultdict(list)
 for item in answers:
     if item["gt_answer"] == "N/A" or item["method"] not in method_names:
+        continue
+    if item["question_type"] != "nested_question_rephrased":
         continue
     question_answer[item["question"]].append(item)
 
@@ -148,12 +150,11 @@ for it, (question, answers) in enumerate(question_answer.items()):
         method_f1[method] += f1
 
 for method in method_names:
-    if method_counts[method] != 0:
-        method_precision[method] = round(
-            method_precision[method] / method_counts[method], 2
-        )
-        method_recall[method] = round(method_recall[method] / method_counts[method], 2)
-        method_f1[method] = round(method_f1[method] / method_counts[method], 2)
+    counts = method_counts[method]
+    if counts != 0:
+        method_precision[method] = round(method_precision[method] / counts, 4)
+        method_recall[method] = round(method_recall[method] / counts, 4)
+        method_f1[method] = round(method_f1[method] / counts, 4)
 
 print("=" * 80)
 print(method_f1)

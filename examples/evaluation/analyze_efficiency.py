@@ -3,21 +3,21 @@ from collections import defaultdict
 
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/Physics/results_rephrased.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased_final.jsonl",
 # ]
 
 # ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased.jsonl",
+#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased_final.jsonl",
 # ]
 
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/amazon/results_rephrased.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased.jsonl",
+    "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased_final.jsonl",
 ]
 
 
@@ -43,8 +43,6 @@ method_names = [
     "cypher_single_entity",
     "Fastgraphrag_PPR",
     "GraphCoT",
-    # "shortest_paths",
-    # "cypher_multi_entity",
     "cypher_only",
     "adaptive",
 ]

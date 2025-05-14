@@ -81,18 +81,20 @@ dataset = "amazon"
 contents = []
 with open(f"../results/{dataset}/claude-3.5-sonnet/results_rephrased.jsonl", "r") as f:
     for item in jsonlines.Reader(f):
-        if item["method"] in ["cypher_single_entity", "cypher_only"]:
+        if item["question_type"] != "single_entity_concrete_rephrased":
+            continue
+        if item["method"] in ["cypher_single_entity", "adaptive"]:
             continue
         contents.append(item)
 
 with open(
-    f"../results/{dataset}/claude-3.5-sonnet/results_rephrased_single_cyonly.jsonl", "r"
+    f"../results/{dataset}/claude-3.5-sonnet/results_rephrased_sp*.jsonl", "r"
 ) as f:
     for item in jsonlines.Reader(f):
         contents.append(item)
 
 with jsonlines.open(
-    f"../results/{dataset}/claude-3.5-sonnet/results_rephrased_new.jsonl", "w"
+    f"../results/{dataset}/claude-3.5-sonnet/results_rephrased_all_sp*.jsonl", "w"
 ) as writer:
     for row in contents:
         writer.write(row)

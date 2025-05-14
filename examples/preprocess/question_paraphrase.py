@@ -41,6 +41,7 @@ client = OpenAI(
 PROMPT = """
 You are a linguistics expert, please paraphrase the given question without changing any semantic meaning of it.
 For example, "Give a broad discription of the the finder of 'Higgs boson'." is not equal to "Who is the finder of 'Higgs boson'?", since the former one asks about general information while what the latter inquires about is vague and can just be the finder name.
+Also, "ave Issac Newton and Albert Einstein both contributed to the same same field of science?" is not equal to "What is the field of science that both Issac Newton and Albert Einstein contributed to?", since the former one is checking if the relation exists while the latter inquires about concrete entities and can just be the field name.
 
 Note that the contents in '' (single quotes) is an exact entity name which will be used to match entities in the knowledge graph, so do not change any word in the single quote '' part.
 Also, in your returned paraphrased question, please keep the contents in '' part unchanged.
@@ -122,11 +123,11 @@ def openai_generator(
 
 if __name__ == "__main__":
     question_types = [
-        "single_entity_abstract",
-        "single_entity_concrete",
-        "multi_entity_abstract",
+        # "single_entity_abstract",
+        # "single_entity_concrete",
+        # "multi_entity_abstract",
         "multi_entity_concrete",
-        "nested_question",
+        # "nested_question",
     ]
     for question_type in question_types:
         output_file = os.path.join(

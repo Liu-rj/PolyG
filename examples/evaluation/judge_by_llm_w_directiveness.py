@@ -30,32 +30,25 @@ client = OpenAI()
 
 if args.dataset == "physics":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_new.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
+        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_spo.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased_spo.jsonl",
+        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased_spo.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
+    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased_spo.jsonl"
 elif args.dataset == "amazon":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_new.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased.jsonl",
+        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_spo.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased_spo.jsonl",
+        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased_spo.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
+    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/judgements_rephrased_spo.jsonl"
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_new.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased.jsonl",
+        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_spo.jsonl",
+        "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_spo.jsonl",
+        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased_spo.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/judgements_rephrased_new.jsonl"
-
-    # ANSWER_PATH = [
-    #     "/home/ubuntu/PolyG/examples/results/goodreads/gpt-4o-mini/results_rephrased.jsonl",
-    #     "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
-    #     # "/home/ubuntu/Graph-CoT/Graph-CoT/results/gpt-4o-mini/goodreads/results_rephrased.jsonl",
-    # ]
-    # OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/gpt-4o-mini/judgements_rephrased.jsonl"
+    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/judgements_rephrased_spo.jsonl"
 
 SYSTEM_ROLE = """
 ---Role---
@@ -134,7 +127,7 @@ Then, select the overall winner(s) by jointly consider the above four criteria a
 Note:
 1. There can be multiple winners for a question in the case where they all well answer the question regarding the criteria. You also need to give the reasons for this case.
 2. Reponse like "there is no direct information for me to answer" or other forms that indicat it can not give answers to the question is not a valid answer as all questions are designed to ensure there is an answer. These kinds of reponses should be considered as a bad reponse under all three criteria..
-4. In some cases that one response could be diverse and informative about some other knowledge but is off-topic and irrelevant to the question, that response should be considered as a bad answer. Only responses that are actually helpful to answer the question should be considered valid responses, otherwise the response is bad under all criteria.
+3. In some cases that one response could be diverse and informative about some other knowledge but is off-topic and irrelevant to the question, that response should be considered as a bad answer. Only responses that are actually helpful to answer the question should be considered valid responses, otherwise the response is bad under all criteria.
 
 Question:
 {query}
@@ -221,10 +214,10 @@ for path in ANSWER_PATH:
 
 question_types = [
     # "single_entity_abstract_rephrased",
-    "single_entity_concrete_rephrased",
-    "multi_entity_abstract_rephrased",
+    # "single_entity_concrete_rephrased",
+    # "multi_entity_abstract_rephrased",
     "multi_entity_concrete_rephrased",
-    "nested_question_rephrased",
+    # "nested_question_rephrased",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
 for item in answers:
@@ -233,6 +226,9 @@ for item in answers:
     question_answer[item["question_type"]][item["question"]].append(
         (item["method"], item["model_answer"], item["gt_answer"])
     )
+
+for question_type, qa_pairs in question_answer.items():
+    print(f"Total number of questions: {len(qa_pairs)}")
 
 criteria = [
     "Comprehensiveness",
@@ -243,9 +239,7 @@ criteria = [
 ]
 method_names = [
     "BFS",
-    # "shortest_paths",
     "cypher_single_entity",
-    # "cypher_multi_entity",
     "cypher_only",
     "Fastgraphrag_PPR",
     "GraphCoT",
@@ -255,8 +249,6 @@ all_method_wins = {}
 for question_type in question_types:
     method_wins = {name: {method: 0 for method in method_names} for name in criteria}
     for it, (question, answers) in enumerate(question_answer[question_type].items()):
-        if question_type == "single_entity_concrete_rephrased" and it < 33:
-            continue
 
         question = question.replace('"', "'")
         print(f"Question {it + 1}: {question}")

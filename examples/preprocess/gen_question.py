@@ -691,7 +691,7 @@ nested_question_template = {
         },
     },
     "goodreads": {
-        "Provide a comprehensive overview about the series whose books are similar to the publications of author '{}'?": {
+        "Provide a comprehensive overview about the series whose books are similar to the publications of author '{}'.": {
             "cypher_template": """
         MATCH (author:goodreads:author)
         WITH author ORDER BY rand() LIMIT 100
