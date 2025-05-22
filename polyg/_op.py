@@ -930,7 +930,7 @@ def form_node_edge_context(
 
     tic = time.time()
     relations_section_list = []
-    if query_param.traversal_type in ["BFS", "direct_cypher"]:
+    if query_param.traversal_type in ["BFS", "cypher_only"]:
         relation_header = ",\t".join(
             [
                 f"{enclose_string_with_quotes(data)}"
@@ -1054,7 +1054,7 @@ async def local_query(
     return response, form_response_tokens, 1, "N/A"
 
 
-async def build_direct_cypher_context(
+async def build_cypher_only_context(
     all_edges: List[Tuple],
     kg_inst: BaseGraphStorage,
     query_param: QueryParam,
@@ -1115,7 +1115,7 @@ async def build_direct_cypher_context(
 """
 
 
-async def direct_cypher(
+async def cypher_only(
     query,
     id_mapping,
     kg_inst: BaseGraphStorage,
@@ -1127,7 +1127,7 @@ async def direct_cypher(
 ) -> tuple[str, int, int, str]:
     use_model_func = global_config["model_func"]
 
-    sys_prompt = PROMPTS["direct_cypher_query"]
+    sys_prompt = PROMPTS["cypher_only_query"]
     if "Physics" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
     elif "amazon" in global_config["working_dir"]:
@@ -1183,7 +1183,7 @@ async def direct_cypher(
 
     try:
         tic = time.time()
-        context = await build_direct_cypher_context(all_edges, kg_inst, query_param)
+        context = await build_cypher_only_context(all_edges, kg_inst, query_param)
         print(f"Build context time: {time.time() - tic:.2f}s")
     except Exception as e:
         print(f"Error: {e}")

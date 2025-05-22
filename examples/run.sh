@@ -112,3 +112,6 @@ python evaluation/compute_f1.py --dataset=goodreads
 python experiment.py --data_dir=datasets/amazon --benchmark_dir=benchmarks/amazon --model=claude-3.5-sonnet
 python evaluation/judege_by_llm.py --dataset=amazon
 python evaluation/compute_f1.py --dataset=amazon
+
+
+python experiment.py --data_dir=datasets/maple/Physics --benchmark_dir=benchmarks/physics --model=gemini-2.0-flash

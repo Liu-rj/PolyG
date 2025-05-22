@@ -31,6 +31,7 @@ argparser.add_argument(
         "claude-3.5-sonnet",
         "deepseek-chat",
         "llama-3.1-70b",
+        "gemini-2.0-flash",
     ],
     required=True,
 )
@@ -79,10 +80,10 @@ EMBEDDING_MODEL = SentenceTransformer(
     max_token_size=EMBEDDING_MODEL.max_seq_length,
 )
 async def local_embedding(
-    texts: list[str], batchsize: int = 32, device: torch.device = None
+    texts: list[str], batchsize: int = 32, device: str | None = None
 ) -> np.ndarray:
     return EMBEDDING_MODEL.encode(
-        texts, normalize_embeddings=True, batch_size=batchsize, device=device
+        sentences=texts, batch_size=batchsize, device=device, normalize_embeddings=True
     )
 
 
@@ -95,7 +96,7 @@ def print_outputs(outputs):
 
 async def bedrock_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[Tuple] = [],
     **kwargs,
 ) -> str:
@@ -103,11 +104,11 @@ async def bedrock_generator(
     if system_prompt:
         system.append({"text": system_prompt})
 
-    history_messages = [
+    history_messages_formated = [
         {"role": r, "content": [{"text": m}]} for r, m in history_messages
     ]
 
-    messages.extend(history_messages)
+    messages.extend(history_messages_formated)
     messages.append({"role": "user", "content": [{"text": prompt}]})
 
     response = bedrock_cli.converse(modelId=MODEL_ID, messages=messages, system=system)
@@ -116,10 +117,10 @@ async def bedrock_generator(
 
 async def openai_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
     **kwargs,
-) -> str:
+) -> str | None:
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
@@ -152,6 +153,12 @@ elif args.model == "llama-3.1-70b":
     bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
     MODEL_ID = "meta.llama3-1-70b-instruct-v1:0"
     generator = bedrock_generator
+elif args.model == "gemini-2.0-flash":
+    client = OpenAI(
+        api_key=os.getenv("GEMINI_API_KEY"),
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    )
+    generator = openai_generator
 else:
     raise ValueError(f"Unsupported model: {args.model}")
 
@@ -220,7 +227,7 @@ def cypher_only(question, id_mapping):
         param=QueryParam(
             mode="local",
             local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="direct_cypher",
+            traversal_type="cypher_only",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
             local_token_ratio_for_node=0.6,
             local_token_ratio_for_edge=0.4,
@@ -261,7 +268,7 @@ def adaptive(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_rephrased_retry_0.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_rephrased.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
@@ -277,8 +284,6 @@ if __name__ == "__main__":
         with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
             for item in jsonlines.Reader(f):
                 contents.append(item)
-        if question_type == "single_entity_concrete_rephrased":
-            contents = contents[30:]
 
         for item in contents:
             results = []

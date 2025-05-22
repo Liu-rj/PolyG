@@ -32,7 +32,7 @@ from ._op import (
     generate_community_report,
     get_chunks,
     local_query,
-    direct_cypher,
+    cypher_only,
     guided_walk,
     topk_csp,
     batch_local_query,
@@ -307,8 +307,8 @@ class GraphRAG:
                     func = topk_csp
                 elif traversal_type in ["BFS", "shortest_path", "all_shortest_paths"]:
                     func = local_query
-                elif traversal_type == "direct_cypher":
-                    func = direct_cypher
+                elif traversal_type == "cypher_only":
+                    func = cypher_only
                 else:
                     logger.error(f"Unsupported traversal type: {traversal_type}")
                     return (

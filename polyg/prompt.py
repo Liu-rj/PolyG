@@ -374,7 +374,7 @@ LIMIT 10
 """
 
 PROMPTS[
-    "direct_cypher_query"
+    "cypher_only_query"
 ] = """---Role---
 You are a helpful assistant that generate cypher queries with the knowledge of the graph schema to find the answer to given questions.
 
@@ -706,7 +706,7 @@ Responses to each step:
 """
 
 
-# PROMPTS["direct_cypher_query_free_form_output"] = """---Role---
+# PROMPTS["cypher_only_query_free_form_output"] = """---Role---
 # You are a helpful assistant that generate cypher queries with the knowledge of the graph schema to find the answer to given questions.
 
 # ---Setting---

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TypedDict, Union, Literal, Generic, TypeVar, Any, Iterable
+from typing import TypedDict, Union, Literal, Generic, TypeVar, Any, Iterable, Tuple
 
 import numpy as np
 
@@ -25,15 +25,15 @@ class QueryParam:
     edge_depth: int = 1
     local_context_length: int = 10000
     traversal_type: Literal[
-        "FBS",
+        "BFS",
         "shortest_path",
         "all_shortest_paths",
         "cypher_query",
         "cypher_path_search",
-        "direct_cypher",
+        "cypher_only",
         "adaptive",
     ] = "adaptive"
-    question_classification_result: str = None
+    question_classification_result: str | None = None
     # global search
     global_min_community_rating: float = 0
     global_max_consider_community: float = 512
@@ -54,7 +54,7 @@ SingleCommunitySchema = TypedDict(
     {
         "level": int,
         "title": str,
-        "edges": list[list[str, str]],
+        "edges": list[Tuple[str, str]],
         "nodes": list[str],
         "chunk_ids": list[str],
         "occurrence": float,

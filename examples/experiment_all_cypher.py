@@ -159,7 +159,7 @@ rag = GraphRAG(
 )
 
 
-def direct_cypher(question, id_mapping):
+def cypher_only(question, id_mapping):
     print(f"Question: {question}")
     response, duration, token_len, api_calls, answer_list = rag.query(
         question,
@@ -168,18 +168,18 @@ def direct_cypher(question, id_mapping):
             mode="local",
             edge_depth=1,
             local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="direct_cypher",
+            traversal_type="cypher_only",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
             local_token_ratio_for_node=0.6,
             local_token_ratio_for_edge=0.4,
         ),
     )
     print_outputs(response)
-    return "direct_cypher", response, duration, token_len, api_calls, answer_list
+    return "cypher_only", response, duration, token_len, api_calls, answer_list
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_direct_cypher.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_cypher_only.jsonl")
 
     question_types = [
         "single_entity_abstract",
@@ -197,7 +197,7 @@ if __name__ == "__main__":
             results = []
             question, id_mapping = item["question"], item["entity"]
 
-            results.append(direct_cypher(question, id_mapping))
+            results.append(cypher_only(question, id_mapping))
 
             result_entrees = []
             for result in results:
