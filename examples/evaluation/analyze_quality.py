@@ -1,13 +1,20 @@
 import jsonlines
+import argparse
+
+argparser = argparse.ArgumentParser()
+argparser.add_argument("--dataset", type=str, default="physics", required=True)
+argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=False)
+args = argparser.parse_args()
 
 
-# LLM_JUDGE_PATH = "../results/Physics/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
-# LLM_JUDGE_PATH = "../results/goodreads/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
-# LLM_JUDGE_PATH = "../results/amazon/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
-
-# LLM_JUDGE_PATH = "../results/Physics/claude-3.5-sonnet/judgements_rephrased.jsonl"
-LLM_JUDGE_PATH = "../results/goodreads/gpt-4o-mini/judgements_rephrased.jsonl"
-# LLM_JUDGE_PATH = "../results/amazon/claude-3.5-sonnet/judgements_rephrased.jsonl"
+if args.dataset == "physics":
+    LLM_JUDGE_PATH = f"../results/Physics/{args.model}/judgements_rephrased.jsonl"
+elif args.dataset == "amazon":
+    LLM_JUDGE_PATH = f"../results/amazon/{args.model}/judgements_rephrased.jsonl"
+elif args.dataset == "goodreads":
+    LLM_JUDGE_PATH = f"../results/goodreads/{args.model}/judgements_rephrased.jsonl"
+else:
+    raise ValueError(f"Unknown dataset: {args.dataset}")
 
 
 judgements = []
@@ -47,7 +54,7 @@ method_names = [
 global_method_wins = {name: {method: 0 for method in method_names} for name in criteria}
 all_questions = 0
 for question_type in question_types:
-    method_wins = {name: {method: 0 for method in method_names} for name in criteria}
+    method_wins = {name: {method: 0.0 for method in method_names} for name in criteria}
     for judgement in question_judgement[question_type]:
         for criterion in criteria:
             winner = judgement[criterion]["Winner"]

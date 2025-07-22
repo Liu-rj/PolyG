@@ -6,27 +6,30 @@ from collections import defaultdict
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument("--dataset", type=str, default="physics", required=True)
+argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=True)
 args = argparser.parse_args()
 
 
 if args.dataset == "physics":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased_final.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_nested.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
     ]
 elif args.dataset == "amazon":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased_final.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
     ]
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased_final.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
     ]
+else:
+    raise ValueError(f"Unknown dataset: {args.dataset}")
 
 
 CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
@@ -66,7 +69,7 @@ Output the extracted result in the the list format: ["Answer 1", "Answer 2", ...
 
 def bedrock_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
 ) -> str:
     bedrock_cli = boto3.client(
         service_name="bedrock-runtime",
@@ -92,12 +95,12 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 method_names = [
-    # "BFS",
+    "BFS",
     "cypher_single_entity",
-    # "Fastgraphrag_PPR",
-    # "GraphCoT",
-    # "cypher_only",
-    # "adaptive",
+    "Fastgraphrag_PPR",
+    "GraphCoT",
+    "cypher_only",
+    "adaptive",
 ]
 question_answer = defaultdict(list)
 for item in answers:
@@ -121,12 +124,14 @@ for it, (question, answers) in enumerate(question_answer.items()):
             "nested_question_rephrased",
         ]
         method, gt = answer["method"], answer["gt_answer"]
-        answer = (
-            answer["answer_list"]
-            if "answer_list" in answer and answer["answer_list"] != "N/A"
-            else answer["model_answer"]
-        )
-        # answer = answer["model_answer"]
+        if method == "adaptive":
+            answer = (
+                answer["answer_list"]
+                if "answer_list" in answer and answer["answer_list"] != "N/A"
+                else answer["model_answer"]
+            )
+        else:
+            answer = answer["model_answer"]
 
         result = bedrock_generator(
             prompt=PROMPT.format(query=question, reponse=answer),

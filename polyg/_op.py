@@ -1137,12 +1137,11 @@ async def cypher_only(
     else:
         raise NotImplementedError
 
-    retry_count = 0
     token_len = 0
     history_msgs = []
     response = None
 
-    while retry_count <= query_param.failure_retries:
+    for i in range(query_param.failure_retries + 1):
         try:
             tic = time.time()
             prompt = f"query: {query}, id mapping: {id_mapping}"
@@ -1153,7 +1152,6 @@ async def cypher_only(
             response = await use_model_func(
                 prompt=prompt, system_prompt=sys_prompt, history_messages=history_msgs
             )
-            print(response)
             cypher_query = response.split("```")[1].strip("cypher")
             print(f"Cypher query generation time: {time.time() - tic:.2f}s")
             print(f"Token length: {cur_token_len}")
@@ -1168,7 +1166,8 @@ async def cypher_only(
 
             break
         except Exception as e:
-            retry_count += 1
+            if i == query_param.failure_retries:
+                return PROMPTS["fail_response"], token_len, 1, "N/A"
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
@@ -1177,9 +1176,6 @@ async def cypher_only(
                     ("user", PROMPTS["error_retry"].format(str(e))),
                 ]
             )
-
-    if retry_count > 1:
-        return PROMPTS["fail_response"], token_len, 1, "N/A"
 
     try:
         tic = time.time()
@@ -1238,12 +1234,11 @@ async def guided_walk(
     else:
         raise NotImplementedError
 
-    retry_count = 0
     token_len = 0
     history_msgs = []
     response = None
 
-    while retry_count <= query_param.failure_retries:
+    for i in range(query_param.failure_retries + 1):
         try:
             prompt = f"query: {query}, id mapping: {id_mapping}"
             cur_token_len = num_tokens(sys_prompt + prompt) + sum(
@@ -1269,7 +1264,8 @@ async def guided_walk(
 
             break
         except Exception as e:
-            retry_count += 1
+            if i == query_param.failure_retries:
+                return PROMPTS["fail_response"], token_len, 1, "N/A"
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
@@ -1278,9 +1274,6 @@ async def guided_walk(
                     ("user", PROMPTS["error_retry"].format(str(e))),
                 ]
             )
-
-    if retry_count > 1:
-        return PROMPTS["fail_response"], token_len, 1, "N/A"
 
     try:
         tic = time.time()
@@ -1361,12 +1354,11 @@ async def topk_csp(
     else:
         raise NotImplementedError
 
-    retry_count = 0
     token_len = 0
     history_msgs = []
     response = None
 
-    while retry_count <= query_param.failure_retries:
+    for i in range(query_param.failure_retries + 1):
         try:
             prompt = f"query: {query}, id mapping: {id_mapping}"
             cur_token_len = num_tokens(sys_prompt + prompt) + sum(
@@ -1393,7 +1385,8 @@ async def topk_csp(
 
             break
         except Exception as e:
-            retry_count += 1
+            if i == query_param.failure_retries:
+                return PROMPTS["fail_response"], token_len, 1, "N/A"
             logger.error(f"Error: {e}")
             history_msgs.extend(
                 [
@@ -1402,9 +1395,6 @@ async def topk_csp(
                     ("user", PROMPTS["error_retry"].format(str(e))),
                 ]
             )
-
-    if retry_count > 1:
-        return PROMPTS["fail_response"], token_len, 1, "N/A"
 
     tic = time.time()
     sys_prompt_temp = PROMPTS["local_rag_response"]

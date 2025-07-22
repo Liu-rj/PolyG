@@ -28,10 +28,13 @@ argparser.add_argument(
     choices=[
         "gpt-4o",
         "gpt-4o-mini",
+        "gpt-4.1-mini",
         "claude-3.5-sonnet",
         "deepseek-chat",
-        "llama-3.1-70b",
-        "gemini-2.0-flash",
+        "deepseek-r1",
+        "llama-3.1-405b",
+        "mistral-large",
+        "gemini-2.5-flash",
     ],
     required=True,
 )
@@ -47,7 +50,7 @@ DATASET_DIR = args.data_dir
 WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
 RESULT_DIR = f"results/{DATASET_DIR.split('/')[-1]}/{args.model}"
 MAX_MODEL_LEN = 128000
-MAX_CONTEXT_TOKENS = 100000
+MAX_CONTEXT_TOKENS = 90000
 MAX_OUTPUT_TOKENS = 5000
 
 print(
@@ -136,7 +139,7 @@ async def openai_generator(
     return response.choices[0].message.content
 
 
-if args.model in ["gpt-4o", "gpt-4o-mini"]:
+if args.model in ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"]:
     client = OpenAI()
     generator = openai_generator
 elif args.model == "deepseek-chat":
@@ -144,16 +147,23 @@ elif args.model == "deepseek-chat":
         api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
     )
     generator = openai_generator
+elif args.model == "deepseek-r1":
+    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
+    MODEL_ID = "us.deepseek.r1-v1:0"
+    generator = bedrock_generator
 elif args.model == "claude-3.5-sonnet":
     bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
     MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-    # MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
     generator = bedrock_generator
-elif args.model == "llama-3.1-70b":
+elif args.model == "llama-3.1-405b":
     bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-    MODEL_ID = "meta.llama3-1-70b-instruct-v1:0"
+    MODEL_ID = "meta.llama3-1-405b-instruct-v1:0"
     generator = bedrock_generator
-elif args.model == "gemini-2.0-flash":
+elif args.model == "mistral-large":
+    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
+    MODEL_ID = "mistral.mistral-large-2407-v1:0"
+    generator = bedrock_generator
+elif args.model == "gemini-2.5-flash":
     client = OpenAI(
         api_key=os.getenv("GEMINI_API_KEY"),
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -248,7 +258,7 @@ def adaptive(question, id_mapping):
         response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
         local_token_ratio_for_node=0.6,
         local_token_ratio_for_edge=0.4,
-        failure_retries=0,
+        failure_retries=3,
     )
     response, duration, token_len, api_calls, answer_list = rag.query(
         question,
@@ -268,16 +278,16 @@ def adaptive(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_rephrased.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_rephrased_sp*.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
     question_types = [
-        "single_entity_abstract_rephrased",
+        # "single_entity_abstract_rephrased",
         "single_entity_concrete_rephrased",
-        "multi_entity_abstract_rephrased",
-        "multi_entity_concrete_rephrased",
-        "nested_question_rephrased",
+        # "multi_entity_abstract_rephrased",
+        # "multi_entity_concrete_rephrased",
+        # "nested_question_rephrased",
     ]
     for question_type in question_types:
         contents = []

@@ -7,19 +7,20 @@ import os
 from openai import OpenAI
 from collections import defaultdict
 from dotenv import load_dotenv
-from typing import List
+from typing import List, Tuple
 
 load_dotenv("../.env")
 
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument("--dataset", type=str, default="physics", required=True)
+argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=False)
 args = argparser.parse_args()
 
 
 # CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 # CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-CHAT_MODEL_ID = "us.deepseek.r1-v1:0"
+MODEL_ID = "us.deepseek.r1-v1:0"
 bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
 # client = OpenAI(
 #     api_key=os.getenv("DEEPSEEK_API_KEY"),
@@ -30,25 +31,27 @@ client = OpenAI()
 
 if args.dataset == "physics":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased_final.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_nested.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
+    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/judgements_rephrased_nested.jsonl"
 elif args.dataset == "amazon":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased_final.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
+    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/judgements_rephrased.jsonl"
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased_final.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/judgements_rephrased_final.jsonl"
+    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/judgements_rephrased.jsonl"
+else:
+    raise ValueError(f"Unknown dataset: {args.dataset}")
 
 SYSTEM_ROLE = """
 ---Role---
@@ -172,36 +175,42 @@ ERROR_MSG = "When processing your generated json evaluation result, errors occur
 
 def bedrock_generator(
     prompt: str,
-    system_prompt: str = None,
-    history_messages: List[dict] = [],
+    system_prompt: str | None = None,
+    history_messages: List[Tuple] = [],
+    **kwargs,
 ) -> str:
     messages, system = [], []
     if system_prompt:
         system.append({"text": system_prompt})
 
-    messages.extend(history_messages)
+    history_messages_formated = [
+        {"role": r, "content": [{"text": m}]} for r, m in history_messages
+    ]
+
+    messages.extend(history_messages_formated)
     messages.append({"role": "user", "content": [{"text": prompt}]})
 
-    response = bedrock_cli.converse(
-        modelId=CHAT_MODEL_ID, messages=messages, system=system
-    )
+    response = bedrock_cli.converse(modelId=MODEL_ID, messages=messages, system=system)
     return response["output"]["message"]["content"][0]["text"]
 
 
 def openai_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
-) -> str:
+    **kwargs,
+) -> str | None:
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
+
+    history_messages = [{"role": r, "content": m} for r, m in history_messages]
 
     messages.extend(history_messages)
     messages.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
-        model="gpt-4o", messages=messages, stream=False
+        model=args.model, messages=messages, stream=False
     )
     return response.choices[0].message.content
 
@@ -216,8 +225,8 @@ question_types = [
     # "single_entity_abstract_rephrased",
     # "single_entity_concrete_rephrased",
     # "multi_entity_abstract_rephrased",
-    "multi_entity_concrete_rephrased",
-    # "nested_question_rephrased",
+    # "multi_entity_concrete_rephrased",
+    "nested_question_rephrased",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
 for item in answers:
@@ -252,6 +261,7 @@ for question_type in question_types:
 
         question = question.replace('"', "'")
         print(f"Question {it + 1}: {question}")
+        gt, prompt, result = "N/A", "", ""
 
         answer_str = "Answers:\n\n"
         for it, answer_tuple in enumerate(answers):
@@ -276,6 +286,7 @@ for question_type in question_types:
                     system_prompt=SYSTEM_ROLE,
                     history_messages=history_msgs,
                 )
+                assert result is not None, "No response from the model."
                 print(result)
                 result = result.split("```")[1].strip("json")
 
@@ -299,9 +310,9 @@ for question_type in question_types:
                 print(f"Error: {e}")
                 history_msgs.extend(
                     [
-                        {"role": "user", "content": prompt},
-                        {"role": "assistant", "content": result},
-                        {"role": "user", "content": ERROR_MSG.format(str(e))},
+                        ("user", prompt),
+                        ("assistant", result),
+                        ("user", ERROR_MSG.format(str(e))),
                     ]
                 )
 

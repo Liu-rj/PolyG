@@ -404,7 +404,7 @@ class GraphRAG:
             graph_schema=graph_schema, query=query
         )
         plan_str, plan = None, []
-        for i in range(query_param.failure_retries):
+        for i in range(query_param.failure_retries + 1):
             try:
                 response = await self.model_func(
                     prompt=prompt, history_messages=history_msgs
@@ -470,7 +470,7 @@ class GraphRAG:
             history=history_str,
             mapping=id_mapping,
         )
-        for i in range(query_param.failure_retries):
+        for i in range(query_param.failure_retries + 1):
             try:
                 response = await self.model_func(
                     prompt=prompt, history_messages=history_msgs

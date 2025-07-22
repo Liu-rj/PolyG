@@ -100,18 +100,30 @@
 
 
 
+# # claude-3.5-sonnet
+# model=claude-3.5-sonnet
 
-python experiment.py --data_dir=datasets/maple/Physics --benchmark_dir=benchmarks/physics --model=claude-3.5-sonnet
-python evaluation/judege_by_llm.py --dataset=physics
-python evaluation/compute_f1.py --dataset=physics
+# # mistral-large
+# model=mistral-large
 
-python experiment.py --data_dir=datasets/goodreads --benchmark_dir=benchmarks/goodreads --model=claude-3.5-sonnet
-python evaluation/judege_by_llm.py --dataset=goodreads
-python evaluation/compute_f1.py --dataset=goodreads
+# # deepseek-r1
+# model=deepseek-r1
 
-python experiment.py --data_dir=datasets/amazon --benchmark_dir=benchmarks/amazon --model=claude-3.5-sonnet
-python evaluation/judege_by_llm.py --dataset=amazon
-python evaluation/compute_f1.py --dataset=amazon
+# # gpt-4o-mini
+# model=gpt-4o-mini
+
+# gpt-4.1-mini
+model=gpt-4.1-mini
 
 
-python experiment.py --data_dir=datasets/maple/Physics --benchmark_dir=benchmarks/physics --model=gemini-2.0-flash
+python experiment.py --data_dir=datasets/maple/Physics --benchmark_dir=benchmarks/physics --model=$model
+python evaluation/judge_by_llm.py --dataset=physics --model=$model
+python evaluation/compute_f1.py --dataset=physics --model=$model
+
+python experiment.py --data_dir=datasets/goodreads --benchmark_dir=benchmarks/goodreads --model=$model
+python evaluation/judge_by_llm.py --dataset=goodreads --model=$model
+python evaluation/compute_f1.py --dataset=goodreads --model=$model
+
+python experiment.py --data_dir=datasets/amazon --benchmark_dir=benchmarks/amazon --model=$model
+python evaluation/judge_by_llm.py --dataset=amazon --model=$model
+python evaluation/compute_f1.py --dataset=amazon --model=$model
