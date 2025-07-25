@@ -12,7 +12,7 @@ args = argparser.parse_args()
 
 if args.dataset == "physics":
     ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_nested.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
     ]
@@ -106,8 +106,8 @@ question_answer = defaultdict(list)
 for item in answers:
     if item["gt_answer"] == "N/A" or item["method"] not in method_names:
         continue
-    if item["question_type"] != "nested_question_rephrased":
-        continue
+    # if item["question_type"] != "nested_question_rephrased":
+    #     continue
     question_answer[item["question"]].append(item)
 
 print(f"Number of questions: {len(question_answer)}")

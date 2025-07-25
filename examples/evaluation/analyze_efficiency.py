@@ -1,24 +1,33 @@
 import jsonlines
+import argparse
 from collections import defaultdict
 
 
-# ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased_final.jsonl",
-# ]
+argparser = argparse.ArgumentParser()
+argparser.add_argument("--dataset", type=str, default="physics", required=True)
+argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=False)
+args = argparser.parse_args()
 
-# ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-#     "/home/ubuntu/fast-graphrag/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-#     "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased_final.jsonl",
-# ]
-
-ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
-    "/home/ubuntu/fast-graphrag/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
-    "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased_final.jsonl",
-]
+if args.dataset == "physics":
+    ANSWER_PATH = [
+        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
+    ]
+elif args.dataset == "amazon":
+    ANSWER_PATH = [
+        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
+    ]
+elif args.dataset == "goodreads":
+    ANSWER_PATH = [
+        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
+    ]
+else:
+    raise ValueError(f"Unknown dataset: {args.dataset}")
 
 
 answers = []
