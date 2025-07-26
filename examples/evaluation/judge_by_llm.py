@@ -38,18 +38,18 @@ if args.dataset == "physics":
     OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/judgements_rephrased.jsonl"
 elif args.dataset == "amazon":
     ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased_sp*_nested.jsonl",
         f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/judgements_rephrased.jsonl"
+    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/judgements_rephrased_sp*_nested.jsonl"
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased_sp*_nested.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/judgements_rephrased_sp*_nested.jsonl"
+    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/judgements_rephrased.jsonl"
 else:
     raise ValueError(f"Unknown dataset: {args.dataset}")
 

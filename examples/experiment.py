@@ -278,16 +278,16 @@ def adaptive(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_rephrased_sp*_nested.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_rephrased_s**.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
     question_types = [
-        # "single_entity_abstract_rephrased",
-        "single_entity_concrete_rephrased",
+        "single_entity_abstract_rephrased",
+        # "single_entity_concrete_rephrased",
         # "multi_entity_abstract_rephrased",
         # "multi_entity_concrete_rephrased",
-        "nested_question_rephrased",
+        # "nested_question_rephrased",
     ]
     for question_type in question_types:
         contents = []
