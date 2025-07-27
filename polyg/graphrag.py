@@ -14,6 +14,7 @@ from .prompt import (
     PHYSICS_GRAPH_SCHEMA,
     AMAZON_GRAPH_SCHEMA,
     GOODREADS_GRAPH_SCHEMA,
+    WEBQSP_GRAPH_SCHEMA,
 )
 from ._utils import num_tokens
 
@@ -395,6 +396,8 @@ class GraphRAG:
             graph_schema = AMAZON_GRAPH_SCHEMA
         elif "goodreads" in self.working_dir:
             graph_schema = GOODREADS_GRAPH_SCHEMA
+        elif "webqsp" in self.working_dir:
+            graph_schema = WEBQSP_GRAPH_SCHEMA
         else:
             raise NotImplementedError
 

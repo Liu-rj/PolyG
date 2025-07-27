@@ -37,6 +37,7 @@ from .prompt import (
     PHYSICS_GRAPH_SCHEMA,
     GOODREADS_GRAPH_SCHEMA,
     AMAZON_GRAPH_SCHEMA,
+    WEBQSP_GRAPH_SCHEMA,
 )
 
 
@@ -1134,6 +1135,8 @@ async def cypher_only(
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
     elif "goodreads" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
+    elif "webqsp" in global_config["working_dir"]:
+        sys_prompt = sys_prompt.format(graph_schema=WEBQSP_GRAPH_SCHEMA)
     else:
         raise NotImplementedError
 
@@ -1231,6 +1234,8 @@ async def guided_walk(
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
     elif "goodreads" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
+    elif "webqsp" in global_config["working_dir"]:
+        sys_prompt = sys_prompt.format(graph_schema=WEBQSP_GRAPH_SCHEMA)
     else:
         raise NotImplementedError
 
