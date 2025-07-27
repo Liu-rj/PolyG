@@ -38,11 +38,11 @@ if args.dataset == "physics":
     OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/judgements_rephrased.jsonl"
 elif args.dataset == "amazon":
     ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased_sp*_nested.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
     ]
-    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/judgements_rephrased_sp*_nested.jsonl"
+    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/judgements_rephrased.jsonl"
 elif args.dataset == "goodreads":
     ANSWER_PATH = [
         f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
@@ -222,10 +222,10 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 question_types = [
-    # "single_entity_abstract_rephrased",
+    "single_entity_abstract_rephrased",
     "single_entity_concrete_rephrased",
-    # "multi_entity_abstract_rephrased",
-    # "multi_entity_concrete_rephrased",
+    "multi_entity_abstract_rephrased",
+    "multi_entity_concrete_rephrased",
     "nested_question_rephrased",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
