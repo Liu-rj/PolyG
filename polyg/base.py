@@ -155,7 +155,7 @@ class BaseGraphStorage(StorageNameSpace):
 
     async def get_node_edges(
         self, source_node_id: str
-    ) -> Union[list[tuple[str, str]], None]:
+    ) -> Union[list[tuple[str, str, str]], None]:
         raise NotImplementedError
 
     async def upsert_node(self, node_id: str, node_data: dict[str, str]):

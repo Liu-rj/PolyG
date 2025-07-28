@@ -1,6 +1,7 @@
 import numpy as np
 import jsonlines
 from collections import defaultdict
+from polyg.prompt import PROMPTS
 
 
 ANSWER_PATH = [
@@ -54,8 +55,8 @@ for question_type, qa_pairs in question_answer.items():
         failures = 0
         for it, item in enumerate(items):
             if (
-                item["model_answer"]
-                == "Sorry, I'm not able to provide an answer to that question."
+                item["model_answer"] == PROMPTS["fail_response"]
+                or item["model_answer"] == PROMPTS["token_limit_exceeded"]
             ):
                 failures += 1
         failure_rate = round(failures / len(items), 4)

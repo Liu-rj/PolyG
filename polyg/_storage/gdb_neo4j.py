@@ -166,16 +166,16 @@ class Neo4jStorage(BaseGraphStorage):
 
     async def get_node_edges(
         self, source_node_id: str
-    ) -> Union[list[tuple[str, str]], None]:
+    ) -> Union[list[tuple[str, str, str]], None]:
         async with self.async_driver.session() as session:
             result = await session.run(
-                f"MATCH (s:{self.namespace})-[r]->(t:{self.namespace}) WHERE s.id = $source_id "
-                "RETURN s.id AS source, t.id AS target",
+                f"MATCH (s:{self.namespace})-[r]-(t:{self.namespace}) WHERE s.id = $source_id "
+                "RETURN s.id AS source, t.id AS target, Type(r) AS relation",
                 source_id=source_node_id,
             )
             edges = []
             async for record in result:
-                edges.append((record["source"], record["target"]))
+                edges.append((record["source"], record["target"], record["relation"]))
             return edges
 
     async def upsert_node(self, node_id: str, node_data: dict[str, str]):
@@ -422,6 +422,7 @@ class Neo4jStorage(BaseGraphStorage):
     async def exec_query_and_get_path(self, query: str):
         paths = []
         nodes = []
+        dests = []
 
         async with self.async_driver.session() as session:
             try:
@@ -435,6 +436,9 @@ class Neo4jStorage(BaseGraphStorage):
 
                         # Process nodes and relationships in the path
                         for i, node in enumerate(path.nodes):
+                            if i == len(path.nodes) - 1:
+                                dests.append(node)
+
                             nodes.append(node)  # Add node
                             path_repr.append(node["name"])  # Add node name
                             if i < len(path.relationships):
@@ -447,7 +451,7 @@ class Neo4jStorage(BaseGraphStorage):
                 print(f"Error executing query: {e}")
                 return None, None
 
-            return paths, nodes
+            return paths, nodes, dests
 
     async def all_shortest_paths(self, source: str, target: str) -> list[list[str]]:
         paths = []

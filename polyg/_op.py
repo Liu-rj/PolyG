@@ -37,8 +37,24 @@ from .prompt import (
     PHYSICS_GRAPH_SCHEMA,
     GOODREADS_GRAPH_SCHEMA,
     AMAZON_GRAPH_SCHEMA,
-    WEBQSP_GRAPH_SCHEMA,
+    FREEBASE_GRAPH_SCHEMA,
 )
+
+
+ALL_CONTEXT = """
+-----Entities-----
+```csv
+{entities_context}
+```
+
+-----Relationships-----
+```csv
+{relations_context}
+```
+
+-----Reasoning Path-----
+{reasoning_path_context}
+"""
 
 
 def chunking_by_token_size(
@@ -987,16 +1003,11 @@ async def _build_local_query_context(
         node_datas, use_relations, query_param
     )
 
-    return f"""
------Entities-----
-```csv
-{entities_context}
-```
------Relationships-----
-```csv
-{relations_context}
-```
-"""
+    return ALL_CONTEXT.format(
+        entities_context=entities_context,
+        relations_context=relations_context,
+        reasoning_path_context="",
+    )
 
 
 async def local_query(
@@ -1044,7 +1055,7 @@ async def local_query(
         logger.error(
             f"Context length {form_response_tokens} exceeds the limit {global_config['model_max_token_size']}"
         )
-        return PROMPTS["fail_response"], 0, 0, "N/A"
+        return PROMPTS["token_limit_exceeded"], 0, 0, "N/A"
 
     tic = time.time()
     response = await use_model_func(
@@ -1104,16 +1115,11 @@ async def build_cypher_only_context(
         node_datas, all_edges_data, query_param
     )
 
-    return f"""
------Entities-----
-```csv
-{entities_context}
-```
------Relationships-----
-```csv
-{relations_context}
-```
-"""
+    return ALL_CONTEXT.format(
+        entities_context=entities_context,
+        relations_context=relations_context,
+        reasoning_path_context="",
+    )
 
 
 async def cypher_only(
@@ -1135,8 +1141,14 @@ async def cypher_only(
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
     elif "goodreads" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
-    elif "webqsp" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=WEBQSP_GRAPH_SCHEMA)
+    elif (
+        "webqsp" in global_config["working_dir"]
+        or "cwq" in global_config["working_dir"]
+    ):
+        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
+            schema=global_config["graph_schema"]
+        )
+        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
     else:
         raise NotImplementedError
 
@@ -1203,7 +1215,7 @@ async def cypher_only(
         logger.error(
             f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
         )
-        return PROMPTS["fail_response"], token_len, 1, "N/A"
+        return PROMPTS["token_limit_exceeded"], token_len, 1, "N/A"
 
     tic = time.time()
     response = await use_model_func(
@@ -1234,8 +1246,14 @@ async def guided_walk(
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
     elif "goodreads" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
-    elif "webqsp" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=WEBQSP_GRAPH_SCHEMA)
+    elif (
+        "webqsp" in global_config["working_dir"]
+        or "cwq" in global_config["working_dir"]
+    ):
+        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
+            schema=global_config["graph_schema"]
+        )
+        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
     else:
         raise NotImplementedError
 
@@ -1261,10 +1279,14 @@ async def guided_walk(
             print("Generated cypher query:", cypher_query)
 
             tic = time.time()
-            results = await kg_inst.exec_query(cypher_query)
-            if results is None:
+            p_context, nodes, dests = await kg_inst.exec_query_and_get_path(
+                cypher_query
+            )
+            if p_context is None:
                 return PROMPTS["fail_response"], token_len, 1, "N/A"
-            ret_ids = [r["id"] for r in results]
+            ret_names = set([d["name"] for d in dests])
+            for node in nodes:
+                id_mapping[node["name"]] = node["id"]
             print(f"Query execution time: {time.time() - tic:.2f}s")
 
             break
@@ -1280,37 +1302,58 @@ async def guided_walk(
                 ]
             )
 
-    try:
-        tic = time.time()
-        entry_ids = list(id_mapping.values())
-        ret_ids = entry_ids + ret_ids
-        node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in ret_ids])
-        for item in node_datas:
-            id_mapping[item["name"]] = item["id"]
-        ret_names = [n["name"] for n in node_datas[len(entry_ids) :]]
-        if not all([n is not None for n in node_datas]):
-            logger.warning("Some nodes are missing, maybe the storage is damaged")
-        print(f"Get node data time: {time.time() - tic:.2f}s")
+    related_edges = []
+    if (
+        "webqsp" in global_config["working_dir"]
+        or "cwq" in global_config["working_dir"]
+    ):
+        rets = await asyncio.gather(*[kg_inst.get_node_edges(d["id"]) for d in dests])
+        for edge_list in rets:
+            related_edges.extend(edge_list)
+        nodes.extend(
+            await asyncio.gather(*[kg_inst.get_node(e[1]) for e in related_edges])
+        )
 
-        keys = ["name", "node_type", "description"]
+    try:
+        keys = ["id", "name", "node_type", "description"]
         entity_header = ",\t".join(
             [f"{enclose_string_with_quotes(data)}" for data in keys]
         )
         entites_section_list = [entity_header]
-        for i, n in enumerate(node_datas):
+        for i, n in enumerate(nodes):
             raw_data = [n.get(k, "UNKNOWN") for k in keys]
             entites_section_list.append(
                 ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
             )
         entities_context = list_to_csv(entites_section_list)
+
+        relation_header = ",\t".join(
+            [
+                f"{enclose_string_with_quotes(data)}"
+                for data in ["id", "source", "target", "relation"]
+            ]
+        )
+        relations_section_list = [relation_header]
+        for i, e in enumerate(related_edges):
+            raw_data = [i, e[0], e[1], e[2]]
+            relations_section_list.append(
+                ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+            )
+        relations_context = list_to_csv(relations_section_list)
     except Exception as e:
         print(f"Error: {e}")
         return PROMPTS["fail_response"], token_len, 1, "N/A"
 
+    all_context = ALL_CONTEXT.format(
+        entities_context=entities_context,
+        relations_context=relations_context,
+        reasoning_path_context=p_context,
+    )
+
     tic = time.time()
-    sys_prompt_temp = PROMPTS["cypher_answer_summary"]
+    sys_prompt_temp = PROMPTS["local_rag_response"]
     sys_prompt = sys_prompt_temp.format(
-        context_data=entities_context, response_type=query_param.response_type
+        context_data=all_context, response_type=query_param.response_type
     )
     print(f"Form prompt time: {time.time() - tic:.2f}s")
 
@@ -1320,15 +1363,15 @@ async def guided_walk(
         logger.error(
             f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
         )
-        return PROMPTS["fail_response"], token_len, 1, "N/A"
+        return PROMPTS["token_limit_exceeded"], token_len, 1, "N/A"
 
     tic = time.time()
-    response = await use_model_func(
+    final_response = await use_model_func(
         query,
         system_prompt=sys_prompt,
     )
     print(f"LLM generate time: {time.time() - tic:.2f}s")
-    return response, token_len + form_reponse_tokens, 2, ", ".join(ret_names)
+    return final_response, token_len + form_reponse_tokens, 2, ", ".join(ret_names)
 
 
 async def topk_csp(
@@ -1344,18 +1387,21 @@ async def topk_csp(
     use_model_func = global_config["model_func"]
 
     tic = time.time()
+    sys_prompt = PROMPTS["cypher_path_search_prompt"]
     if "Physics" in global_config["working_dir"]:
-        sys_prompt = PROMPTS["cypher_path_search_prompt_physics"].format(
-            graph_schema=PHYSICS_GRAPH_SCHEMA
-        )
+        sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
     elif "amazon" in global_config["working_dir"]:
-        sys_prompt = PROMPTS["cypher_path_search_prompt_amazon"].format(
-            graph_schema=AMAZON_GRAPH_SCHEMA
-        )
+        sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
     elif "goodreads" in global_config["working_dir"]:
-        sys_prompt = PROMPTS["cypher_path_search_prompt_goodreads"].format(
-            graph_schema=GOODREADS_GRAPH_SCHEMA
+        sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
+    elif (
+        "webqsp" in global_config["working_dir"]
+        or "cwq" in global_config["working_dir"]
+    ):
+        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
+            schema=global_config["graph_schema"]
         )
+        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
     else:
         raise NotImplementedError
 
@@ -1381,8 +1427,8 @@ async def topk_csp(
             print("Generated cypher query:", cypher_query)
 
             tic = time.time()
-            context, nodes = await kg_inst.exec_query_and_get_path(cypher_query)
-            if context is None:
+            p_context, nodes, _ = await kg_inst.exec_query_and_get_path(cypher_query)
+            if p_context is None:
                 return PROMPTS["fail_response"], token_len, 1, "N/A"
             for node in nodes:
                 id_mapping[node["name"]] = node["id"]
@@ -1401,10 +1447,32 @@ async def topk_csp(
                 ]
             )
 
+    try:
+        keys = ["name", "node_type", "description"]
+        entity_header = ",\t".join(
+            [f"{enclose_string_with_quotes(data)}" for data in keys]
+        )
+        entites_section_list = [entity_header]
+        for i, n in enumerate(nodes):
+            raw_data = [n.get(k, "UNKNOWN") for k in keys]
+            entites_section_list.append(
+                ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+            )
+        entities_context = list_to_csv(entites_section_list)
+    except Exception as e:
+        print(f"Error: {e}")
+        return PROMPTS["fail_response"], token_len, 1, "N/A"
+
+    all_context = ALL_CONTEXT.format(
+        entities_context=entities_context,
+        relations_context="",
+        reasoning_path_context=p_context,
+    )
+
     tic = time.time()
     sys_prompt_temp = PROMPTS["local_rag_response"]
     sys_prompt = sys_prompt_temp.format(
-        context_data=context, response_type=query_param.response_type
+        context_data=all_context, response_type=query_param.response_type
     )
     print(f"Form prompt time: {time.time() - tic:.2f}s")
 
@@ -1414,7 +1482,7 @@ async def topk_csp(
         logger.error(
             f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
         )
-        return PROMPTS["fail_response"], token_len, 1, "N/A"
+        return PROMPTS["token_limit_exceeded"], token_len, 1, "N/A"
 
     tic = time.time()
     final_response = await use_model_func(

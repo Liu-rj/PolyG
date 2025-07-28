@@ -1,6 +1,6 @@
 """
 Reference:
- - Some Prompts are from [graphrag](https://github.com/microsoft/graphrag) and [nano-graphrag](https://github.com/gusye1234/nano-graphrag)
+ - Some Prompts are based on [graphrag](https://github.com/microsoft/graphrag) and [nano-graphrag](https://github.com/gusye1234/nano-graphrag)
 """
 
 PHYSICS_GRAPH_SCHEMA = """
@@ -82,7 +82,7 @@ Graph indentifier:
 Add the identification label "amazon" to the entities in the cypher query, for example, ":amazon:items" (same for other types of entities).
 """
 
-WEBQSP_GRAPH_SCHEMA = """
+FREEBASE_GRAPH_SCHEMA = """
 Definition of the graph:
 This knowledge graph is a subgraph extracted from freebase, there are many types of relations connecting the nodes.
 
@@ -91,261 +91,7 @@ Node properties:
 
 Edge properties:
 In freebase, nodes are linked to each other through various relations and domains. Specific relation types are:
-1. book_written_work_subjects
-2. government_national_anthem_national_anthem_of
-3. common_webpage_resource
-4. location_statistical_region_gender_balance_members_of_parliament
-5. olympics_olympic_medal_honor_medal
-6. sports_competitor_country_relationship_sports
-7. location_partial_containment_relationship_partially_contained_by
-8. organization_organization_scope_organizations_with_this_scope
-9. olympics_olympic_athlete_affiliation_sport
-10. location_statistical_region_gross_savings_as_percent_of_gdp
-11. location_administrative_division_capital
-12. location_statistical_region_diesel_price_liter
-13. olympics_olympic_medal_honor_medalist
-14. common_topic_notable_for
-15. government_government_office_or_title_office_holders
-16. symbols_flag_used_by
-17. organization_organization_founder_organizations_founded
-18. location_statistical_region_gni_per_capita_in_ppp_dollars
-19. location_location_partially_contains
-20. base_aareas_schema_administrative_area_subdividing_type
-21. people_person_nationality
-22. film_film_location_featured_in_films
-23. government_government_position_held_office_position_or_title
-24. base_popstra_celebrity_vacations_in
-25. location_statistical_region_poverty_rate_2dollars_per_day
-26. type_type_expected_by
-27. government_government_office_or_title_category
-28. government_national_anthem_of_a_country_anthem
-29. location_country_currency_used
-30. time_event_included_in_event
-31. sports_competitor_country_relationship_competitor
-32. organization_organization_membership_member
-33. business_employment_tenure_company
-34. meteorology_cyclone_affected_area_cyclones
-35. government_governmental_jurisdiction_governing_officials
-36. sports_competitor_competition_relationship_competition
-37. sports_sports_team_sport
-38. symbols_name_source_namesakes
-39. sports_sport_country_athletes
-40. location_country_administrative_divisions
-41. location_statistical_region_net_migration
-42. olympics_olympic_sport_athletes
-43. award_award_presented_by
-44. meteorology_tropical_cyclone_tropical_cyclone_season
-45. people_person_employment_history
-46. measurement_unit_dated_percentage_source
-47. type_property_schema
-48. base_ontologies_ontology_instance_mapping_freebase_topic
-49. location_location_nearby_airports
-50. symbols_flag_use_flag_user
-51. location_location_geolocation
-52. olympics_olympic_medal_honor_country
-53. sports_tournament_event_competitor_events_competed_in
-54. base_locations_countries_continent
-55. location_location_containedby
-56. location_statistical_region_foreign_direct_investment_net_inflows
-57. government_government_position_held_office_holder
-58. sports_tournament_event_competition_competitors
-59. government_form_of_government_countries
-60. government_politician_government_positions_held
-61. sports_sport_country_athletic_performances
-62. location_country_official_language
-63. location_statistical_region_deposit_interest_rate
-64. common_topic_webpage
-65. sports_multi_event_tournament_sports
-66. location_administrative_division_country
-67. base_popstra_vacation_choice_vacationer
-68. base_aareas_schema_administrative_area_type_subdivides_place
-69. government_government_position_held_basic_title
-70. base_ontologies_ontology_instance_mapping_ontology
-71. freebase_valuenotation_is_reviewed
-72. sports_tournament_team_tournaments_competed_in
-73. location_country_national_anthem
-74. location_statistical_region_part_time_employment_percent
-75. business_employment_tenure_person
-76. olympics_olympic_games_sports
-77. base_aareas_administrative_area_level_examples
-78. location_partial_containment_relationship_partially_contains
-79. base_culturalevent_event_entity_involved
-80. location_statistical_region_cpi_inflation_rate
-81. olympics_olympic_sport_olympic_games_contested
-82. organization_membership_organization_members
-83. sports_competitor_competition_relationship_tournament
-84. government_governmental_body_jurisdiction
-85. sports_competitor_competition_relationship_country
-86. meteorology_tropical_cyclone_affected_areas
-87. location_statistical_region_gdp_nominal_per_capita
-88. location_statistical_region_labor_participation_rate
-89. olympics_olympic_medal_honor_event
-90. fictional_universe_fictional_setting_fictional_characters_born_here
-91. people_person_languages
-92. award_award_presenting_organization_awards_presented
-93. government_government_agency_jurisdiction
-94. sports_sports_team_location
-95. government_government_position_held_jurisdiction_of_office
-96. food_beer_from_region
-97. common_webpage_in_index
-98. book_written_work_original_language
-99. location_administrative_division_capital_relationship_capital
-100. location_statistical_region_agriculture_as_percent_of_gdp
-101. base_aareas_schema_administrative_area_administrative_parent
-102. location_statistical_region_prevalence_of_undernourisment
-103. location_statistical_region_size_of_armed_forces
-104. common_topic_notable_types
-105. base_athletics_athletics_championships_competition_athlete_relationship_event
-106. book_written_work_author
-107. geography_river_basin_countries
-108. base_aareas_schema_administrative_area_administrative_area_type
-109. book_book_genre
-110. people_person_gender
-111. book_book_subject_works
-112. meteorology_tropical_cyclone_strongest_storm_of
-113. location_statistical_region_external_debt_stock
-114. sports_multi_event_tournament_athletic_performances
-115. measurement_unit_dated_kgoe_source
-116. freebase_type_profile_strict_included_types
-117. base_aareas_schema_administrative_area_type_iso_country
-118. government_governmental_body_body_this_is_a_component_of
-119. location_statistical_region_gdp_real
-120. location_statistical_region_official_development_assistance
-121. location_statistical_region_military_expenditure_percent_gdp
-122. location_location_partially_containedby
-123. language_human_language_countries_spoken_in
-124. location_statistical_region_child_labor_percent
-125. government_government_office_category_offices
-126. rdf_schema_domain
-127. location_statistical_region_merchandise_trade_percent_of_gdp
-128. common_resource_annotations
-129. location_country_form_of_government
-130. base_athletics_athletics_championships_competition_athlete_relationship_country
-131. base_athletics_track_and_field_athlete_championship_events_competed_in
-132. base_popstra_vacation_choice_location
-133. olympics_olympic_athlete_affiliation_olympics
-134. location_statistical_region_gni_in_ppp_dollars
-135. olympics_olympic_athlete_country
-136. aviation_airport_hub_for
-137. aviation_airport_serves
-138. symbols_flag_use_flag
-139. base_locations_continents_planet
-140. time_event_includes_event
-141. travel_tourist_attraction_near_travel_destination
-142. sports_competitor_country_relationship_country
-143. meteorology_tropical_cyclone_category
-144. freebase_valuenotation_has_value
-145. location_location_time_zones
-146. government_governmental_jurisdiction_agencies
-147. location_capital_of_administrative_division_capital_of
-148. type_property_expected_type
-149. olympics_olympic_athlete_medals_won
-150. location_administrative_division_capital_relationship_administrative_division
-151. sports_competitor_competition_relationship_medal
-152. symbols_namesake_named_after
-153. organization_organization_founders
-154. time_event_locations
-155. location_statistical_region_electricity_consumption_per_capita
-156. rdf_schema_range
-157. base_athletics_athletics_country_championships_athletes_performances
-158. location_statistical_region_brain_drain_percent
-159. language_human_language_region
-160. food_beer_brewery_brand
-161. royalty_monarch_kingdom
-162. base_athletics_athletics_championships_competition_athlete_relationship_athlete_s
-163. location_location_partially_contained_by
-164. location_statistical_region_internet_users_percent_population
-165. common_topic_article
-166. olympics_olympic_games_participating_countries
-167. sports_sport_teams
-168. sports_competitor_competition_relationship_competitors
-169. film_film_language
-170. location_statistical_region_energy_use_per_capita
-171. sports_multi_event_tournament_competitions
-172. geography_river_origin
-173. common_webpage_category
-174. location_country_languages_spoken
-175. royalty_kingdom_rulers
-176. sports_competitor_competition_relationship_team
-177. base_aareas_schema_administrative_area_administrative_children
-178. sports_multi_event_tournament_participating_countries
-179. government_national_anthem_of_a_country_country
-180. finance_currency_countries_used
-181. measurement_unit_adjusted_money_value_source
-182. location_statistical_region_gdp_growth_rate
-183. freebase_valuenotation_has_no_value
-184. base_locations_continents_countries_within
-185. organization_organization_membership_organization
-186. location_location_people_born_here
-187. fictional_universe_fictional_character_gender
-188. location_administrative_division_first_level_division_of
-189. base_athletics_athletics_championships_competition_athlete_relationship_championships
-190. measurement_unit_dated_kilowatt_hour_source
-191. travel_travel_destination_tourist_attractions
-192. location_statistical_region_health_expenditure_as_percent_of_gdp
-193. location_statistical_region_literacy_rate
-194. olympics_olympic_medal_honor_olympics
-195. olympics_olympic_event_competition_medalists
-196. organization_organization_member_member_of
-197. base_athletics_athletics_championships_competition_athlete_relationship_medal
-198. fictional_universe_fictional_character_place_of_birth
-199. base_athletics_athletics_championships_competition_competitors
-200. sports_multi_event_tournament_competitors
-201. location_statistical_region_co2_emissions_per_capita
-202. location_country_first_level_divisions
-203. common_webpage_topic
-204. location_statistical_region_debt_service_as_percent_of_trade_volume
-205. base_popstra_location_vacationers
-206. common_image_appears_in_topic_gallery
-207. people_deceased_person_place_of_death
-208. sports_tournament_event_competitor_country
-209. measurement_unit_dated_money_value_source
-210. base_ontologies_ontology_instance_equivalent_instances
-211. location_country_currency_formerly_used
-212. government_governmental_jurisdiction_government_bodies
-213. type_type_properties
-214. aviation_airport_focus_city_for
-215. symbols_flag_referent_flag
-216. base_schemastaging_context_name_pronunciation
-217. freebase_type_hints_included_types
-218. location_statistical_region_time_required_to_start_a_business
-219. location_location_contains
-220. olympics_olympic_athlete_affiliation_athlete
-221. olympics_olympic_event_competition_olympic_games_contested
-222. location_statistical_region_high_tech_as_percent_of_manufactured_exports
-223. location_location_events
-224. sports_sport_country_multi_event_tournaments_participated_in
-225. business_employer_employees
-226. measurement_unit_dated_money_value_currency
-227. location_statistical_region_renewable_freshwater_per_capita
-228. common_topic_image
-229. location_statistical_region_market_cap_of_listed_companies_as_percent_of_gdp
-230. location_location_partiallycontains
-231. base_athletics_athletics_medal_medal_winners
-232. location_country_capital
-233. sports_competitor_country_relationship_tournament
-234. common_image_size
-235. olympics_olympic_participating_country_athletes
-236. olympics_olympic_athlete_affiliation_country
-237. location_country_internet_tld
-238. sports_sports_team_location_teams
-239. people_person_place_of_birth
-240. olympics_olympic_participating_country_medals_won
-241. organization_organization_geographic_scope
-242. music_composition_language
-243. film_film_featured_film_locations
-244. measurement_unit_adjusted_money_value_adjustment_currency
-245. base_locations_planets_continents_within
-246. location_statistical_region_consumer_price_index
-247. sports_tournament_event_competition_tournament
-248. location_statistical_region_trade_balance_as_percent_of_gdp
-249. food_beer_country_region_beers_from_here
-250. measurement_unit_dated_metric_ton_source
-251. government_governmental_body_component_bodies
-252. olympics_olympic_participating_country_olympics_participated_in
-253. book_author_works_written
-254. location_statistical_region_long_term_unemployment_rate
-255. finance_currency_countries_formerly_used
+{schema}
 
 Graph indentifier:
 Add the identification label "webqsp" to the entities in the cypher query, for example, ":webqsp:node" for the entities in the graph.
@@ -456,7 +202,7 @@ Do not include information where the supporting evidence for it is not provided.
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Return the unique ids of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query.
+4. Return the whole paths of retrieved entities and relations, starting from the input entity to the answer entity, using `MATCH path = (start)-[relation]->...->(end)` and `RETURN path` in the cypher query.
 
 5. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 
@@ -468,7 +214,7 @@ Your cypher query here
 
 
 PROMPTS[
-    "cypher_path_search_prompt_physics"
+    "cypher_path_search_prompt"
 ] = """---Role---
 
 You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
@@ -479,8 +225,8 @@ You will be provided with the knowledge graph schema, which indicates the types 
 
 User questions are about relationships between nodes which can be indirect and result in multi-hop relation paths. User questions may include a relation constraint that indicates some specific paths.
 
-An example:
-User question is "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of paper reference?". In this case, the user is asking about the paths between two authors that is constraint to paper references and citations.
+Examples:
+1. User question: "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of paper reference?". In this case, the user is asking about the paths between two authors that is constraint to paper references and citations.
 Suppose the "id" of 'J. Koll' and 'Z. Staykova' is 'id1' and 'id2', and the cypher query for this question is (where only paths that contains reference and citation relations should be considered):
 ```cypher
 MATCH path = (author1:author {{id: 'id1'}})-[:paper]->(paper1:paper)-[:reference|cited_by]->(paper2:paper)-[:author]->(author2:author {{id: 'id2'}})
@@ -488,55 +234,7 @@ RETURN path
 LIMIT 10
 ```
 
----Goal---
-
-Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph. Also give the cypher query that can be executed on the graph to get the answer.
-
-If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
-
-Do not include information where the supporting evidence for it is not provided.
-
----Graph Schema---
-
-{graph_schema}
-
----Notes---
-
-1. Add the identification label in the generated cypher query as instructed in the graph schema section to ensure the cypher query inquires about the right graph.
-
-2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
-
-3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
-For example, correct cypher query should first "MATCH path" then "RETURN path".
-Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:physics)" is fine.
-
-4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
-For example, just starting from "(:paper)-[:reference|cited_by]->(:paper)" for matching "paper reference" relations is good. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
-
-5. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
-
-6. Return the results in path format:
-```cypher
-RETURN path
-LIMIT 10
-```
-"""
-
-
-PROMPTS[
-    "cypher_path_search_prompt_goodreads"
-] = """---Role---
-
-You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
-
----Setting---
-
-You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
-
-User questions are about relationships between nodes which can be indirect and result in multi-hop relation paths. User questions may include a relation constraint that indicates some specific paths.
-
-An example:
-User question is "What is the relationship between authors 'A' and 'B' regarding collaborated books?". In this case, the user is asking about the paths between two authors that is constraint to books they have co-authored.
+2. User question: "What is the relationship between authors 'A' and 'B' regarding collaborated books?". In this case, the user is asking about the paths between two authors that is constraint to books they have co-authored.
 Suppose the "id"s of author 'A' and 'B' are 'id1' and 'id2', and the cypher query for this question is (where only paths that contains co-authored books should be considered):
 ```cypher
 MATCH path = (author1:author {{id: 'id1'}})-[:book]->(book1:book)-[:author]->(author2:author {{id: 'id2'}})
@@ -544,58 +242,10 @@ RETURN path
 LIMIT 10
 ```
 
----Goal---
-
-Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph. Also give the cypher query that can be executed on the graph to get the answer.
-
-If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
-
-Do not include information where the supporting evidence for it is not provided.
-
----Graph Schema---
-
-{graph_schema}
-
----Notes---
-
-1. Add the identification label in the generated cypher query as instructed in the graph schema section to ensure the cypher query inquires about the right graph.
-
-2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
-
-3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
-For example, correct cypher query should first "MATCH path" then "RETURN path".
-Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:goodreads)" is fine.
-
-4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for relation matching if we don't explicitly tell you to do so as it will take a long time.
-If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
-
-5. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
-
-6. Return the results in path format:
-```cypher
-RETURN path
-LIMIT 10
-```
-"""
-
-
-PROMPTS[
-    "cypher_path_search_prompt_amazon"
-] = """---Role---
-
-You are a helpful assistant that can generate trustful reasoning paths with the knowledge of the graph schema to answer the given user question.
-
----Setting---
-
-You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
-
-User questions are about relationships between nodes which can be indirect and result in multi-hop relation paths. User questions may include a relation constraint that indicates some specific paths.
-
-An example:
-User question is ""What is the relationship between items 'A' and 'B' regarding common brands?"". In this case, the user is asking about the paths between two items that is constraint to brands they both belong to.
+3. User question: ""What is the relationship between items 'A' and 'B' regarding common brands?"". In this case, the user is asking about the paths between two items that is constraint to brands they both belong to.
 Suppose the "id"s of the items 'A' and 'B' are 'id1' and 'id2', and the cypher query for this question is (where only paths that contains their belonging brands should be considered):
 ```cypher
-MATCH path = (item1:amazon:item {{id: 'id1'}})-[:brand]->(brand1:amazon:brand)-[:item]->(item2:amazon:item {{id: 'id2'}})
+MATCH path = (item1:item {{id: 'id1'}})-[:brand]->(brand1:brand)-[:item]->(item2:item {{id: 'id2'}})
 RETURN path
 LIMIT 10
 ```
@@ -618,12 +268,9 @@ Do not include information where the supporting evidence for it is not provided.
 
 2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute.
-For example, correct cypher query should first "MATCH path" then "RETURN path".
-Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. To match nodes with any type, just use "(:amazon)" is fine.
+3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute. For example, correct cypher query should first "MATCH path" then "RETURN path". Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels.
 
-4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time.
-If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
+4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time. For example, just starting from "(:paper)-[:reference|cited_by]->(:paper)" for matching "paper reference" relations is good. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
 
 5. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
 
@@ -633,6 +280,7 @@ RETURN path
 LIMIT 10
 ```
 """
+
 
 PROMPTS[
     "cypher_only_query"
@@ -676,6 +324,8 @@ Your cypher query here
 """
 
 PROMPTS["fail_response"] = "Sorry, I'm not able to provide an answer to that question."
+
+PROMPTS["token_limit_exceeded"] = "Content exceeds the token limit, please reduce the content size and try again."
 
 PROMPTS["error_retry"] = (
     "When processing your previous response, errors occurred which indicates that you have made a mistake. Please fix the error and generate the response again. The error is: {}."

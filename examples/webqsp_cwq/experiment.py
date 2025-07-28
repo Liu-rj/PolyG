@@ -1,15 +1,17 @@
 import os
 import logging
 import numpy as np
-import torch
+from datasets import load_dataset
 import boto3
 import argparse
 import jsonlines
-import time
+import networkx as nx
 from openai import OpenAI
 from polyg import GraphRAG, QueryParam
 from polyg._storage import HNSWVectorStorage, Neo4jStorage
 from polyg._utils import wrap_embedding_func_with_attrs
+from neo4j import GraphDatabase
+from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
 from typing import List, Tuple
 from dotenv import load_dotenv
@@ -39,23 +41,18 @@ argparser.add_argument(
     required=True,
 )
 argparser.add_argument(
-    "--data_dir", type=str, default="datasets/maple/Physics", required=True
-)
-argparser.add_argument(
-    "--benchmark_dir", type=str, default="benchmarks/physics", required=True
+    "--benchmark", type=str, default="webqsp", choices=["webqsp", "cwq"], required=True
 )
 args = argparser.parse_args()
 
-DATASET_DIR = args.data_dir
-WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
-RESULT_DIR = f"results/{DATASET_DIR.split('/')[-1]}/{args.model}"
+WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{args.benchmark}"
+RESULT_DIR = f"results/{args.benchmark}/{args.model}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 90000
 MAX_OUTPUT_TOKENS = 5000
 
 print(
-    f"Dataset dir: {DATASET_DIR}",
-    f"Benchmark dir: {args.benchmark_dir}",
+    f"Benchmark: {args.benchmark}",
     f"Working dir: {WORKING_DIR}",
     f"Result dir: {RESULT_DIR}",
 )
@@ -70,6 +67,9 @@ neo4j_config = {
         os.environ.get("NEO4J_PASSWORD", "12345678"),
     ),
 }
+driver = GraphDatabase.driver(
+    neo4j_config["neo4j_url"], auth=neo4j_config["neo4j_auth"]
+)
 
 
 EMBEDDING_MODEL = SentenceTransformer(
@@ -277,50 +277,107 @@ def adaptive(question, id_mapping):
     )
 
 
+def build_graph(graph: list) -> nx.DiGraph:
+    G = nx.DiGraph()
+    for triplet in graph:
+        h, r, t = triplet
+        characters_to_replace = [".", "-", "#", " "]
+        for char in characters_to_replace:
+            r = r.replace(char, "_")
+        G.add_edge(h, t, relation=r.strip())
+    return G
+
+
+def upsert_to_neo4j(args: argparse.Namespace, nx_graph: nx.DiGraph):
+    with driver.session() as session:
+        # 1. Create Nodes
+        for node_id, properties in tqdm(nx_graph.nodes(data=True), ncols=100):
+            node_prop = {"name": node_id}
+            # Ensure a label is set for the node
+            query = (
+                f"MERGE (n:{args.benchmark}:node {{id: $node_id}})"
+                "SET n += $properties"
+            )
+            session.run(query, node_id=node_id, properties=node_prop)
+
+        # 2. Create Relationships
+        for u, v, properties in tqdm(nx_graph.edges(data=True), ncols=100):
+            # Ensure a relation is set
+            rel_type = properties["relation"]
+
+            query = (
+                f"MATCH (a:{args.benchmark}:node {{id: $source_id}})"
+                f"MATCH (b:{args.benchmark}:node {{id: $target_id}}) "
+                f"MERGE (a)-[r:{rel_type}]->(b) "  # Using MERGE to avoid duplicate relationships
+            )
+            session.run(query, source_id=u, target_id=v)
+
+    print("NetworkX graph successfully inserted into Neo4j.")
+
+
+def remove_from_neo4j(args: argparse.Namespace):
+    with driver.session() as session:
+        session.run(f"MATCH (n:{args.benchmark}:node) DETACH DELETE n")
+    print(f"All nodes and relations in the {args.benchmark} graph have been removed.")
+
+
+def extract_graph_schema(nx_graph: nx.DiGraph) -> str:
+    all_relation_types = set()
+    for u, v, properties in tqdm(nx_graph.edges(data=True), ncols=100):
+        rel_type = properties["relation"]  # Default if not in properties
+        all_relation_types.add(rel_type)
+
+    print("Number of relation types:", len(all_relation_types))
+    schema = ""
+    for i, rel_type in enumerate(all_relation_types):
+        schema += f"{i + 1}. {rel_type}\n"
+
+    return schema
+
+
 if __name__ == "__main__":
+    remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+
     output_file = os.path.join(RESULT_DIR, "results_rephrased.jsonl")
-    # if os.path.exists(output_file):
-    #     os.remove(output_file)
 
-    question_types = [
-        "single_entity_abstract_rephrased",
-        "single_entity_concrete_rephrased",
-        "multi_entity_abstract_rephrased",
-        "multi_entity_concrete_rephrased",
-        "nested_question_rephrased",
-    ]
-    for question_type in question_types:
-        contents = []
-        with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
-            for item in jsonlines.Reader(f):
-                contents.append(item)
+    dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
-        for item in contents:
-            results = []
-            question, id_mapping = item["question"], item["entity"]
+    for sample in dataset:
+        question = sample["question"]
+        nx_graph = build_graph(sample["graph"])
+        id_mapping = {}
+        for entity in sample["q_entity"]:
+            id_mapping[entity] = entity
+        upsert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
+        rag.graph_schema = extract_graph_schema(nx_graph)  # Extract schema if needed
 
-            results.append(adaptive(question, id_mapping.copy()))
-            results.append(BFS(question, id_mapping.copy()))
-            results.append(cypher_single_entity(question, id_mapping.copy()))
-            results.append(cypher_only(question, id_mapping.copy()))
+        results = []
+        results.append(adaptive(question, id_mapping.copy()))
+        # results.append(BFS(question, id_mapping.copy()))
+        # results.append(cypher_single_entity(question, id_mapping.copy()))
+        # results.append(cypher_only(question, id_mapping.copy()))
 
-            result_entrees = []
-            for result in results:
-                result_entree = {
-                    "question_type": question_type,
-                    "question": question,
-                    "method": result[0],
-                    "model_answer": result[1],
-                    "duration": round(result[2], 2),
-                    "token_count": result[3],
-                    "api_calls": result[4],
-                    "answer_list": result[5],
-                    "gt_answer": item["answer"],
-                }
-                if len(result) > 6:
-                    result_entree["question_classification_result"] = result[6]
-                result_entrees.append(result_entree)
-                print(result_entree)
+        result_entrees = []
+        for result in results:
+            result_entree = {
+                "question_type": args.benchmark,
+                "question": question,
+                "method": result[0],
+                "model_answer": result[1],
+                "duration": round(result[2], 2),
+                "token_count": result[3],
+                "api_calls": result[4],
+                "answer_list": result[5],
+                "gt_answer": sample["a_entity"],
+            }
+            if len(result) > 6:
+                result_entree["question_classification_result"] = result[6]
+            result_entrees.append(result_entree)
+            print(result_entree)
 
-            with jsonlines.open(output_file, "a") as writer:
-                writer.write_all(result_entrees)
+        remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+
+        with jsonlines.open(output_file, "a") as writer:
+            writer.write_all(result_entrees)
+
+    driver.close()

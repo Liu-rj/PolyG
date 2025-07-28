@@ -14,7 +14,7 @@ from .prompt import (
     PHYSICS_GRAPH_SCHEMA,
     AMAZON_GRAPH_SCHEMA,
     GOODREADS_GRAPH_SCHEMA,
-    WEBQSP_GRAPH_SCHEMA,
+    FREEBASE_GRAPH_SCHEMA,
 )
 from ._utils import num_tokens
 
@@ -92,6 +92,9 @@ class GraphRAG:
     graph_cluster_algorithm: str = "leiden"
     max_graph_cluster_size: int = 10
     graph_cluster_seed: int = 0xDEADBEEF
+
+    # graph schema
+    graph_schema: str = "null"
 
     # node embedding
     node_embedding_algorithm: str = "node2vec"
@@ -396,8 +399,8 @@ class GraphRAG:
             graph_schema = AMAZON_GRAPH_SCHEMA
         elif "goodreads" in self.working_dir:
             graph_schema = GOODREADS_GRAPH_SCHEMA
-        elif "webqsp" in self.working_dir:
-            graph_schema = WEBQSP_GRAPH_SCHEMA
+        elif "webqsp" in self.working_dir or "cwq" in self.working_dir:
+            graph_schema = FREEBASE_GRAPH_SCHEMA.format(schema=self.graph_schema)
         else:
             raise NotImplementedError
 
