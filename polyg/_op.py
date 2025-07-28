@@ -823,7 +823,7 @@ async def _find_most_related_edges_from_entities(
                 *[kg_inst.get_node_edges(node_id) for node_id in all_nodes]
             )
             for this_edges in related_edges:
-                all_edges.update([tuple(sorted(e)) for e in this_edges])
+                all_edges.update([tuple(sorted(e[0:2])) for e in this_edges])
                 all_nodes.update([e[1] for e in this_edges])
             print(f"Number of nodes: {len(all_nodes)}")
         all_edges = list(all_edges)
