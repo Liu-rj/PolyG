@@ -84,7 +84,7 @@ Ground Truth Answers:
 Responses:
 {answer}
 
-Evaluate the above responses using the three criteria and provide detailed explanations for each criterion.
+Evaluate the above responses using the three criteria and provide detailed explanations for each criterion. Be sure to output the method names not just "Answer 1", "Answer 2", etc.
 
 Output your evaluation in the following JSON format (wrap the JSON in triple backticks):
 
@@ -138,7 +138,7 @@ Question:
 Responses:
 {answer}
 
-Evaluate the above responses using the three criteria and provide detailed explanations for each criterion.
+Evaluate the above responses using the three criteria and provide detailed explanations for each criterion.  Be sure to output the method names not just "Answer 1", "Answer 2", etc.
 
 Output your evaluation in the following JSON format (wrap the JSON in triple backticks):
 
