@@ -461,7 +461,7 @@ class Neo4jStorage(BaseGraphStorage):
                 async with transaction_context(session, timeout=60) as tx:
                     results = await tx.run(
                         f"""
-                        MATCH p = SHORTEST 10 (s:{self.namespace} {{id: $source_id}})
+                        MATCH p = SHORTEST 20 (s:{self.namespace} {{id: $source_id}})
                         -[*]->(t:{self.namespace} {{id: $target_id}})
                         RETURN [n in nodes(p) | n.id] AS path
                         """,

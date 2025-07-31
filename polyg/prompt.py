@@ -104,29 +104,50 @@ PROMPTS[
     "local_rag_response"
 ] = """---Role---
 
-You are a helpful assistant responding to questions about data in the tables provided.
+You are a helpful assistant responding to user questions.
 
 ---Setting---
 
-The data tables may appear in one of the two forms:
-1. Two tables are provided: one being the entity node and one being the edge relationship.
+You will be provided with some helpful references. The provided reference data tables may appear in the following forms:
+1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths.
 2. Multiple reasoning paths are provided, indicating relations between entities.
 
-Questions can be about node inquiries or relations between nodes.
-
-Entities in the question may not have direct relationship and answering the question will need to consider multi-hop relations.
+Questions can be about node inquiries or relations between nodes. Entities in the question may not have direct relationship and answering the question will need to consider multi-hop relations.
 
 ---Goal---
 
-Generate a response to the user's question following the given target length and format, only based on relevant information in the provided data tables.
+Generate a response to the user's question following the given target length and format.
 
-Users may not see the provided data tables, so provied necessary evidence in your response.
+Note:
+1. Users may not see the provided data tables, so provide necessary evidence in your response.
+2. If you don't know the answer, just say so. Do not make anything up.
 
-If you don't know the answer, just say so. Do not make anything up.
+---Target response length and format---
 
-Do not include information where the supporting evidence for it is not provided.
+{response_type}
 
-Note: In your reponses, keep the name of entities as they are, do not change them in any way.
+---Data tables---
+
+{context_data}
+"""
+
+PROMPTS[
+    "guided_walk_response"
+] = """---Role---
+
+You are a helpful assistant responding to user questions.
+
+---Setting---
+
+You will be provided with some helpful references. The provided reference data tables may appear in the following forms:
+1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths.
+2. Multiple reasoning paths are provided, indicating relations between entities.
+
+---Goal---
+
+Generate a response to the user's question following the given target length and format.
+
+If the reference tables do not provide sufficient evidence, use your internal knowledge to answer the question.
 
 ---Target response length and format---
 
@@ -231,7 +252,7 @@ Suppose the "id" of 'J. Koll' and 'Z. Staykova' is 'id1' and 'id2', and the cyph
 ```cypher
 MATCH path = (author1:author {{id: 'id1'}})-[:paper]->(paper1:paper)-[:reference|cited_by]->(paper2:paper)-[:author]->(author2:author {{id: 'id2'}})
 RETURN path
-LIMIT 10
+LIMIT 20
 ```
 
 2. User question: "What is the relationship between authors 'A' and 'B' regarding collaborated books?". In this case, the user is asking about the paths between two authors that is constraint to books they have co-authored.
@@ -239,7 +260,7 @@ Suppose the "id"s of author 'A' and 'B' are 'id1' and 'id2', and the cypher quer
 ```cypher
 MATCH path = (author1:author {{id: 'id1'}})-[:book]->(book1:book)-[:author]->(author2:author {{id: 'id2'}})
 RETURN path
-LIMIT 10
+LIMIT 20
 ```
 
 3. User question: ""What is the relationship between items 'A' and 'B' regarding common brands?"". In this case, the user is asking about the paths between two items that is constraint to brands they both belong to.
@@ -247,7 +268,7 @@ Suppose the "id"s of the items 'A' and 'B' are 'id1' and 'id2', and the cypher q
 ```cypher
 MATCH path = (item1:item {{id: 'id1'}})-[:brand]->(brand1:brand)-[:item]->(item2:item {{id: 'id2'}})
 RETURN path
-LIMIT 10
+LIMIT 20
 ```
 
 ---Goal---
@@ -277,7 +298,7 @@ Do not include information where the supporting evidence for it is not provided.
 6. Return the results in path format:
 ```cypher
 RETURN path
-LIMIT 10
+LIMIT 20
 ```
 """
 

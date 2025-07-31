@@ -1351,7 +1351,13 @@ async def guided_walk(
     )
 
     tic = time.time()
-    sys_prompt_temp = PROMPTS["local_rag_response"]
+    if (
+        "webqsp" in global_config["working_dir"]
+        or "cwq" in global_config["working_dir"]
+    ):
+        sys_prompt_temp = PROMPTS["guided_walk_response"]
+    else:
+        sys_prompt_temp = PROMPTS["local_rag_response"]
     sys_prompt = sys_prompt_temp.format(
         context_data=all_context, response_type=query_param.response_type
     )

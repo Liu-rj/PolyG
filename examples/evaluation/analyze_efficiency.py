@@ -10,7 +10,7 @@ args = argparser.parse_args()
 
 if args.dataset == "physics":
     ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased.jsonl",
+        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_top20.jsonl",
         f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
         f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
     ]
