@@ -14,6 +14,8 @@ args = argparser.parse_args()
 
 
 ANSWER_PATH = f"results/{args.dataset}/{args.model}/results_rephrased.jsonl"
+# ANSWER_PATH = f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl"
+# ANSWER_PATH = f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl"
 
 OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
 
@@ -151,7 +153,6 @@ with open(ANSWER_PATH, "r") as f:
     for item in jsonlines.Reader(f):
         answers.append(item)
 
-answers = answers[1161:]
 
 method_names = [
     # "BFS",
@@ -182,15 +183,17 @@ for it, (question, answers) in enumerate(question_answer.items()):
         for i in range(len(gt)):
             gt[i] = gt[i].strip('"').lower()
 
-        result = answer["answer_list"].split(", ")
-        for i in range(len(result)):
-            result[i] = result[i].strip('"').lower()
+        f1 = 0
+        if method == "adaptive":
+            result = answer["answer_list"].split(", ")
+            for i in range(len(result)):
+                result[i] = result[i].strip('"').lower()
 
-        # precision, recall, f1 = compute_score(result, gt)
-        f1, precision, recall = eval_f1(result, gt)
-        prediction_str = " ".join(result)
-        acc = eval_acc(prediction_str, gt)
-        hit = eval_hit(prediction_str, gt)
+            # precision, recall, f1 = compute_score(result, gt)
+            f1, precision, recall = eval_f1(result, gt)
+            prediction_str = " ".join(result)
+            acc = eval_acc(prediction_str, gt)
+            hit = eval_hit(prediction_str, gt)
 
         if f1 == 0:
             result = bedrock_generator(

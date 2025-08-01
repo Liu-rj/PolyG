@@ -190,6 +190,64 @@ rag = GraphRAG(
 )
 
 
+def BFS(question, id_mapping):
+    print(f"Question: {question}")
+    response, duration, token_len, api_calls, answer_list = rag.query(
+        question,
+        id_mapping,
+        param=QueryParam(
+            mode="local",
+            edge_depth=1,
+            local_context_length=MAX_CONTEXT_TOKENS,
+            traversal_type="BFS",
+            response_type="a simple sentence that indicates the answer.",
+            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_edge=0.4,
+            failure_retries=0,
+        ),
+    )
+    print_outputs(response)
+    return "BFS", response, duration, token_len, api_calls, answer_list
+
+
+def cypher_single_entity(question, id_mapping):
+    print(f"Question: {question}")
+    response, duration, token_len, api_calls, answer_list = rag.query(
+        question,
+        id_mapping,
+        param=QueryParam(
+            mode="local",
+            local_context_length=MAX_CONTEXT_TOKENS,
+            traversal_type="cypher_query",
+            response_type="a simple sentence that indicates the answer.",
+            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_edge=0.4,
+            failure_retries=0,
+        ),
+    )
+    print_outputs(response)
+    return "cypher_single_entity", response, duration, token_len, api_calls, answer_list
+
+
+def cypher_only(question, id_mapping):
+    print(f"Question: {question}")
+    response, duration, token_len, api_calls, answer_list = rag.query(
+        question,
+        id_mapping,
+        param=QueryParam(
+            mode="local",
+            local_context_length=MAX_CONTEXT_TOKENS,
+            traversal_type="cypher_only",
+            response_type="a simple sentence that indicates the answer.",
+            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_edge=0.4,
+            failure_retries=0,
+        ),
+    )
+    print_outputs(response)
+    return "cypher_only", response, duration, token_len, api_calls, answer_list
+
+
 def adaptive(question, id_mapping):
     print(f"Question: {question}")
     query_param = QueryParam(
@@ -295,6 +353,9 @@ if __name__ == "__main__":
 
         results = []
         results.append(adaptive(question, id_mapping.copy()))
+        results.append(BFS(question, id_mapping.copy()))
+        results.append(cypher_single_entity(question, id_mapping.copy()))
+        results.append(cypher_only(question, id_mapping.copy()))
 
         result_entrees = []
         for result in results:
