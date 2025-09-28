@@ -7,14 +7,14 @@ argparser.add_argument("--dataset", type=str, default="physics", required=True)
 argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=True)
 args = argparser.parse_args()
 
-RESULT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
+RESULT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation_polyg_new.jsonl"
 
 method_names = [
-    # "BFS",
-    # "cypher_single_entity",
-    # "Fastgraphrag_PPR",
-    # "GraphCoT",
-    # "cypher_only",
+    "BFS",
+    "cypher_single_entity",
+    "Fastgraphrag_PPR",
+    "GraphCoT",
+    "cypher_only",
     "adaptive",
 ]
 
@@ -27,8 +27,6 @@ method_counts = {method: 0 for method in method_names}
 
 with jsonlines.open(RESULT_PATH, "r") as reader:
     results = list(reader)
-
-# results = results[:1500]
 
 for item in results:
     method = item["method"]

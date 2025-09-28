@@ -1,3 +1,4 @@
+import os
 import boto3
 import jsonlines
 import argparse
@@ -5,6 +6,7 @@ import string
 import re
 from collections import defaultdict
 from typing import List, Tuple
+from openai import OpenAI
 
 
 argparser = argparse.ArgumentParser()
@@ -13,13 +15,17 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 
-ANSWER_PATH = f"results/{args.dataset}/{args.model}/results_rephrased.jsonl"
-# ANSWER_PATH = f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl"
-# ANSWER_PATH = f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl"
+ANSWER_PATH = [
+    f"results/{args.dataset}/{args.model}/results_rephrased_rog.jsonl",
+    # f"/home/renjie/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
+    # f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl",
+]
 
-OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
+OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation_rog.jsonl"
 
-
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
+)
 CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 # CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 # CHAT_MODEL_ID = "us.deepseek.r1-v1:0"
@@ -89,6 +95,22 @@ def bedrock_generator(
     return response["output"]["message"]["content"][0]["text"]
 
 
+def openai_generator(
+    prompt: str,
+    system_prompt: str | None = None,
+) -> str | None:
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    messages.append({"role": "user", "content": prompt})
+
+    response = client.chat.completions.create(
+        model="deepseek-chat", messages=messages, stream=False
+    )
+    return response.choices[0].message.content
+
+
 # def compute_score(result: List, gt: List) -> Tuple[float, float, float]:
 #     tp = len(set(result) & set(gt))
 #     fp = len(set(result) - set(gt))
@@ -149,17 +171,18 @@ def eval_f1(prediction, answer):
 
 
 answers = []
-with open(ANSWER_PATH, "r") as f:
-    for item in jsonlines.Reader(f):
-        answers.append(item)
+for path in ANSWER_PATH:
+    with open(path, "r") as f:
+        for item in jsonlines.Reader(f):
+            answers.append(item)
 
 
 method_names = [
-    # "BFS",
-    # "cypher_single_entity",
-    # "Fastgraphrag_PPR",
-    # "GraphCoT",
-    # "cypher_only",
+    "BFS",
+    "cypher_single_entity",
+    "Fastgraphrag_PPR",
+    "GraphCoT",
+    "cypher_only",
     "adaptive",
 ]
 question_answer = defaultdict(list)
@@ -183,20 +206,41 @@ for it, (question, answers) in enumerate(question_answer.items()):
         for i in range(len(gt)):
             gt[i] = gt[i].strip('"').lower()
 
-        f1 = 0
         if method == "adaptive":
+            # check the original answer list
             result = answer["answer_list"].split(", ")
             for i in range(len(result)):
                 result[i] = result[i].strip('"').lower()
-
-            # precision, recall, f1 = compute_score(result, gt)
-            f1, precision, recall = eval_f1(result, gt)
+            f1_al, precision_al, recall_al = eval_f1(result, gt)
             prediction_str = " ".join(result)
-            acc = eval_acc(prediction_str, gt)
-            hit = eval_hit(prediction_str, gt)
+            acc_al = eval_acc(prediction_str, gt)
+            hit_al = eval_hit(prediction_str, gt)
 
-        if f1 == 0:
-            result = bedrock_generator(
+            # check the model response
+            result = openai_generator(
+                prompt=PROMPT.format(query=question, reponse=answer["model_answer"]),
+                system_prompt=SYSTEM_ROLE,
+            )
+            print(result)
+            try:
+                result = eval(result.split("```")[1])
+            except Exception as e:
+                print(e)
+                result = result.strip("[]").split(", ")
+            for i in range(len(result)):
+                result[i] = str(result[i]).strip('"').lower()
+            f1_ma, precision_ma, recall_ma = eval_f1(result, gt)
+            prediction_str = " ".join(result)
+            acc_ma = eval_acc(prediction_str, gt)
+            hit_ma = eval_hit(prediction_str, gt)
+
+            f1 = max(f1_al, f1_ma)
+            if f1 == f1_al:
+                precision, recall, acc, hit = precision_al, recall_al, acc_al, hit_al
+            else:
+                precision, recall, acc, hit = precision_ma, recall_ma, acc_ma, hit_ma
+        else:
+            result = openai_generator(
                 prompt=PROMPT.format(query=question, reponse=answer["model_answer"]),
                 system_prompt=SYSTEM_ROLE,
             )

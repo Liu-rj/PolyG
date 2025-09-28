@@ -312,6 +312,9 @@ def upsert_to_neo4j(args: argparse.Namespace, nx_graph: nx.DiGraph):
             )
             session.run(query, source_id=u, target_id=v)
 
+        # 3. Create indexes for faster lookup
+        session.run(f"CREATE INDEX IF NOT EXISTS FOR (n:{args.benchmark}) ON (n.id)")
+
     print("NetworkX graph successfully inserted into Neo4j.")
 
 
@@ -341,8 +344,18 @@ if __name__ == "__main__":
     output_file = os.path.join(RESULT_DIR, "results_rephrased.jsonl")
 
     dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
+    # dataset = load_dataset("./datasets/cwq", split="test")
+
+    # # randomly sample 100 examples
+    # dataset = dataset.shuffle(seed=42).select(range(100))
+    # with open("../datasets/cwq/test_ids.txt", "r") as f:
+    #     test_ids = f.read().splitlines()
+    # print(f"Number of test ids: {len(test_ids)}")
+    # print(f"Number of unique test ids: {len(set(test_ids))}")
 
     for it, sample in enumerate(dataset):
+        # if sample["id"] not in test_ids:
+        #     continue
         question = sample["question"]
         nx_graph = build_graph(sample["graph"])
         id_mapping = {}
