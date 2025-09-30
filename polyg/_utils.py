@@ -8,7 +8,7 @@ import numbers
 from dataclasses import dataclass
 from functools import wraps
 from hashlib import md5
-from typing import Any, Union
+from typing import Any, Union, List, Callable
 
 import numpy as np
 import tiktoken
@@ -146,7 +146,7 @@ def decode_tokens_by_tiktoken(tokens: list[int], model_name: str = "gpt-4o"):
 
 
 def truncate_list_by_token_size(
-    list_data: list, max_token_size: int, key: callable = None
+    list_data: List, max_token_size: int, key: Callable | None = None
 ):
     """Truncate a list of data by token size"""
     if max_token_size <= 0:
@@ -208,7 +208,7 @@ def enclose_string_with_quotes(content: Any) -> str:
     return f'"{content}"'
 
 
-def list_of_list_to_csv(data: list[list]):
+def list_of_list_to_csv(data: List[List]):
     return "\n".join(
         [
             ",\t".join([f"{enclose_string_with_quotes(data_dd)}" for data_dd in data_d])
@@ -217,8 +217,8 @@ def list_of_list_to_csv(data: list[list]):
     )
 
 
-def list_to_csv(data: list[list]):
-    return "\n".join([data_d for data_d in data])
+def list_to_csv(data: List[str]):
+    return "\n".join(data)
 
 
 # -----------------------------------------------------------------------------------
@@ -240,7 +240,7 @@ def clean_str(input: Any) -> str:
 class EmbeddingFunc:
     embedding_dim: int
     max_token_size: int
-    func: callable
+    func: Callable
 
     async def __call__(self, *args, **kwargs) -> np.ndarray:
         return await self.func(*args, **kwargs)

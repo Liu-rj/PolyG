@@ -93,8 +93,11 @@ Edge properties:
 In freebase, nodes are linked to each other through various relations and domains. Specific relation types are:
 {schema}
 
+Example relations:
+{example}
+
 Graph indentifier:
-Add the identification label "webqsp" to the entities in the cypher query, for example, ":webqsp:node" for the entities in the graph.
+Add the identification label "{benchmark}" to the entities in the cypher query, for example, ":{benchmark}:node" for the entities in the graph.
 """
 
 GRAPH_FIELD_SEP = "<SEP>"
@@ -223,11 +226,11 @@ Do not include information where the supporting evidence for it is not provided.
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Return the whole paths of retrieved entities and relations, starting from the input entity to the answer entity, using `MATCH path = (start)-[relation]->...->(end)` and `RETURN path` in the cypher query.
+4. Return the whole paths and the target entities, using `MATCH path = (start)-[relation]->...->(node)->...->(end) RETURN path, node AS target` in the cypher query.
 
 5. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 
-6. return the cypher query in the following format:
+6. return the cypher query in the following format (enclosed by ```cypher ... ```):
 ```cypher
 Your cypher query here
 ```
@@ -295,7 +298,7 @@ Do not include information where the supporting evidence for it is not provided.
 
 5. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
 
-6. Return the results in path format:
+6. Return the results in path format (enclosed by ```cypher ... ```):
 ```cypher
 RETURN path
 LIMIT 20
@@ -338,7 +341,7 @@ Do not make up any information where the supporting evidence for it is not provi
 
 4. Only return two columns "souce" and "target" which are the entity IDs of the required relations, using "id" property. Do not involve any other columns or attributes.
 
-5. return the cypher query in the following format:
+5. return the cypher query in the following format (enclosed by ```cypher ... ```):
 ```cypher
 Your cypher query here
 ```

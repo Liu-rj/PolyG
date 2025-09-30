@@ -13,3 +13,5 @@ aioboto3
 jsonlines
 sentence-transformers
 igraph
+datasets
+protobuf
