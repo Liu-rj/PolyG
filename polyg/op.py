@@ -1,7 +1,7 @@
 import asyncio
 import time
 from typing import Union, List, Tuple, Dict
-from ._utils import (
+from .utils import (
     logger,
     truncate_list_by_token_size,
     num_tokens,

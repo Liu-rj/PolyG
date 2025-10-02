@@ -5,7 +5,7 @@ from neo4j import AsyncGraphDatabase
 from dataclasses import dataclass
 from typing import Union, List, Any, Tuple, Set, Dict
 from ..base import BaseGraphStorage, ID
-from .._utils import logger
+from ..utils import logger
 from contextlib import asynccontextmanager
 
 neo4j_lock = asyncio.Lock()

@@ -16,14 +16,14 @@ from .prompt import (
     GOODREADS_GRAPH_SCHEMA,
     FREEBASE_GRAPH_SCHEMA,
 )
-from ._utils import num_tokens
-from ._op import (
+from .utils import num_tokens
+from .op import (
     local_query,
     cypher_only,
     guided_walk,
     topk_csp,
 )
-from ._utils import (
+from .utils import (
     EmbeddingFunc,
     compute_mdhash_id,
     limit_async_func_call,
@@ -31,11 +31,12 @@ from ._utils import (
     always_get_an_event_loop,
     logger,
 )
-from ._storage import Neo4jStorage
+from .storage import Neo4jStorage
 from .base import (
     BaseGraphStorage,
     QueryParam,
 )
+from .llm import LLM
 
 
 @dataclass
@@ -43,9 +44,11 @@ class GraphRAG:
     working_dir: str
 
     # LLM
-    model_func: Callable
+    model: str = "openai/gpt-4o"
     model_max_token_size: int = 32768
     model_max_async: int = 16
+    llm: LLM = field(init=False)
+    model_func: Callable = field(init=False)
 
     # graph schema
     graph_schema: str = "null"
@@ -60,18 +63,19 @@ class GraphRAG:
     addon_params: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        _print_config = ",\n  ".join([f"{k} = {v}" for k, v in asdict(self).items()])
-        logger.debug(f"GraphRAG init with param:\n\n  {_print_config}\n")
-
         if not os.path.exists(self.working_dir) and self.always_create_working_dir:
             logger.info(f"Creating working directory {self.working_dir}")
             os.makedirs(self.working_dir)
+
+        self.llm = LLM(self.model)
+        self.model_func = limit_async_func_call(self.model_max_async)(self.llm.generate)
 
         self.entity_relation_graph = self.graph_storage_cls(
             namespace="", global_config=asdict(self)
         )
 
-        self.model_func = limit_async_func_call(self.model_max_async)(self.model_func)
+        _print_config = ",\n  ".join([f"{k} = {v}" for k, v in asdict(self).items()])
+        logger.debug(f"GraphRAG init with param:\n\n  {_print_config}\n")
 
     def query(
         self, query: str, id_mapping: dict, param: QueryParam = QueryParam()
