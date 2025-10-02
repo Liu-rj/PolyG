@@ -8,8 +8,8 @@ import jsonlines
 import networkx as nx
 from openai import OpenAI
 from polyg import GraphRAG, QueryParam
-from polyg._storage import HNSWVectorStorage, Neo4jStorage
-from polyg._utils import wrap_embedding_func_with_attrs
+from polyg.storage import HNSWVectorStorage, Neo4jStorage
+from polyg.utils import wrap_embedding_func_with_attrs
 from neo4j import GraphDatabase
 from tqdm import tqdm
 from sentence_transformers import SentenceTransformer
@@ -26,17 +26,12 @@ argparser = argparse.ArgumentParser()
 argparser.add_argument(
     "--model",
     type=str,
-    default="gpt-4o-mini",
+    default="openai/gpt-4o",
     choices=[
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gpt-4.1-mini",
-        "claude-3.5-sonnet",
-        "deepseek-chat",
-        "deepseek-r1",
-        "llama-3.1-405b",
-        "mistral-large",
-        "gemini-2.5-flash",
+        "openai/gpt-4o",
+        "openai/gpt-4o-mini",
+        "deepseek/deepseek-chat",
+        "deepseek/deepseek-reasoner",
     ],
     required=True,
 )
@@ -72,24 +67,6 @@ driver = GraphDatabase.driver(
 )
 
 
-EMBEDDING_MODEL = SentenceTransformer(
-    "sentence-transformers/all-MiniLM-L6-v2", cache_folder=WORKING_DIR, device="cpu"
-)
-
-
-# We're using Sentence Transformers to generate embeddings for the BGE model
-@wrap_embedding_func_with_attrs(
-    embedding_dim=EMBEDDING_MODEL.get_sentence_embedding_dimension(),
-    max_token_size=EMBEDDING_MODEL.max_seq_length,
-)
-async def local_embedding(
-    texts: list[str], batchsize: int = 32, device: str | None = None
-) -> np.ndarray:
-    return EMBEDDING_MODEL.encode(
-        sentences=texts, batch_size=batchsize, device=device, normalize_embeddings=True
-    )
-
-
 def print_outputs(outputs):
     print("=" * 80)
     print("Generated reponse:")
@@ -97,96 +74,12 @@ def print_outputs(outputs):
     print("-" * 80)
 
 
-async def bedrock_generator(
-    prompt: str,
-    system_prompt: str | None = None,
-    history_messages: List[Tuple] = [],
-    **kwargs,
-) -> str:
-    messages, system = [], []
-    if system_prompt:
-        system.append({"text": system_prompt})
-
-    history_messages_formated = [
-        {"role": r, "content": [{"text": m}]} for r, m in history_messages
-    ]
-
-    messages.extend(history_messages_formated)
-    messages.append({"role": "user", "content": [{"text": prompt}]})
-
-    response = bedrock_cli.converse(modelId=MODEL_ID, messages=messages, system=system)
-    return response["output"]["message"]["content"][0]["text"]
-
-
-async def openai_generator(
-    prompt: str,
-    system_prompt: str | None = None,
-    history_messages: List[dict] = [],
-    **kwargs,
-) -> str | None:
-    messages = []
-    if system_prompt:
-        messages.append({"role": "system", "content": system_prompt})
-
-    history_messages = [{"role": r, "content": m} for r, m in history_messages]
-
-    messages.extend(history_messages)
-    messages.append({"role": "user", "content": prompt})
-
-    response = client.chat.completions.create(
-        model=args.model, messages=messages, stream=False
-    )
-    return response.choices[0].message.content
-
-
-if args.model in ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"]:
-    client = OpenAI()
-    generator = openai_generator
-elif args.model == "deepseek-chat":
-    client = OpenAI(
-        api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
-    )
-    generator = openai_generator
-elif args.model == "deepseek-r1":
-    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-    MODEL_ID = "us.deepseek.r1-v1:0"
-    generator = bedrock_generator
-elif args.model == "claude-3.5-sonnet":
-    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-    MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-    generator = bedrock_generator
-elif args.model == "llama-3.1-405b":
-    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-    MODEL_ID = "meta.llama3-1-405b-instruct-v1:0"
-    generator = bedrock_generator
-elif args.model == "mistral-large":
-    bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-    MODEL_ID = "mistral.mistral-large-2407-v1:0"
-    generator = bedrock_generator
-elif args.model == "gemini-2.5-flash":
-    client = OpenAI(
-        api_key=os.getenv("GEMINI_API_KEY"),
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-    )
-    generator = openai_generator
-else:
-    raise ValueError(f"Unsupported model: {args.model}")
-
-
 rag = GraphRAG(
     working_dir=WORKING_DIR,
-    enable_llm_cache=False,
-    model_func=generator,
-    embedding_func=local_embedding,
+    model=args.model,
     model_max_token_size=MAX_MODEL_LEN,
-    vector_db_storage_cls=HNSWVectorStorage,
     graph_storage_cls=Neo4jStorage,
     addon_params=neo4j_config,
-    vector_db_storage_cls_kwargs={
-        "max_elements": 10000000,
-        "ef_search": 200,
-        "M": 50,
-    },
 )
 
 

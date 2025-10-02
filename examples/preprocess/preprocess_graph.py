@@ -11,7 +11,7 @@ from scipy.sparse import csr_matrix
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
-    "--path", type=str, default="dataset/maple/Physics", required=True
+    "--path", type=str, default="../datasets/maple/Physics", required=True
 )
 args = argparser.parse_args()
 

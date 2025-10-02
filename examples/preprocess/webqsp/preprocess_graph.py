@@ -59,7 +59,17 @@ def get_entities_to_relationships_map(graph: ig.Graph) -> csr_matrix:
 
 dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
+# dataset = load_dataset(f"../../webqsp_cwq/datasets/cwq", split="test")
+
+# # load id file
+# with open("../../datasets/cwq/test_ids.txt", "r") as f:
+#     test_ids = f.read().splitlines()
+# print(f"Number of unique test examples: {len(set(test_ids))}")
+
 for it, sample in enumerate(dataset):
+    # if sample["id"] not in test_ids:
+    #     continue
+    # print(f"Processing sample {it} with id {sample['id']}")
     question = sample["question"]
     G = build_graph(sample["graph"])
 
@@ -76,7 +86,7 @@ for it, sample in enumerate(dataset):
             if relation not in nodes[node_id]["neighbors"]:
                 nodes[node_id]["neighbors"][relation] = []
             nodes[node_id]["neighbors"][relation].append(v)
-    
+
     print(f"Number of nodes: {len(nodes)}")
 
     # save the graph in JSON format
@@ -97,12 +107,12 @@ for it, sample in enumerate(dataset):
     all_edges = list(G.edges())
     all_edges_data = {
         "relation": [
-            G.edges.get((e[0], e[1])).get("relation", "UNKOWN") for e in all_edges
+            G.edges.get((e[0], e[1])).get("relation", "UNKOWN") for e in all_edges  # type: ignore
         ]
     }
 
     keys = ["name", "node_type", "description"]
-    ig_nodes_data = {k: [d.get(k, "UNKOWN") for d in all_nodes_data] for k in keys}
+    ig_nodes_data = {k: [d.get(k, "UNKOWN") for d in all_nodes_data] for k in keys}  # type: ignore
     ig_nodes_data["node_name"] = ig_nodes_data.pop("name")
 
     # add node and edge list
