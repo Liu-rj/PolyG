@@ -18,25 +18,9 @@ argparser.add_argument(
 args = argparser.parse_args()
 
 client = OpenAI(
-    api_key=SecretStr(os.getenv("DEEPSEEK_API_KEY")),
+    api_key=SecretStr(os.getenv("DEEPSEEK_API_KEY")),  # type: ignore
     base_url="https://api.deepseek.com",
 )
-
-# PROMPT = """
-# You are a linguistics expert, please paraphrase the given question template without changing any semantic meaning of it.
-
-# Note that content '{{}}' (in single quotes) is an template entity name placeholder which will be used to match entities in the knowledge graph, so do not change the '{{}}' part.
-# Also, in your returned paraphrased question, please keep the '{{}}' part unchanged.
-
-# Question: {}:
-
-# You are required to return 4 paraphrased questions in the following format:
-# Result:
-# <paraphrased question1>
-# <paraphrased question2>
-# <paraphrased question3>
-# <paraphrased question4>
-# """
 
 PROMPT = """
 You are a linguistics expert, please paraphrase the given question without changing any semantic meaning of it.
@@ -87,9 +71,8 @@ def print_outputs(outputs):
 
 def bedrock_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
-    **kwargs,
 ) -> str:
     messages, system = [], []
     if system_prompt:
@@ -104,9 +87,8 @@ def bedrock_generator(
 
 def openai_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
-    **kwargs,
 ) -> str:
     messages = []
     if system_prompt:
@@ -118,16 +100,16 @@ def openai_generator(
     response = client.chat.completions.create(
         model="deepseek-chat", messages=messages, stream=False, temperature=1.0
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content  # type: ignore
 
 
 if __name__ == "__main__":
     question_types = [
-        # "single_entity_abstract",
-        # "single_entity_concrete",
-        # "multi_entity_abstract",
+        "single_entity_abstract",
+        "single_entity_concrete",
+        "multi_entity_abstract",
         "multi_entity_concrete",
-        # "nested_question",
+        "nested_question",
     ]
     for question_type in question_types:
         output_file = os.path.join(
@@ -145,6 +127,7 @@ if __name__ == "__main__":
 
             key_strs = [f"'{key}'" for key in id_mapping.keys()]
 
+            response = ""
             while True:
                 try:
                     response = bedrock_generator(

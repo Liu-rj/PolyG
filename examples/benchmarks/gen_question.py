@@ -765,7 +765,7 @@ def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
         if node_data["name"] in name_set:
             continue
         # if it has no neighbors, skip
-        if graph.degree(node) < 10:
+        if graph.degree(node) < 10: # type: ignore
             continue
         question = f"Give me a broad introduction about '{node_data['name']}'."
         q_entity = {
@@ -1076,7 +1076,7 @@ def gen_nested_question(n: int, graph_name: str, output_path: str):
                 record = None
                 try:
                     with session.begin_transaction(timeout=60) as tx:
-                        results = tx.run(q_cypher_t)
+                        results = tx.run(q_cypher_t)  # type: ignore
                         record = results.single()
                         if record is None:
                             print("No record found, retry")
@@ -1095,7 +1095,7 @@ def gen_nested_question(n: int, graph_name: str, output_path: str):
                     try:
                         print("Validating the cypher query")
                         with session.begin_transaction(timeout=30) as tx:
-                            ret = tx.run(q_cypher.format(*values))
+                            ret = tx.run(q_cypher.format(*values))  # type: ignore
                             for ele in ret:
                                 if len(answer) > 20:
                                     raise Exception("Too many results")
