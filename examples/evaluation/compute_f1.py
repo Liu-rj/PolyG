@@ -14,29 +14,12 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 
-if args.dataset == "physics":
-    ANSWER_PATH = [
-        f"/home/renjie/PolyG/examples/results/Physics/{args.model}/results_rephrased.jsonl",
-        f"/home/renjie/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
-        f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
-    ]
-    OUTPUT_PATH = f"/home/renjie/PolyG/examples/results/Physics/{args.model}/detailed_evaluation.jsonl"
-elif args.dataset == "amazon":
-    ANSWER_PATH = [
-        f"/home/renjie/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
-        f"/home/renjie/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
-        f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
-    ]
-    OUTPUT_PATH = f"/home/renjie/PolyG/examples/results/amazon/{args.model}/detailed_evaluation.jsonl"
-elif args.dataset == "goodreads":
-    ANSWER_PATH = [
-        f"/home/renjie/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
-        f"/home/renjie/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
-        f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
-    ]
-    OUTPUT_PATH = f"/home/renjie/PolyG/examples/results/goodreads/{args.model}/detailed_evaluation.jsonl"
-else:
-    raise ValueError(f"Unknown dataset: {args.dataset}")
+ANSWER_PATH = [
+    f"/home/renjie/PolyG/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
+    f"/home/renjie/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
+    f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl",
+]
+OUTPUT_PATH = f"/home/renjie/PolyG/examples/results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
 
 
 client = OpenAI(

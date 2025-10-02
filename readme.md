@@ -37,7 +37,7 @@ Store the knowledge graphs into `datasets` directory (from the root directory of
 Go to `examples/preprocess` directory, run
 
 ```shell
-python preprocess_graph.py --path dataset/maple/Physics
+python preprocess_graph.py --path dataset/physics
 python preprocess_graph.py --path dataset/goodreads
 python preprocess_graph.py --path dataset/amazon
 ```

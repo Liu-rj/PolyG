@@ -4,7 +4,7 @@ from collections import defaultdict
 
 
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    "/home/ubuntu/PolyG/examples/results/physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
     "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
 ]
@@ -63,7 +63,7 @@ plt.axhline(y=sum(all_acc) / len(all_acc), color="g", linestyle="--", label="Ave
 # write the average accuracy on the plot
 plt.text(
     3.88,
-    np.mean(all_acc) + 0.02,
+    np.mean(all_acc) + 0.02,  # type: ignore
     f"Average: {np.mean(all_acc):.2f}",
     ha="center",
     fontsize=FONT_SIZE - 4,

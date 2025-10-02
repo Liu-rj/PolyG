@@ -10,9 +10,7 @@ from scipy.sparse import csr_matrix
 
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument(
-    "--path", type=str, default="../datasets/maple/Physics", required=True
-)
+argparser.add_argument("--path", type=str, default="../datasets/physics", required=True)
 args = argparser.parse_args()
 
 # load the json file
@@ -107,12 +105,12 @@ all_nodes = list(G.nodes())
 all_nodes_data = [G.nodes.get(nid) for nid in all_nodes]
 all_edges = list(G.edges())
 all_edges_data = {
-    "relation": [G.edges.get((e[0], e[1])).get("relation", "UNKOWN") for e in all_edges]
+    "relation": [G.edges.get((e[0], e[1])).get("relation", "UNKOWN") for e in all_edges]  # type: ignore
 }
 del G
 
 keys = ["name", "node_type", "description"]
-ig_nodes_data = {k: [d.get(k, "UNKOWN") for d in all_nodes_data] for k in keys}
+ig_nodes_data = {k: [d.get(k, "UNKOWN") for d in all_nodes_data] for k in keys}  # type: ignore
 ig_nodes_data["node_name"] = ig_nodes_data.pop("name")
 
 # add node and edge list

@@ -6,7 +6,7 @@ import csv
 
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
-    "--path", type=str, default="../datasets/maple/Physics", required=True
+    "--path", type=str, default="../datasets/physics", required=True
 )
 args = argparser.parse_args()
 

@@ -29,15 +29,15 @@ argparser.add_argument(
     required=True,
 )
 argparser.add_argument(
-    "--data_dir", type=str, default="datasets/maple/Physics", required=True
+    "--data_dir", type=str, default="../datasets/physics", required=True
 )
 argparser.add_argument(
-    "--benchmark_dir", type=str, default="benchmarks/physics", required=True
+    "--benchmark_dir", type=str, default="../benchmarks/physics", required=True
 )
 args = argparser.parse_args()
 
 DATASET_DIR = args.data_dir
-WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{DATASET_DIR.split('/')[-1]}"
+WORKING_DIR = f"checkpoints/polyg_{DATASET_DIR.split('/')[-1]}"
 RESULT_DIR = f"results/{DATASET_DIR.split('/')[-1]}/{args.model}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 90000

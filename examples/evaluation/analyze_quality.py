@@ -8,7 +8,7 @@ args = argparser.parse_args()
 
 
 if args.dataset == "physics":
-    LLM_JUDGE_PATH = f"../results/Physics/{args.model}/judgements_rephrased.jsonl"
+    LLM_JUDGE_PATH = f"../results/physics/{args.model}/judgements_rephrased.jsonl"
 elif args.dataset == "amazon":
     LLM_JUDGE_PATH = f"../results/amazon/{args.model}/judgements_rephrased.jsonl"
 elif args.dataset == "goodreads":

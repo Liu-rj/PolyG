@@ -357,7 +357,7 @@ async def cypher_only(
     use_model_func = global_config["model_func"]
 
     sys_prompt = PROMPTS["cypher_only_query"]
-    if "Physics" in global_config["working_dir"]:
+    if "physics" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
     elif "amazon" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
@@ -487,7 +487,7 @@ async def guided_walk(
 
     tic = time.time()
     sys_prompt = PROMPTS["cypher_query_prompt"]
-    if "Physics" in global_config["working_dir"]:
+    if "physics" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
     elif "amazon" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
@@ -652,7 +652,7 @@ async def topk_csp(
 
     tic = time.time()
     sys_prompt = PROMPTS["cypher_path_search_prompt"]
-    if "Physics" in global_config["working_dir"]:
+    if "physics" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
     elif "amazon" in global_config["working_dir"]:
         sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)

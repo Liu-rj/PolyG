@@ -27,28 +27,13 @@ bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-
 # )
 client = OpenAI()
 
+ANSWER_PATH = [
+    f"/home/ubuntu/PolyG/examples/results/{args.dataset}/claude-3.5-sonnet/results_rephrased.jsonl",
+    f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/results_rephrased.jsonl",
+    f"/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/{args.dataset}/results_rephrased.jsonl",
+]
+OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/{args.dataset}/claude-3.5-sonnet/judgements_rephrased.jsonl"
 
-if args.dataset == "physics":
-    ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/Physics/results_rephrased.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/maple-Physics/results_rephrased.jsonl",
-    ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/judgements_rephrased.jsonl"
-elif args.dataset == "amazon":
-    ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/amazon/results_rephrased.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/amazon/results_rephrased.jsonl",
-    ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/judgements_rephrased.jsonl"
-elif args.dataset == "goodreads":
-    ANSWER_PATH = [
-        "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased.jsonl",
-        "/home/ubuntu/fast-graphrag/examples/results/goodreads/results_rephrased.jsonl",
-        "/home/ubuntu/Graph-CoT/Graph-CoT/results/claude-3-5-sonnet/goodreads/results_rephrased.jsonl",
-    ]
-    OUTPUT_FILE = "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/judgements_rephrased.jsonl"
 
 SYSTEM_ROLE = """
 ---Role---
@@ -162,7 +147,7 @@ ERROR_MSG = "When processing your generated json evaluation result, errors occur
 
 def bedrock_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
 ) -> str:
     messages, system = [], []
@@ -180,7 +165,7 @@ def bedrock_generator(
 
 def openai_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
 ) -> str:
     messages = []
@@ -193,7 +178,7 @@ def openai_generator(
     response = client.chat.completions.create(
         model="gpt-4o", messages=messages, stream=False
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content  # type: ignore
 
 
 answers = []
@@ -243,6 +228,7 @@ for question_type in question_types:
         print(f"Question {it + 1}: {question}")
 
         answer_str = "Answers:\n\n"
+        gt = "N/A"
         for it, answer_tuple in enumerate(answers):
             method, answer, gt = answer_tuple
             answer_str += "-------------------------------------\n"
@@ -251,6 +237,7 @@ for question_type in question_types:
 
         sys_prompt = PROMPT_WITH_GT if gt != "N/A" else PROMPT_WITHOUT_GT
         history_msgs = []
+        prompt, result = None, None
 
         while True:
             try:

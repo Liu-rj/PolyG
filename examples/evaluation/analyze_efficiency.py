@@ -8,26 +8,12 @@ argparser.add_argument("--dataset", type=str, default="physics", required=True)
 argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=False)
 args = argparser.parse_args()
 
-if args.dataset == "physics":
-    ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_top20.jsonl",
-        f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased.jsonl",
-    ]
-elif args.dataset == "amazon":
-    ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
-    ]
-elif args.dataset == "goodreads":
-    ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
-    ]
-else:
-    raise ValueError(f"Unknown dataset: {args.dataset}")
+
+ANSWER_PATH = [
+    f"/home/ubuntu/PolyG/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
+    f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
+    f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl",
+]
 
 
 answers = []
@@ -58,7 +44,7 @@ method_names = [
 all_time, all_tokens, all_api_calls = [], [], []
 bfs_time = []
 for question_type in question_types:
-    method_time = {method: 0 for method in method_names}
+    method_time = {method: 0.0 for method in method_names}
     method_tokens = {method: 0 for method in method_names}
     method_api_calss = {method: 0 for method in method_names}
     method_counts = {method: 0 for method in method_names}
@@ -111,7 +97,7 @@ for method_time in all_time:
     print(",".join([str(method_time[method]) for method in method_names]))
 print("Overall Times")
 print(",".join(method_names))
-overall_time = {method: 0 for method in method_names}
+overall_time = {method: 0.0 for method in method_names}
 for method in method_names:
     for method_time in all_time:
         overall_time[method] += method_time[method]

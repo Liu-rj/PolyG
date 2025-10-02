@@ -60,8 +60,8 @@ single_entity_concrete_template = {
             },
             "Where is the paper '{}' published?": {
                 "cypher": """
-            MATCH (p:Physics:paper {{id: '{}'}})
-            -[:venue]->(v:Physics:venue)
+            MATCH (p:physics:paper {{id: '{}'}})
+            -[:venue]->(v:physics:venue)
             RETURN DISTINCT v.name AS name
             """,
                 "hops": 1,
@@ -765,7 +765,7 @@ def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
         if node_data["name"] in name_set:
             continue
         # if it has no neighbors, skip
-        if graph.degree(node) < 10: # type: ignore
+        if graph.degree(node) < 10:  # type: ignore
             continue
         question = f"Give me a broad introduction about '{node_data['name']}'."
         q_entity = {
@@ -1142,9 +1142,7 @@ def gen_nested_question(n: int, graph_name: str, output_path: str):
 
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument(
-    "--path", type=str, default="../datasets/maple/Physics", required=True
-)
+argparser.add_argument("--path", type=str, default="../datasets/physics", required=True)
 argparser.add_argument(
     "--output-path", type=str, default="../benchmarks/physics", required=True
 )

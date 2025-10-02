@@ -30,8 +30,6 @@ class Neo4jStorage(BaseGraphStorage):
         self.namespace = (
             f"{self.global_config['working_dir'].split('/')[-1].split('_')[-1].lower()}"
         )
-        # if "Physics" in self.global_config["working_dir"]:
-        #     self.namespace = "___" + self.namespace
         logger.info(f"Using the label {self.namespace} for Neo4j as identifier")
         if self.neo4j_url is None or self.neo4j_auth is None:
             raise ValueError("Missing neo4j_url or neo4j_auth in addon_params")
@@ -41,16 +39,6 @@ class Neo4jStorage(BaseGraphStorage):
             max_connection_pool_size=100,
             connection_timeout=3600,
         )
-
-    async def _init_workspace(self):
-        await self.async_driver.verify_authentication()
-        await self.async_driver.verify_connectivity()
-        # TODOLater: create database if not exists always cause an error when async
-        # await self.create_database()
-
-    async def index_start_callback(self):
-        logger.info("Init Neo4j workspace")
-        await self._init_workspace()
 
     async def has_node(self, node_id: ID) -> bool:
         async with self.async_driver.session() as session:

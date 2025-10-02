@@ -29,31 +29,13 @@ bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-
 client = OpenAI()
 
 
-if args.dataset == "physics":
-    POLYG_PATH = f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_top20.jsonl"
-    ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/results_rephrased_final.jsonl",
-        f"/home/ubuntu/fast-graphrag/examples/results/Physics/{args.model}/results_rephrased_final.jsonl",
-        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/maple-Physics/results_rephrased_final.jsonl",
-    ]
-    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/Physics/{args.model}/judgements_rephrased_top20.jsonl"
-elif args.dataset == "amazon":
-    POLYG_PATH = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased_sp*_nested_new.jsonl"
-    ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/fast-graphrag/examples/results/amazon/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/amazon/results_rephrased.jsonl",
-    ]
-    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/amazon/{args.model}/judgements_rephrased_sp*_nested_new.jsonl"
-elif args.dataset == "goodreads":
-    ANSWER_PATH = [
-        f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/fast-graphrag/examples/results/goodreads/{args.model}/results_rephrased.jsonl",
-        f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/goodreads/results_rephrased.jsonl",
-    ]
-    OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/goodreads/{args.model}/judgements_rephrased.jsonl"
-else:
-    raise ValueError(f"Unknown dataset: {args.dataset}")
+ANSWER_PATH = [
+    f"/home/ubuntu/PolyG/examples/results/{args.dataset}/{args.model}/results_rephrased_final.jsonl",
+    f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased_final.jsonl",
+    f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased_final.jsonl",
+]
+OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/{args.dataset}/{args.model}/judgements_rephrased_top20.jsonl"
+
 
 SYSTEM_ROLE = """
 ---Role---
@@ -225,19 +207,14 @@ for path in ANSWER_PATH:
                 continue
             answers.append(item)
 
-with open(POLYG_PATH, "r") as f:
-    for item in jsonlines.Reader(f):
-        assert item["method"] == "adaptive"
-        answers.append(item)
-
 print(f"Total number of answers: {len(answers)}")
 
 question_types = [
-    # "single_entity_abstract_rephrased",
+    "single_entity_abstract_rephrased",
     "single_entity_concrete_rephrased",
-    # "multi_entity_abstract_rephrased",
-    # "multi_entity_concrete_rephrased",
-    # "nested_question_rephrased",
+    "multi_entity_abstract_rephrased",
+    "multi_entity_concrete_rephrased",
+    "nested_question_rephrased",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
 for item in answers:

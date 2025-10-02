@@ -256,7 +256,7 @@ class GraphRAG:
         """
         Decompose the nested query into sub-queries.
         """
-        if "Physics" in self.working_dir:
+        if "physics" in self.working_dir:
             graph_schema = PHYSICS_GRAPH_SCHEMA
         elif "amazon" in self.working_dir:
             graph_schema = AMAZON_GRAPH_SCHEMA

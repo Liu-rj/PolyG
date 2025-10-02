@@ -5,16 +5,10 @@ from polyg.prompt import PROMPTS
 
 
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    "/home/ubuntu/PolyG/examples/results/physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
     "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
 ]
-
-# ANSWER_PATH = [
-#     "/home/ubuntu/PolyG/examples/results/Physics/claude-3.5-sonnet/results_rephrased_retry_0.jsonl",
-#     "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_retry_0.jsonl",
-#     "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_retry_0.jsonl",
-# ]
 
 answers = []
 for path in ANSWER_PATH:
