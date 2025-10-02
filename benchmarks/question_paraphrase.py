@@ -105,16 +105,14 @@ def openai_generator(
 
 if __name__ == "__main__":
     question_types = [
-        "single_entity_abstract",
-        "single_entity_concrete",
-        "multi_entity_abstract",
-        "multi_entity_concrete",
-        "nested_question",
+        "single_entity_abstract_raw",
+        "single_entity_concrete_raw",
+        "multi_entity_abstract_raw",
+        "multi_entity_concrete_raw",
+        "nested_question_raw",
     ]
     for question_type in question_types:
-        output_file = os.path.join(
-            args.benchmark_dir, f"{question_type}_rephrased.jsonl"
-        )
+        output_file = os.path.join(args.benchmark_dir, f"{question_type}.jsonl")
 
         contents = []
         with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:

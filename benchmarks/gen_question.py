@@ -1162,26 +1162,26 @@ print("# edges:", graph.number_of_edges())
 gen_single_entity_abstract(
     graph,
     80,
-    os.path.join(args.output_path, "single_entity_abstract.jsonl"),
+    os.path.join(args.output_path, "single_entity_abstract_raw.jsonl"),
 )
 gen_single_entity_concrete(
     10,
     dataset_name,
-    os.path.join(args.output_path, "single_entity_concrete.jsonl"),
+    os.path.join(args.output_path, "single_entity_concrete_raw.jsonl"),
 )
 gen_multi_entity_abstract(
     graph,
     20,
     [2, 3, 4, 5],
-    os.path.join(args.output_path, "multi_entity_abstract.jsonl"),
+    os.path.join(args.output_path, "multi_entity_abstract_raw.jsonl"),
 )
 gen_multi_entity_concrete(
     20,
     dataset_name,
-    os.path.join(args.output_path, "multi_entity_concrete.jsonl"),
+    os.path.join(args.output_path, "multi_entity_concrete_raw.jsonl"),
 )
 gen_nested_question(
     20,
     dataset_name,
-    os.path.join(args.output_path, "nested_question.jsonl"),
+    os.path.join(args.output_path, "nested_question_raw.jsonl"),
 )
