@@ -10,12 +10,8 @@ from .utils import (
 )
 from .base import BaseGraphStorage, QueryParam, ID
 from .prompt import (
-    GRAPH_FIELD_SEP,
     PROMPTS,
-    PHYSICS_GRAPH_SCHEMA,
-    GOODREADS_GRAPH_SCHEMA,
-    AMAZON_GRAPH_SCHEMA,
-    FREEBASE_GRAPH_SCHEMA,
+    SCHEMA_MAP,
 )
 
 
@@ -356,31 +352,15 @@ async def cypher_only(
 ) -> tuple[str, int, int, List]:
     use_model_func = global_config["model_func"]
 
-    sys_prompt = PROMPTS["cypher_only_query"]
-    if "physics" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
-    elif "amazon" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
-    elif "goodreads" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
-    elif "webqsp" in global_config["working_dir"]:
+    graph_schema = SCHEMA_MAP[global_config["dataset"]]
+    if global_config["dataset"] in ["webqsp", "cwq"]:
         schema_example = await build_schema_example(kg_inst, list(id_mapping.values()))
-        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-            schema=global_config["graph_schema"],
-            benchmark="webqsp",
+        graph_schema = graph_schema.format(
+            schema=global_config["concrete_graph_schema"],
+            benchmark=global_config["dataset"],
             example=schema_example,
         )
-        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
-    elif "cwq" in global_config["working_dir"]:
-        schema_example = await build_schema_example(kg_inst, list(id_mapping.values()))
-        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-            schema=global_config["graph_schema"],
-            benchmark="cwq",
-            example=schema_example,
-        )
-        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
-    else:
-        raise NotImplementedError
+    sys_prompt = PROMPTS["cypher_only_query"].format(graph_schema=graph_schema)
 
     token_len = 0
     history_msgs = []
@@ -486,33 +466,15 @@ async def guided_walk(
     use_model_func = global_config["model_func"]
 
     tic = time.time()
-    sys_prompt = PROMPTS["cypher_query_prompt"]
-    if "physics" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
-    elif "amazon" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
-    elif "goodreads" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
-    elif "webqsp" in global_config["working_dir"]:
+    graph_schema = SCHEMA_MAP[global_config["dataset"]]
+    if global_config["dataset"] in ["webqsp", "cwq"]:
         schema_example = await build_schema_example(kg_inst, list(id_mapping.values()))
-        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-            schema=global_config["graph_schema"],
-            benchmark="webqsp",
+        graph_schema = graph_schema.format(
+            schema=global_config["concrete_graph_schema"],
+            benchmark=global_config["dataset"],
             example=schema_example,
         )
-        print(graph_schema)
-        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
-    elif "cwq" in global_config["working_dir"]:
-        schema_example = await build_schema_example(kg_inst, list(id_mapping.values()))
-        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-            schema=global_config["graph_schema"],
-            benchmark="cwq",
-            example=schema_example,
-        )
-        print(graph_schema)
-        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
-    else:
-        raise NotImplementedError
+    sys_prompt = PROMPTS["cypher_query_prompt"].format(graph_schema=graph_schema)
 
     token_len = 0
     history_msgs = []
@@ -567,10 +529,7 @@ async def guided_walk(
     ret_names = set([d["name"] for d in dest_datas])  # type: ignore
 
     related_edges = []
-    if (
-        "webqsp" in global_config["working_dir"]
-        or "cwq" in global_config["working_dir"]
-    ):
+    if global_config["dataset"] in ["webqsp", "cwq"]:
         rets = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in dest_ids])
         for edge_list in rets:
             related_edges.extend(edge_list)
@@ -613,10 +572,7 @@ async def guided_walk(
     )
 
     tic = time.time()
-    if (
-        "webqsp" in global_config["working_dir"]
-        or "cwq" in global_config["working_dir"]
-    ):
+    if global_config["dataset"] in ["webqsp", "cwq"]:
         sys_prompt_temp = PROMPTS["guided_walk_response"]
     else:
         sys_prompt_temp = PROMPTS["local_rag_response"]
@@ -651,31 +607,15 @@ async def topk_csp(
     use_model_func = global_config["model_func"]
 
     tic = time.time()
-    sys_prompt = PROMPTS["cypher_path_search_prompt"]
-    if "physics" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=PHYSICS_GRAPH_SCHEMA)
-    elif "amazon" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=AMAZON_GRAPH_SCHEMA)
-    elif "goodreads" in global_config["working_dir"]:
-        sys_prompt = sys_prompt.format(graph_schema=GOODREADS_GRAPH_SCHEMA)
-    elif "webqsp" in global_config["working_dir"]:
+    graph_schema = SCHEMA_MAP[global_config["dataset"]]
+    if global_config["dataset"] in ["webqsp", "cwq"]:
         schema_example = await build_schema_example(kg_inst, list(id_mapping.values()))
-        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-            schema=global_config["graph_schema"],
-            benchmark="webqsp",
+        graph_schema = graph_schema.format(
+            schema=global_config["concrete_graph_schema"],
+            benchmark=global_config["dataset"],
             example=schema_example,
         )
-        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
-    elif "cwq" in global_config["working_dir"]:
-        schema_example = await build_schema_example(kg_inst, list(id_mapping.values()))
-        graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-            schema=global_config["graph_schema"],
-            benchmark="cwq",
-            example=schema_example,
-        )
-        sys_prompt = sys_prompt.format(graph_schema=graph_schema)
-    else:
-        raise NotImplementedError
+    sys_prompt = PROMPTS["cypher_path_search_prompt"].format(graph_schema=graph_schema)
 
     token_len = 0
     history_msgs = []

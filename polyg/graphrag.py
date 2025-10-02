@@ -11,10 +11,7 @@ from typing import Callable, Dict, List, Optional, Type, Union, cast, Tuple
 from tqdm import tqdm
 from .prompt import (
     PROMPTS,
-    PHYSICS_GRAPH_SCHEMA,
-    AMAZON_GRAPH_SCHEMA,
-    GOODREADS_GRAPH_SCHEMA,
-    FREEBASE_GRAPH_SCHEMA,
+    SCHEMA_MAP,
 )
 from .utils import num_tokens
 from .op import (
@@ -41,7 +38,8 @@ from .llm import LLM
 
 @dataclass
 class GraphRAG:
-    working_dir: str
+    dataset: str
+    working_dir: str | None = None
 
     # LLM
     model: str = "openai/gpt-4o"
@@ -51,21 +49,21 @@ class GraphRAG:
     model_func: Callable = field(init=False)
 
     # graph schema
-    graph_schema: str = "null"
+    concrete_graph_schema: str = "null"
 
     # storage
     graph_storage_cls: Type[BaseGraphStorage] = Neo4jStorage
 
     # extension
-    always_create_working_dir: bool = True
+    create_working_dir: bool = False
 
     # extension
     addon_params: dict = field(default_factory=dict)
 
     def __post_init__(self):
-        if not os.path.exists(self.working_dir) and self.always_create_working_dir:
+        if self.working_dir and self.create_working_dir:
             logger.info(f"Creating working directory {self.working_dir}")
-            os.makedirs(self.working_dir)
+            os.makedirs(self.working_dir, exist_ok=True)
 
         self.llm = LLM(self.model)
         self.model_func = limit_async_func_call(self.model_max_async)(self.llm.generate)
@@ -256,22 +254,11 @@ class GraphRAG:
         """
         Decompose the nested query into sub-queries.
         """
-        if "physics" in self.working_dir:
-            graph_schema = PHYSICS_GRAPH_SCHEMA
-        elif "amazon" in self.working_dir:
-            graph_schema = AMAZON_GRAPH_SCHEMA
-        elif "goodreads" in self.working_dir:
-            graph_schema = GOODREADS_GRAPH_SCHEMA
-        elif "webqsp" in self.working_dir:
-            graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-                schema=self.graph_schema, benchmark="webqsp", example=""
+        graph_schema = SCHEMA_MAP[self.dataset]
+        if self.dataset in ["webqsp", "cwq"]:
+            graph_schema = graph_schema.format(
+                schema=self.concrete_graph_schema, benchmark=self.dataset, example=""
             )
-        elif "cwq" in self.working_dir:
-            graph_schema = FREEBASE_GRAPH_SCHEMA.format(
-                schema=self.graph_schema, benchmark="cwq", example=""
-            )
-        else:
-            raise NotImplementedError
 
         total_tokens = 0
         history_msgs = []

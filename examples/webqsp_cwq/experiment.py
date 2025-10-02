@@ -1,19 +1,13 @@
 import os
 import logging
-import numpy as np
 from datasets import load_dataset
-import boto3
 import argparse
 import jsonlines
 import networkx as nx
-from openai import OpenAI
 from polyg import GraphRAG, QueryParam
-from polyg.storage import HNSWVectorStorage, Neo4jStorage
-from polyg.utils import wrap_embedding_func_with_attrs
+from polyg.storage import Neo4jStorage
 from neo4j import GraphDatabase
 from tqdm import tqdm
-from sentence_transformers import SentenceTransformer
-from typing import List, Tuple
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -40,15 +34,17 @@ argparser.add_argument(
 )
 args = argparser.parse_args()
 
-WORKING_DIR = f"checkpoints/polyg_bedrock_and_neo4j_{args.benchmark}"
-RESULT_DIR = f"results/{args.benchmark}/{args.model}"
+DATASET_DIR = args.data_dir
+DATASET_NAME = DATASET_DIR.split("/")[-1]
+RESULT_DIR = f"results/{DATASET_NAME}/{args.model}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 100000
 MAX_OUTPUT_TOKENS = 5000
 
 print(
-    f"Benchmark: {args.benchmark}",
-    f"Working dir: {WORKING_DIR}",
+    f"DATASET: {DATASET_NAME}",
+    f"Dataset dir: {DATASET_DIR}",
+    f"Benchmark dir: {args.benchmark_dir}",
     f"Result dir: {RESULT_DIR}",
 )
 
@@ -75,7 +71,7 @@ def print_outputs(outputs):
 
 
 rag = GraphRAG(
-    working_dir=WORKING_DIR,
+    dataset=DATASET_NAME,
     model=args.model,
     model_max_token_size=MAX_MODEL_LEN,
     graph_storage_cls=Neo4jStorage,
@@ -255,7 +251,9 @@ if __name__ == "__main__":
         for entity in sample["q_entity"]:
             id_mapping[entity] = entity
         upsert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
-        rag.graph_schema = extract_graph_schema(nx_graph)  # Extract schema if needed
+        rag.concrete_graph_schema = extract_graph_schema(
+            nx_graph
+        )  # Extract schema if needed
 
         results = []
         results.append(adaptive(question, id_mapping.copy()))

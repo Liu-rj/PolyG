@@ -100,6 +100,14 @@ Graph indentifier:
 Add the identification label "{benchmark}" to the entities in the cypher query, for example, ":{benchmark}:node" for the entities in the graph.
 """
 
+SCHEMA_MAP = {
+    "physics": PHYSICS_GRAPH_SCHEMA,
+    "amazon": AMAZON_GRAPH_SCHEMA,
+    "goodreads": GOODREADS_GRAPH_SCHEMA,
+    "webqsp": FREEBASE_GRAPH_SCHEMA,
+    "cwq": FREEBASE_GRAPH_SCHEMA,
+}
+
 GRAPH_FIELD_SEP = "<SEP>"
 PROMPTS = {}
 
@@ -349,7 +357,9 @@ Your cypher query here
 
 PROMPTS["fail_response"] = "Sorry, I'm not able to provide an answer to that question."
 
-PROMPTS["token_limit_exceeded"] = "Content exceeds the token limit, please reduce the content size and try again."
+PROMPTS["token_limit_exceeded"] = (
+    "Content exceeds the token limit, please reduce the content size and try again."
+)
 
 PROMPTS["error_retry"] = (
     "When processing your previous response, errors occurred which indicates that you have made a mistake. Please fix the error and generate the response again. The error is: {}."

@@ -27,9 +27,7 @@ class Neo4jStorage(BaseGraphStorage):
     def __post_init__(self):
         self.neo4j_url = self.global_config["addon_params"].get("neo4j_url", None)
         self.neo4j_auth = self.global_config["addon_params"].get("neo4j_auth", None)
-        self.namespace = (
-            f"{self.global_config['working_dir'].split('/')[-1].split('_')[-1].lower()}"
-        )
+        self.namespace = self.global_config["dataset"]
         logger.info(f"Using the label {self.namespace} for Neo4j as identifier")
         if self.neo4j_url is None or self.neo4j_auth is None:
             raise ValueError("Missing neo4j_url or neo4j_auth in addon_params")

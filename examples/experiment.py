@@ -35,18 +35,19 @@ argparser.add_argument(
     "--benchmark_dir", type=str, default="../benchmarks/physics", required=True
 )
 args = argparser.parse_args()
+print(args)
 
 DATASET_DIR = args.data_dir
-WORKING_DIR = f"checkpoints/polyg_{DATASET_DIR.split('/')[-1]}"
-RESULT_DIR = f"results/{DATASET_DIR.split('/')[-1]}/{args.model}"
+DATASET_NAME = DATASET_DIR.split("/")[-1]
+RESULT_DIR = f"results/{DATASET_NAME}/{args.model}"
 MAX_MODEL_LEN = 128000
 MAX_CONTEXT_TOKENS = 90000
 MAX_OUTPUT_TOKENS = 5000
 
 print(
+    f"DATASET: {DATASET_NAME}",
     f"Dataset dir: {DATASET_DIR}",
     f"Benchmark dir: {args.benchmark_dir}",
-    f"Working dir: {WORKING_DIR}",
     f"Result dir: {RESULT_DIR}",
 )
 
@@ -70,7 +71,7 @@ def print_outputs(outputs):
 
 
 rag = GraphRAG(
-    working_dir=WORKING_DIR,
+    dataset=DATASET_NAME,
     model=args.model,
     model_max_token_size=MAX_MODEL_LEN,
     graph_storage_cls=Neo4jStorage,
