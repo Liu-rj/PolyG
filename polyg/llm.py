@@ -22,7 +22,9 @@ class LLM:
 
         messages.extend(history_messages)
         messages.append({"role": "user", "content": prompt})
-        response = completion(model=self.model, messages=messages, **kwargs)
+        response = completion(
+            model=self.model, messages=messages, temperature=0, **kwargs
+        )
         assert isinstance(response, ModelResponse)
 
         return response.choices[0].message.content  # type: ignore

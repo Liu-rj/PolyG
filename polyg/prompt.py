@@ -228,7 +228,7 @@ Do not include information where the supporting evidence for it is not provided.
 
 ---Notes---
 
-1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
+1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes. Make sure to use the relation with its correct direction (-> or <-) in the cypher query.
 
 2. Add the identification label in the generated cypher query as instructed in the graph schema section to ensure the cypher query inquires about the right graph.
 
@@ -300,7 +300,7 @@ Do not include information where the supporting evidence for it is not provided.
 
 2. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute. For example, correct cypher query should first "MATCH path" then "RETURN path". Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels.
+3. Please carefully think about the query structure and make sure the query is *correct* and *efficient* to execute. For example, correct cypher query should first "MATCH path" then "RETURN path". Also, cypher does not allow mixing label expression symbols ('|', '&', '!', and '%') with colon (':') between labels. Make sure to use the relation with its correct direction (-> or <-) in the cypher query.
 
 4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time. For example, just starting from "(:paper)-[:reference|cited_by]->(:paper)" for matching "paper reference" relations is good. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
 
@@ -341,7 +341,7 @@ Do not make up any information where the supporting evidence for it is not provi
 
 ---Notes---
 
-1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
+1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes. Make sure to use the relation with its correct direction (-> or <-) in the cypher query.
 
 2. Add the identification label in the generated cypher query as instructed in the graph schema section to ensure the cypher query inquires about the right graph.
 
