@@ -24,21 +24,6 @@ question_types = {
 }
 
 
-# prompt_ = """
-# You are a highly intelligent assistant tasked with classifying questions into four types based on the number of entities mentioned and the nature of the aspect being asked.
-# - single_entity_abstract (0): The question mentions one entity and asks about its own aspects.  It does not ask about other entities.
-# - single_entity_concrete (1): The question mentions one entity and asks about its relations to other entities, or specific details  such as relationships, interactions, or comparisons.
-# - multi_entity_abstract (2): The question mentions multiple entities and asks about their abstract relationships, concepts, or interactions.
-# - multi_entity_concrete (3): The question mentions multiple entities and asks about concrete details or specific attributes of their relationship.
-# When given a question, return only a single number corresponding to its type:
-# - 0 for single_entity_abstract
-# - 1 for single_entity_concrete
-# - 2 for multi_entity_abstract
-# - 3 for multi_entity_concrete
-# Question: {}
-# Your Answer:
-# """
-
 prompt = """
 **Prompt:**
 You are an intelligent assistant tasked with classifying questions into four types based on the number of entities mentioned and the nature of the aspect being asked.
@@ -88,7 +73,7 @@ def num_tokens(text: str, token_encoder: tiktoken.Encoding | None = None) -> int
 
 def bedrock_generator(
     prompt: str,
-    system_prompt: str = None,
+    system_prompt: str | None = None,
     history_messages: List[dict] = [],
     **kwargs,
 ) -> str:
