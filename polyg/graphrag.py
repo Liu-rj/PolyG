@@ -44,6 +44,7 @@ class GraphRAG:
     # LLM
     model: str = "openai/gpt-4o"
     model_max_token_size: int = 32768
+    model_sampling_params: Dict = field(default_factory=dict)
     model_max_async: int = 16
     llm: LLM = field(init=False)
     model_func: Callable = field(init=False)
@@ -65,7 +66,7 @@ class GraphRAG:
             logger.info(f"Creating working directory {self.working_dir}")
             os.makedirs(self.working_dir, exist_ok=True)
 
-        self.llm = LLM(self.model)
+        self.llm = LLM(self.model, self.model_sampling_params)
         self.model_func = limit_async_func_call(self.model_max_async)(self.llm.generate)
 
         self.entity_relation_graph = self.graph_storage_cls(

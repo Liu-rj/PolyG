@@ -175,6 +175,7 @@ class Neo4jStorage(BaseGraphStorage):
                             if "target" in key.lower():
                                 dest = record[key]
                                 dest_ids.add(dest["id"])  # Add target node
+                                node_ids.add(dest["id"])  # Also add to node_ids
             except Exception as e:
                 print(f"Error executing query: {e}")
 

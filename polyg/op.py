@@ -376,7 +376,9 @@ async def cypher_only(
             token_len += cur_token_len
             llm_calls += 1
             response = await use_model_func(
-                prompt=prompt, system_prompt=sys_prompt, history_messages=history_msgs
+                prompt=prompt,
+                system_prompt=sys_prompt,
+                history_messages=history_msgs,
             )
             cypher_query = response.split("```")[1].strip("cypher")
             print(f"Cypher query generation time: {time.time() - tic:.2f}s")
@@ -506,8 +508,8 @@ async def guided_walk(
             print(p_context)
             print(node_ids)
             print(dest_ids)
-            if len(p_context) == 0:
-                raise ValueError("No path found, please adjust the query")
+            if len(p_context) == 0 and len(node_ids) == 0:
+                raise ValueError("No result found, please adjust the query")
             print(f"Query execution time: {time.time() - tic:.2f}s")
 
             break

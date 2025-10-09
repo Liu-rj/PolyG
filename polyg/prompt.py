@@ -216,11 +216,36 @@ User questions are about node inquiries which involve multi-hop relation paths.
 
 Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph.
 
-Also give the cypher query that can be executed on the graph to get the answer.
+Also give the cypher query that can be executed on the graph to get the answer. The cypher query should return a **complete** path from starting entities to answers, as well as the final answer entities.
 
 If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
 
 Do not include information where the supporting evidence for it is not provided.
+
+---Examples---
+
+1. User question: "What venues have the academic collaborators of the author who writes the paper 'gravitation analysis' published in?":
+Suppose the "id" of 'gravitation analysis' is 'id1', the cypher query for this question is:
+```cypher
+MATCH path = (start_paper:physics:paper {{id: 'id1'}})-[:author]->(author:physics:author)-[:paper]->(collab_paper:physics:paper)-[:author]->(collaborator:physics:author)-[:paper]->(pub:physics:paper)-[:venue]->(venue:physics:venue)
+WHERE collaborator <> author
+RETURN path, venue AS target
+```
+
+2. User question: "What books have the collaborators of the author 'Newton' published?":
+Suppose the "id" of 'Newton' is 'id1', the cypher query for this question is:
+```cypher
+MATCH path = (author1:goodreads:author {{id: 'id1'}})-[:book]->(book1:goodreads:book)-[:author]->(coauthor:goodreads:author)-[:book]->(other_book:goodreads:book)
+WHERE coauthor <> author1
+RETURN path, other_book AS target
+```
+
+3. User question: "What are the items that are also viewed when viewing items of the brand owning the item 'TaB Diet Cola 12 Pack'?":
+Suppose the "id" of 'TaB Diet Cola 12 Pack' is 'id1', the cypher query for this question is:
+```cypher
+MATCH path = (start:amazon:item {{id: 'id1'}})-[:brand]->(brand:amazon:brand)-[:item]->(other_items:amazon:item)-[:also_viewed_item]->(also_viewed:amazon:item)
+RETURN path, also_viewed AS target
+```
 
 ---Graph Schema---
 
@@ -234,7 +259,7 @@ Do not include information where the supporting evidence for it is not provided.
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Return the whole paths and the target entities, using `MATCH path = (start)-[relation]->...->(node)->...->(end) RETURN path, node AS target` in the cypher query.
+4. Return the **complete** paths and the target entities, using `MATCH path = (start)-[relation]->...->(node)->...->(end) RETURN path, node AS target` in the cypher query.
 
 5. Use "LIMIT 20" to limit the number of results returned in the cypher query.
 
@@ -257,7 +282,16 @@ You will be provided with the knowledge graph schema, which indicates the types 
 
 User questions are about relationships between nodes which can be indirect and result in multi-hop relation paths. User questions may include a relation constraint that indicates some specific paths.
 
-Examples:
+---Goal---
+
+Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph. Also give the cypher query that can be executed on the graph to get the answer.
+
+If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
+
+Do not include information where the supporting evidence for it is not provided.
+
+---Examples---
+
 1. User question: "What is the relationship between 'J. Koll' and 'Z. Staykova' in terms of paper reference?". In this case, the user is asking about the paths between two authors that is constraint to paper references and citations.
 Suppose the "id" of 'J. Koll' and 'Z. Staykova' is 'id1' and 'id2', and the cypher query for this question is (where only paths that contains reference and citation relations should be considered):
 ```cypher
@@ -281,14 +315,6 @@ MATCH path = (item1:item {{id: 'id1'}})-[:brand]->(brand1:brand)-[:item]->(item2
 RETURN path
 LIMIT 20
 ```
-
----Goal---
-
-Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph. Also give the cypher query that can be executed on the graph to get the answer.
-
-If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
-
-Do not include information where the supporting evidence for it is not provided.
 
 ---Graph Schema---
 
@@ -371,9 +397,9 @@ PROMPTS[
 **Prompt:**
 You are an intelligent assistant tasked with classifying questions into different types based on the missing parts of a fact and the nature of the aspect being asked.
 
-We have four types of questions, where s is the subject, p is the predicate, o is the object, and * means the missing part. Below, we define the four types of questions with some concrete examples for each type.
+We have five types of questions, where s is the subject, p is the predicate, o is the object, and * means the missing part. Below, we define the five types of questions with some concrete examples for each type.
 
-The four types of questions are:
+The five types of questions are:
 - **<s,*,*> (0):**
   In this type, the object and concrete predicate are both missing in the facts and question asks about the general or broad information of the subject (e.g., themes, concepts, or a general description).
   Examples:
@@ -383,7 +409,7 @@ The four types of questions are:
   - "Who is flo from progressive?"
 - **<s,p,*> (1):**
   In this type, the object is missing in the facts and question focuses on finding the object, with specific and concrete relations and attributes to the subject are provided by a concrete predicate p.
-  Note that this type of question can have multiple predicates and subjects, and containing time or counting constraints in the predicates.
+  Note that this type of question can have multiple predicates (a predicate chain) and subjects, and containing time or counting constraints in the predicates.
   Examples:
   - "Who are the authors of the book 'Sunshine for the Latter-Day Sa'?"
   - "What series have the author of the book 'Cookies for the Dragon (Saint Lakes, #2.1)' published?"
@@ -405,6 +431,14 @@ The four types of questions are:
   Examples:
   - "Have the authors 'Rubem Fonseca' and 'Lygia Fagundes Telles' ever published books in the same publishers?"
   - "Do the publishers 'Scholastic Inc.' and 'Klutz' have any authors publishing books in both of them?"
+- **nested (-1):**
+  Not every question can be directly classified into the above four classes, especially for complex questions, where the question is nested and asks about different types of relations, in which case you should return **-1**.
+  For example, when the question asks about the relationship between two entities or inquiry about general information about some entities, but the entities need to be determined by another query embeded in the overall question, it is a nested question and should be classified as -1.
+  Especially, nested questions can only be in the form where the overall quesiton is one of <s,*,*>, <s,*,o>, <s,p,o> question nested with <s,p,*> question.
+  Examples:
+  - "Provide some information about the academic work and achievements of the scholars who have collaborated with 'L. Foldy'.": 1. the first step is a <s,p,*> question, finding the academic collaborators of 'L. Foldy'. 2. the second step is a <s,*,*> question: gather general academic information for the collaborators.
+  - "Have the scholars 'S. Chiku' and 'A. I. Sanda' both published work at the venue having the paper 'weyl groups in ads3 cft2'?": 1. the first step is a <s,p,o> question, finding the venue having the paper 'weyl groups in ads3 cft2'. 2. the second step is a <s,p,o> question, finding the path validating whether the authors both published work in the venue found in the previous step.
+  - "In what way is the scholar 'Liang Wu' linked to the writers of 'bound states of breathing airy gaussian beams in nonlocal nonlinear medium'?" 1. the first step is a <s,p,*> question: find the authors of the paper 'bound states of breathing airy gaussian beams in nonlocal nonlinear medium'. 2. then a <s,*,o> question: find the path validating whether 'Liang Wu' is linked to the authors found in the previous step.
 
 **Differences between <s,p,*> and <s,p,o>:**
 In the case of multiple predicates and subjects, <s,p,*> questions may sound similar to <s,p,o> questions, but they are different in what they inquiry about.
@@ -412,18 +446,11 @@ If the question asks for some concrete entities, for example "What is/are the en
 If the questions focus on checking the existence of a relationship between two entities, for example "Do A and B share ...?", then that is <s,p,o> question.
 
 **Instruction:**
-When given a question, analyze it based on the definitions above. If the question belongs to any of the four types, then return **only a single number** corresponding to the type of the question.
-However, note that not every question can be directly classified into the above four classes, where the question is nested and asks about different types of relations, in which case you should return **-1**.
-For example, when the question asks about the relationship between two entities or inquiry about general information about some entities, but the entities need to be determined by another query embeded in the overall question, it is a nested question and should be classified as -1.
+When given a question, analyze its type based on the definitions above, then return **only a single number** corresponding to the type of the question.
 
-Especially, nested questions can only be in the form where the overall quesiton is one of <s,*,*>, <s,*,o>, <s,p,o> question nested with <s,p,*> question.
-If the question reveals a chain of specific relations (multi-hop predicates) from one specific entity (subject), it is not a nested question and should be classified as <s,p,*> question and output 1.
-In the case of multiple sequential <s,p,*> sub-questions with different subjects, you can merge them into one single <s,p,*> question and classify the overall question as 1 for <s,p,*>, as consecutive <s,p,*> questions can always be merged into one single <s,p,*> question with multiple predicates and subjects.
-
-Some concrete example:
-- "Provide some concrete information about the academic collaborators of the scholar 'L. Foldy'.": 1. the first step is a <s,p,*> question, finding the collaborators of 'L. Foldy'. 2. the second step is a <s,*,*> question: gather general and broad information for the collaborators.
-- "Have the scholars 'S. Chiku' and 'A. I. Sanda' both published work at the venue having the paper 'weyl groups in ads3 cft2'?": 1. the first step is a <s,p,o> question, finding the venue having the paper 'weyl groups in ads3 cft2'. 2. the second step is a <s,p,o> question, finding the path validating whether the authors both published work in the venue found in the previous step.
-- "In what way is the scholar 'Liang Wu' linked to the writers of 'bound states of breathing airy gaussian beams in nonlocal nonlinear medium'?" 1. the first step is a <s,p,*> question: find the authors of the paper 'bound states of breathing airy gaussian beams in nonlocal nonlinear medium'. 2. then a <s,*,o> question: find the path validating whether 'Liang Wu' is linked to the authors found in the previous step.
+Notes:
+1. If the question reveals a chain of specific relations (multi-hop predicates) from one specific entity (subject), it is not a nested question and should be classified as <s,p,*> question and output 1.
+2. In the case of multiple sequential <s,p,*> sub-questions with different subjects, you can merge them into one single <s,p,*> question and classify the overall question as 1 for <s,p,*>, as consecutive <s,p,*> questions can always be merged into one single <s,p,*> question with multiple predicates and subjects.
 
 
 For the response, you don't need to give any explanation but just **a single number** indicating the type:
@@ -432,7 +459,7 @@ For the response, you don't need to give any explanation but just **a single num
 - **1** for <s,p,*>
 - **2** for <s,*,o>
 - **3** for <s,p,o>
-- **-1** for questions that do not belong to any of the four types.
+- **-1** for nested questions.
 
 **Question:** {}
 
