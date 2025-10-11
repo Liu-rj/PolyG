@@ -332,7 +332,7 @@ multi_entity_concrete_template = {
             """,
             "hops": 3,
         },
-        "Have authors '{}' and '{}' both collaborated with some other authors and who are they?": {
+        "Have authors '{}' and '{}' both collaborated with some other authors, not necessarily in the same work, and who are they?": {
             "cypher_template": """
             MATCH (author1:physics:author)
             -[:paper]->(paper1:physics:paper)
