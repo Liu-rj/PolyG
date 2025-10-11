@@ -133,14 +133,11 @@ class Neo4jStorage(BaseGraphStorage):
         result_list = []
 
         async with self.async_driver.session() as session:
-            try:
-                async with transaction_context(session, timeout=60) as tx:
-                    results = await tx.run(query)
+            async with transaction_context(session, timeout=60) as tx:
+                results = await tx.run(query)
 
-                    async for record in results:
-                        result_list.append(record)
-            except Exception as e:
-                print(f"Error executing query: {e}")
+                async for record in results:
+                    result_list.append(record)
 
             return result_list
 
@@ -150,34 +147,31 @@ class Neo4jStorage(BaseGraphStorage):
         paths, node_ids, dest_ids = [], set(), set()
 
         async with self.async_driver.session() as session:
-            try:
-                async with transaction_context(session, timeout=60) as tx:
-                    results = await tx.run(query)
+            async with transaction_context(session, timeout=60) as tx:
+                results = await tx.run(query)
 
-                    # Iterate through the results asynchronously
-                    async for record in results:
-                        for key in record.keys():
-                            if "path" in key.lower():
-                                path = record[key]
-                                path_repr = []
+                # Iterate through the results asynchronously
+                async for record in results:
+                    for key in record.keys():
+                        if "path" in key.lower():
+                            path = record[key]
+                            path_repr = []
 
-                                # Process nodes and relationships in the path
-                                for i, node in enumerate(path.nodes):
-                                    node_ids.add(node["id"])  # Add node
-                                    path_repr.append(node["name"])  # Add node name
-                                    if i < len(path.relationships):
-                                        rel = path.relationships[i]
-                                        path_repr.append(f"({rel.type})")
+                            # Process nodes and relationships in the path
+                            for i, node in enumerate(path.nodes):
+                                node_ids.add(node["id"])  # Add node
+                                path_repr.append(node["name"])  # Add node name
+                                if i < len(path.relationships):
+                                    rel = path.relationships[i]
+                                    path_repr.append(f"({rel.type})")
 
-                                # Join the path representation as a readable string
-                                paths.append(" -> ".join(path_repr))
+                            # Join the path representation as a readable string
+                            paths.append(" -> ".join(path_repr))
 
-                            if "target" in key.lower():
-                                dest = record[key]
-                                dest_ids.add(dest["id"])  # Add target node
-                                node_ids.add(dest["id"])  # Also add to node_ids
-            except Exception as e:
-                print(f"Error executing query: {e}")
+                        if "target" in key.lower():
+                            dest = record[key]
+                            dest_ids.add(dest["id"])  # Add target node
+                            node_ids.add(dest["id"])  # Also add to node_ids
 
             return paths, node_ids, dest_ids
 
@@ -185,22 +179,19 @@ class Neo4jStorage(BaseGraphStorage):
         paths = []
 
         async with self.async_driver.session() as session:
-            try:
-                async with transaction_context(session, timeout=60) as tx:
-                    results = await tx.run(
-                        f"""
-                        MATCH p = SHORTEST 20 (s:{self.namespace} {{id: $source_id}})
-                        -[*]->(t:{self.namespace} {{id: $target_id}})
-                        RETURN [n in nodes(p) | n.id] AS path
-                        """,
-                        source_id=src_id,
-                        target_id=tgt_id,
-                    )
+            async with transaction_context(session, timeout=60) as tx:
+                results = await tx.run(
+                    f"""
+                    MATCH p = SHORTEST 20 (s:{self.namespace} {{id: $source_id}})
+                    -[*]->(t:{self.namespace} {{id: $target_id}})
+                    RETURN [n in nodes(p) | n.id] AS path
+                    """,
+                    source_id=src_id,
+                    target_id=tgt_id,
+                )
 
-                    async for record in results:
-                        node_id = record["path"]
-                        paths.append(node_id)
-            except Exception as e:
-                print(f"Error executing query: {e}")
+                async for record in results:
+                    node_id = record["path"]
+                    paths.append(node_id)
 
             return paths
