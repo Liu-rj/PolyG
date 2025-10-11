@@ -16,6 +16,11 @@ from .prompt import (
 
 
 ALL_CONTEXT = """
+-----Cypher Query-----
+```cypher
+{cypher_query}
+```
+
 -----Entities-----
 ```csv
 {entities_context}
@@ -35,7 +40,7 @@ async def _find_most_related_edges_from_entities(
     id_mapping: dict[str, str],
     query_param: QueryParam,
     kg_inst: BaseGraphStorage,
-):
+) -> Tuple[List[Dict], List[Dict], str]:
     all_nodes = set(id_mapping.values())
     entry_ids = list(id_mapping.values())
 
@@ -62,11 +67,22 @@ async def _find_most_related_edges_from_entities(
 
         print(f"Number of nodes retrieved: {len(all_nodes)}")
         print(f"Number of edges retrieved: {num_edges}")
+
+        cypher_query = (
+            "MATCH (s:self.namespace)-[r]-(t:self.namespace) WHERE s.id = $source_id\n"
+            "RETURN s.id AS source, t.id AS target, Type(r) AS relation"
+        )
     elif query_param.traversal_type == "topk_shortest_paths":
         all_node_path = await kg_inst.topk_shortest_paths(entry_ids[0], entry_ids[1])
 
         print(f"Number of paths retrieved: {len(all_node_path)}")
         print(f"Number of edges retrieved: {sum([len(p) - 1 for p in all_node_path])}")
+
+        cypher_query = (
+            "MATCH p = SHORTEST 20 (s:self.namespace {id: $source_id})-[*]->"
+            "(t:self.namespace {id: $target_id})\n"
+            "RETURN [n in nodes(p) | n.id] AS path"
+        )
     else:
         raise ValueError(f"Unknown traversal type: {query_param.traversal_type}")
 
@@ -148,14 +164,14 @@ async def _find_most_related_edges_from_entities(
         print(f"Collect path data time: {time.time() - tic:.2f}s")
     else:
         raise ValueError(f"Unknown traversal type: {query_param.traversal_type}")
-    return (node_datas, all_edges_data)
+    return (node_datas, all_edges_data, cypher_query)
 
 
 def form_node_edge_context(
     node_datas: List[Dict],
     relation_datas: List[Dict],
     query_param: QueryParam,
-):
+) -> Tuple[str, str]:
     tic = time.time()
     keys = ["name", "node_type", "description"]
     entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
@@ -220,10 +236,10 @@ async def _build_local_query_context(
     kg_inst: BaseGraphStorage,
     query_param: QueryParam,
     global_config: dict,
-):
+) -> str:
     tic = time.time()
-    node_datas, use_relations = await _find_most_related_edges_from_entities(
-        id_mapping, query_param, kg_inst
+    node_datas, use_relations, cypher_query = (
+        await _find_most_related_edges_from_entities(id_mapping, query_param, kg_inst)
     )
     print(f"Get relations time: {time.time() - tic:.2f}s")
     logger.info(f"Using {len(node_datas)} entites, {len(use_relations)} relations")
@@ -233,6 +249,7 @@ async def _build_local_query_context(
     )
 
     return ALL_CONTEXT.format(
+        cypher_query=cypher_query,
         entities_context=entities_context,
         relations_context=relations_context,
         reasoning_path_context="",
@@ -285,62 +302,27 @@ async def local_query(
     return response, form_response_tokens, 1, []
 
 
-async def build_cypher_only_context(
-    all_edges: List[Tuple],
-    kg_inst: BaseGraphStorage,
-    query_param: QueryParam,
-):
-    tic = time.time()
-    # turn edges to a set of unique node ids
-    entry_ids = set()
-    for src, tgt in all_edges:
-        entry_ids.add(src)
-        entry_ids.add(tgt)
-    node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in entry_ids])
-    assert all(x is not None for x in node_datas)
-    print(f"Get node data time: {time.time() - tic:.2f}s")
-
-    tic = time.time()
-    src_node_pack = await asyncio.gather(*[kg_inst.get_node(e[0]) for e in all_edges])
-    tgt_node_pack = await asyncio.gather(*[kg_inst.get_node(e[1]) for e in all_edges])
-    assert all(x is not None for x in src_node_pack)
-    assert all(x is not None for x in tgt_node_pack)
-    all_edges_name = [
-        (src["name"], tgt["name"]) for src, tgt in zip(src_node_pack, tgt_node_pack)  # type: ignore
-    ]
-    all_edges_pack = await asyncio.gather(
-        *[kg_inst.get_edge(e[0], e[1]) for e in all_edges]
+async def build_schema_example(kg_inst: BaseGraphStorage, node_ids: List[ID]):
+    all_edges = set()
+    related_edges = await asyncio.gather(
+        *[kg_inst.get_node_edges(node_id) for node_id in node_ids]
     )
-    assert all(x is not None for x in all_edges_pack)
-    print(f"Get edge data time: {time.time() - tic:.2f}s")
+    for this_edges in related_edges:
+        all_edges.update(this_edges)
 
-    tic = time.time()
-    all_edges_degree = await asyncio.gather(
-        *[kg_inst.edge_degree(e[0], e[1]) for e in all_edges]
+    relation_header = ",\t".join(
+        [
+            f"{enclose_string_with_quotes(data)}"
+            for data in ["id", "source", "target", "relation"]
+        ]
     )
-    print(f"Get edge degree time: {time.time() - tic:.2f}s")
-
-    tic = time.time()
-    all_edges_data = [
-        {"src_tgt": k, "rank": r, **v}
-        for k, r, v in zip(all_edges_name, all_edges_degree, all_edges_pack)
-        if v is not None
-    ]
-    print(f"Combine edge data time: {time.time() - tic:.2f}s")
-
-    tic = time.time()
-    all_edges_data = sorted(all_edges_data, key=lambda x: x["rank"], reverse=True)
-    print(f"Sort edge data time: {time.time() - tic:.2f}s")
-
-    entities_context, relations_context = form_node_edge_context(
-        node_datas, all_edges_data, query_param  # type: ignore
-    )
-
-    return ALL_CONTEXT.format(
-        entities_context=entities_context,
-        relations_context=relations_context,
-        reasoning_path_context="",
-    )
+    relations_section_list = [relation_header]
+    for i, e in enumerate(all_edges):
+        raw_data = [i, e[0], e[1], e[2]]
+        relations_section_list.append(
+            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+        )
+    return list_to_csv(relations_section_list)
 
 
 async def cypher_only(
@@ -367,7 +349,8 @@ async def cypher_only(
     response = None
     llm_calls = 0
 
-    all_edges = []
+    cypher_query = ""
+    results = []
     prompt = f"query: {query}, id mapping: {id_mapping}"
     for i in range(query_param.failure_retries + 1):
         try:
@@ -387,7 +370,6 @@ async def cypher_only(
 
             tic = time.time()
             results = await kg_inst.exec_query(cypher_query)
-            all_edges = [(r["source"], r["target"]) for r in results]
             print(f"Query execution time: {time.time() - tic:.2f}s")
 
             break
@@ -401,16 +383,35 @@ async def cypher_only(
                 ]
             )
 
-    if len(all_edges) == 0:
+    if len(results) == 0:
         return PROMPTS["fail_response"], token_len, llm_calls, []
 
-    try:
-        tic = time.time()
-        context = await build_cypher_only_context(all_edges, kg_inst, query_param)
-        print(f"Build context time: {time.time() - tic:.2f}s")
-    except Exception as e:
-        print(f"Error: {e}")
-        return PROMPTS["fail_response"], token_len, llm_calls, []
+    tic = time.time()
+    keys = results[0].keys()
+    entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
+    entites_section_list = [entity_header]
+    for i, n in enumerate(results):
+        raw_data = [n.get(k, "UNKNOWN") for k in keys]
+        entites_section_list.append(
+            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+        )
+    truncated_entities_list = truncate_list_by_token_size(
+        entites_section_list,
+        max_token_size=int(
+            query_param.local_context_length * query_param.local_token_ratio_for_node
+        ),
+    )
+    entities_context = list_to_csv(truncated_entities_list)
+    print(
+        f"Build entity context time: {time.time() - tic:.2f}s, context length: {num_tokens(entities_context)} tokens"
+    )
+
+    context = ALL_CONTEXT.format(
+        cypher_query=cypher_query,
+        entities_context=entities_context,
+        relations_context="",
+        reasoning_path_context="",
+    )
 
     tic = time.time()
     sys_prompt_temp = PROMPTS["local_rag_response"]
@@ -425,7 +426,7 @@ async def cypher_only(
         logger.error(
             f"Context length {form_reponse_tokens} exceeds the limit {global_config['model_max_token_size']}"
         )
-        return PROMPTS["token_limit_exceeded"], token_len, 1, []
+        return PROMPTS["token_limit_exceeded"], token_len, llm_calls, []
 
     tic = time.time()
     response = await use_model_func(query, system_prompt=sys_prompt)
@@ -433,29 +434,6 @@ async def cypher_only(
     print(f"LLM generate time: {time.time() - tic:.2f}s")
 
     return response, token_len + form_reponse_tokens, llm_calls, []
-
-
-async def build_schema_example(kg_inst: BaseGraphStorage, node_ids: List[ID]):
-    all_edges = set()
-    related_edges = await asyncio.gather(
-        *[kg_inst.get_node_edges(node_id) for node_id in node_ids]
-    )
-    for this_edges in related_edges:
-        all_edges.update(this_edges)
-
-    relation_header = ",\t".join(
-        [
-            f"{enclose_string_with_quotes(data)}"
-            for data in ["id", "source", "target", "relation"]
-        ]
-    )
-    relations_section_list = [relation_header]
-    for i, e in enumerate(all_edges):
-        raw_data = [i, e[0], e[1], e[2]]
-        relations_section_list.append(
-            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
-        )
-    return list_to_csv(relations_section_list)
 
 
 async def guided_walk(
@@ -483,7 +461,9 @@ async def guided_walk(
     response = None
     llm_calls = 0
 
-    p_context, node_ids, dest_ids, ret_names = [], set(), set(), set()
+    # p_context, node_ids, dest_ids, ret_names = [], set(), set(), set()
+    ret_ids = []
+    cypher_query = ""
     prompt = f"query: {query}, id mapping: {id_mapping}"
     for i in range(query_param.failure_retries + 1):
         try:
@@ -501,15 +481,22 @@ async def guided_walk(
             print(f"Token length: {cur_token_len}")
             print("Generated cypher query:", cypher_query)
 
+            # tic = time.time()
+            # p_context, node_ids, dest_ids = await kg_inst.exec_query_and_get_path(
+            #     cypher_query
+            # )
+            # print(p_context)
+            # print(node_ids)
+            # print(dest_ids)
+            # if len(p_context) == 0 and len(node_ids) == 0:
+            #     raise ValueError("No result found, please adjust the query")
+            # print(f"Query execution time: {time.time() - tic:.2f}s")
+
             tic = time.time()
-            p_context, node_ids, dest_ids = await kg_inst.exec_query_and_get_path(
-                cypher_query
-            )
-            print(p_context)
-            print(node_ids)
-            print(dest_ids)
-            if len(p_context) == 0 and len(node_ids) == 0:
+            results = await kg_inst.exec_query(cypher_query)
+            if len(results) == 0:
                 raise ValueError("No result found, please adjust the query")
+            ret_ids = [r["id"] for r in results]
             print(f"Query execution time: {time.time() - tic:.2f}s")
 
             break
@@ -523,54 +510,76 @@ async def guided_walk(
                 ]
             )
 
-    if len(p_context) == 0 and len(node_ids) == 0:
-        return PROMPTS["fail_response"], token_len, llm_calls, []
+    # if len(p_context) == 0 and len(node_ids) == 0:
+    #     return PROMPTS["fail_response"], token_len, llm_calls, []
 
-    dest_datas = await asyncio.gather(*[kg_inst.get_node(d) for d in dest_ids])
-    assert all(x is not None for x in dest_datas)
-    ret_names = set([d["name"] for d in dest_datas])  # type: ignore
+    # dest_datas = await asyncio.gather(*[kg_inst.get_node(d) for d in dest_ids])
+    # assert all(x is not None for x in dest_datas)
+    # ret_names = set([d["name"] for d in dest_datas])  # type: ignore
 
-    related_edges = []
-    if global_config["dataset"] in ["webqsp", "cwq"]:
-        rets = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in dest_ids])
-        for edge_list in rets:
-            related_edges.extend(edge_list)
-        node_ids.update([e[1] for e in related_edges])
+    # related_edges = []
+    # if global_config["dataset"] in ["webqsp", "cwq"]:
+    #     rets = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in dest_ids])
+    #     for edge_list in rets:
+    #         related_edges.extend(edge_list)
+    #     node_ids.update([e[1] for e in related_edges])
 
-    node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
-    assert all(x is not None for x in node_datas)
-    for it, node in enumerate(node_datas):
-        id_mapping[node["name"]] = node["id"]  # type: ignore
+    # node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
+    # assert all(x is not None for x in node_datas)
+    # for it, node in enumerate(node_datas):
+    #     id_mapping[node["name"]] = node["id"]  # type: ignore
 
-    keys = ["id", "name", "node_type", "description"]
+    # keys = ["id", "name", "node_type", "description"]
+    # entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
+    # entites_section_list = [entity_header]
+    # for i, n in enumerate(node_datas):
+    #     assert n is not None
+    #     raw_data = [n.get(k, "UNKNOWN") for k in keys]
+    #     entites_section_list.append(
+    #         ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+    #     )
+    # entities_context = list_to_csv(entites_section_list)
+
+    # relation_header = ",\t".join(
+    #     [
+    #         f"{enclose_string_with_quotes(data)}"
+    #         for data in ["id", "source", "target", "relation"]
+    #     ]
+    # )
+    # relations_section_list = [relation_header]
+    # for i, e in enumerate(related_edges):
+    #     raw_data = [i, e[0], e[1], e[2]]
+    #     relations_section_list.append(
+    #         ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+    #     )
+    # relations_context = list_to_csv(relations_section_list)
+
+    tic = time.time()
+    entry_ids = list(id_mapping.values())
+    ret_ids = entry_ids + ret_ids
+    node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in ret_ids])
+    node_datas = [n for n in node_datas if n is not None] # remove None
+    for item in node_datas:
+        id_mapping[item["name"]] = item["id"] # type: ignore
+    ret_names = [n["name"] for n in node_datas[len(entry_ids) :]] # type: ignore
+    print(ret_names)
+    print(f"Get node data time: {time.time() - tic:.2f}s")
+
+    keys = ["name", "node_type", "description"]
     entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
     entites_section_list = [entity_header]
     for i, n in enumerate(node_datas):
-        assert n is not None
-        raw_data = [n.get(k, "UNKNOWN") for k in keys]
+        raw_data = [n.get(k, "UNKNOWN") for k in keys] # type: ignore
         entites_section_list.append(
             ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
         )
     entities_context = list_to_csv(entites_section_list)
 
-    relation_header = ",\t".join(
-        [
-            f"{enclose_string_with_quotes(data)}"
-            for data in ["id", "source", "target", "relation"]
-        ]
-    )
-    relations_section_list = [relation_header]
-    for i, e in enumerate(related_edges):
-        raw_data = [i, e[0], e[1], e[2]]
-        relations_section_list.append(
-            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
-        )
-    relations_context = list_to_csv(relations_section_list)
-
     all_context = ALL_CONTEXT.format(
+        cypher_query=cypher_query,
         entities_context=entities_context,
-        relations_context=relations_context,
-        reasoning_path_context=p_context,
+        relations_context="",
+        reasoning_path_context="",
     )
 
     tic = time.time()
@@ -625,6 +634,7 @@ async def topk_csp(
     llm_calls = 0
 
     p_context, node_ids = [], set()
+    cypher_query = ""
     prompt = f"query: {query}, id mapping: {id_mapping}"
     for i in range(query_param.failure_retries + 1):
         try:
@@ -662,22 +672,22 @@ async def topk_csp(
         return PROMPTS["fail_response"], token_len, llm_calls, []
 
     node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
-    assert all(x is not None for x in node_datas)
+    node_datas = [n for n in node_datas if n is not None] # remove None
     for node in node_datas:
         id_mapping[node["name"]] = node["id"]  # type: ignore
 
     keys = ["name", "node_type", "description"]
     entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
-    entites_section_list = [entity_header]
+    entities_section_list = [entity_header]
     for i, n in enumerate(node_datas):
-        assert n is not None
         raw_data = [n.get(k, "UNKNOWN") for k in keys]
-        entites_section_list.append(
+        entities_section_list.append(
             ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
         )
-    entities_context = list_to_csv(entites_section_list)
+    entities_context = list_to_csv(entities_section_list)
 
     all_context = ALL_CONTEXT.format(
+        cypher_query=cypher_query,
         entities_context=entities_context,
         relations_context="",
         reasoning_path_context=p_context,

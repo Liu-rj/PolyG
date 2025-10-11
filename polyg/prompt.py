@@ -12,7 +12,7 @@ Node properties:
 2. type: paper, properties: ["id", "name", "label", "year", "node_type", "abstract"]
 3. type: venue, properties: ["id", "name", "node_type"]
 
-Edge properties:
+Edge properties (all relation names are single-directional):
 Author nodes are linked to their paper nodes by authorship. Specific relations are:
 1. author -> "paper" -> paper
 
@@ -39,7 +39,7 @@ Node properties:
 3. type: publisher, properties: ["id", "name", "node_type"]
 4. type: series, properties: ["id", "name", "node_type", "description"]
 
-Edge properties:
+Edge properties (all relation names are single-directional):
 Book nodes are linked to neighboring book nodes, author nodes, publisher nodes and series nodes. Specific relations are:
 1. book -> "author" -> author
 2. book -> "publisher" -> publisher
@@ -67,7 +67,7 @@ Node properties:
 1. type: item, properties: ["id", "name", "node_type"]
 2. type: brand, properties: ["id", "name", "node_type"]
 
-Edge properties:
+Edge properties (all relation names are single-directional):
 Item nodes are linked to neighboring item nodes and brand nodes. Specific relations are:
 1. item -> "also_viewed_item" -> item
 2. item -> "buy_after_viewing_item" -> item
@@ -120,8 +120,8 @@ You are a helpful assistant responding to user questions.
 ---Setting---
 
 You will be provided with some helpful references. The provided reference data tables may appear in the following forms:
-1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths.
-2. Multiple reasoning paths are provided, indicating relations between entities.
+1. The cypher query used to retrieve the reference data.
+1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths indicating relations between entities.
 
 Questions can be about node inquiries or relations between nodes. Entities in the question may not have direct relationship and answering the question will need to consider multi-hop relations.
 
@@ -210,41 +210,24 @@ You are a helpful assistant that can generate trustful reasoning paths with the 
 
 You will be provided with the knowledge graph schema, which indicates the types of nodes and edges, and by what relations nodes are connected.
 
-User questions are about node inquiries which involve multi-hop relation paths.
+User questions are about node inquries which involve multi-hop relation paths.
 
 ---Goal---
 
-Generate a trustful reasoning path that can be executed on graph using the given user question, based on the given schema of the knowledge graph.
-
-Also give the cypher query that can be executed on the graph to get the answer. The cypher query should return a **complete** path from starting entities to answers, as well as the final answer entities.
+Given user question, generate a cypher query that can be executed on the neo4j database to find the reasoning paths based on the given schema of the knowledge graph.
 
 If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
 
 Do not include information where the supporting evidence for it is not provided.
 
----Examples---
+---Example---
 
-1. User question: "What venues have the academic collaborators of the author who writes the paper 'gravitation analysis' published in?":
-Suppose the "id" of 'gravitation analysis' is 'id1', the cypher query for this question is:
+1. User query: What are the titles of all papers authored by 'Hee-Dong Jeong'?
+Suppose the id of 'Hee-Dong Jeong' is '2901004538', the cypher query for this question is:
 ```cypher
-MATCH path = (start_paper:physics:paper {{id: 'id1'}})-[:author]->(author:physics:author)-[:paper]->(collab_paper:physics:paper)-[:author]->(collaborator:physics:author)-[:paper]->(pub:physics:paper)-[:venue]->(venue:physics:venue)
-WHERE collaborator <> author
-RETURN path, venue AS target
-```
-
-2. User question: "What books have the collaborators of the author 'Newton' published?":
-Suppose the "id" of 'Newton' is 'id1', the cypher query for this question is:
-```cypher
-MATCH path = (author1:goodreads:author {{id: 'id1'}})-[:book]->(book1:goodreads:book)-[:author]->(coauthor:goodreads:author)-[:book]->(other_book:goodreads:book)
-WHERE coauthor <> author1
-RETURN path, other_book AS target
-```
-
-3. User question: "What are the items that are also viewed when viewing items of the brand owning the item 'TaB Diet Cola 12 Pack'?":
-Suppose the "id" of 'TaB Diet Cola 12 Pack' is 'id1', the cypher query for this question is:
-```cypher
-MATCH path = (start:amazon:item {{id: 'id1'}})-[:brand]->(brand:amazon:brand)-[:item]->(other_items:amazon:item)-[:also_viewed_item]->(also_viewed:amazon:item)
-RETURN path, also_viewed AS target
+MATCH (a:physics:author {{id: '2901004538'}})-[:paper]->(p:physics:paper)
+RETURN DISTINCT p.id AS id
+LIMIT 20
 ```
 
 ---Graph Schema---
@@ -253,17 +236,19 @@ RETURN path, also_viewed AS target
 
 ---Notes---
 
-1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes. Make sure to use the relation with its correct direction (-> or <-) in the cypher query.
+1. Please carefully think about the query structure and make sure the query is **correct** and **efficient** to execute. Do not forget to assign a variable name before retrieving the attributes.
 
 2. Add the identification label in the generated cypher query as instructed in the graph schema section to ensure the cypher query inquires about the right graph.
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Return the **complete** paths and the target entities, using `MATCH path = (start)-[relation]->...->(node)->...->(end) RETURN path, node AS target` in the cypher query.
+4. Always use "->" rather than "<-" and "-" to indicate the direction of the relationship in the cypher query. Each edge have an reversed edge in the graph, so do not involve duplicated paths.
 
-5. Use "LIMIT 20" to limit the number of results returned in the cypher query.
+5. Only return the unique id column of retrieved entities and set the label of the result column as "id", using `RETURN DISTINCT node.id as id` in the cypher query. Do not return other properties or columns, i.e., `RETURN DISTINCT node.name as id` is not allowed.
 
-6. return the cypher query in the following format (enclosed by ```cypher ... ```):
+6. Use "LIMIT 20" to limit the number of results returned in the cypher query.
+
+7. return the cypher query in the following format:
 ```cypher
 Your cypher query here
 ```
@@ -330,7 +315,7 @@ LIMIT 20
 
 4. Start from short-path cypher queries and do not use `*1..`, `*1..2`, `*1..3`, `*..` or even larger ranges for elation matching if we don't explicitly tell you to do so as it will take a long time. For example, just starting from "(:paper)-[:reference|cited_by]->(:paper)" for matching "paper reference" relations is good. If current simple queries can not find the answer, we will ask you to gradually extend the path with specfic path length.
 
-5. Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path.
+5. IMPORTANT: Always use single "MATCH path =" clause for the whole cypher query, starting from one input entity to another and captures the whole path, and return the "path". Results are extracted using the "path" variable, so program will fail if you return other variables. Do not split the path matching into multiple "MATCH" clauses, just use a single path matching and return it!
 
 6. Return the results in path format (enclosed by ```cypher ... ```):
 ```cypher
@@ -355,8 +340,6 @@ The user input is a graph question and a id_mapping. The id_mapping is a diction
 
 Generate the cypher query that can be executed on neo4j database to find the answer to the question based on the provided question and id_mapping.
 
-You should return two columns "source" and "target" using the "id" property, indicating relations consisting of the source and target entity IDs that are required to answer the question: (1) source node entity IDs and (2) target node entity IDs.
-
 If you don't have adequate information to give trustful reasoning paths, just say so. Do not make anything up.
 
 Do not make up any information where the supporting evidence for it is not provided.
@@ -373,9 +356,7 @@ Do not make up any information where the supporting evidence for it is not provi
 
 3. Use the "id" property to identify the entities in the graph, rather than names. Users will provide the ids of the entities along with the questions.
 
-4. Only return two columns "souce" and "target" which are the entity IDs of the required relations, using "id" property. Do not involve any other columns or attributes.
-
-5. return the cypher query in the following format (enclosed by ```cypher ... ```):
+4. return the cypher query in the following format (enclosed by ```cypher ... ```):
 ```cypher
 Your cypher query here
 ```
@@ -567,7 +548,7 @@ The input will be five parts:
 
 **Note:**
 - In the following question type, s means subject, p means predicate, o means object, and * means the missing part.
-- For <s,*,*> and <s,p,*> question, you can merge several questions into one question. For example two <s,*,*> questions, "Tell me about 'A'." and "Tell me about 'B'." can be merged into "Tell me about 'A' and 'B'.". And you should give both the id mapping for 'A' and 'B'. Same for <s,p,*> questions, for example "Who is the collaborator of both 'A' and 'B'?".
+- For <s,*,*> and <s,p,*> question, you should merge several questions into one question. For example two <s,*,*> questions, "Tell me about 'A'." and "Tell me about 'B'." can be merged into "Tell me about 'A' and 'B'.". And you should give both the id mapping for 'A' and 'B'. Same for <s,p,*> questions, for example "Who is the collaborator of both 'A' and 'B'?".
 - For other two types of questions <s,*,o> and <s,p,o>, you need to generate a seperate concrete question for each entity. For example, "What is the relation between 'L. Foldy' and 'A'?" and "What is the relation between 'L. Foldy' and 'B'?" should be generated as two separate questions. And you should give a seperate id mapping for each concrete question.
 
 **Example:**
@@ -582,7 +563,7 @@ Question plan:
 Step: 2
 
 Previous step's response:
-1. ["A", "B", "C"]
+1. academic collaborators who have worked with 'L. Foldy' are "A", "B", and "C".
 
 Id mapping:
 {{"A": "id1", "B": "id2", "C": "id3"}}
@@ -608,7 +589,7 @@ Question plan:
 Step: 2
 
 Previous step's response:
-1. ["A", "B"]
+1. authors of the paper 'kinetic and mass mixing with three abelian groups' are "A" and "B".
 
 Id mapping:
 {{"A": "id1", "B": "id2"}}
@@ -625,6 +606,9 @@ Generated concrete question for current step:
         "id_mapping": {{ "Steven D. Bass": "id_steven", "B": "id2" }}
     }},
 }}
+
+-----
+Think carefully before you answer, remember to merge questions for <s,*,*> and <s,p,*> question types, and generate seperate questions for <s,*,o> and <s,p,o> question types.
 ```
 
 
