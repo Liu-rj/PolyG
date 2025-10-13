@@ -25,6 +25,9 @@ argparser.add_argument(
         "openai/gpt-4o-mini",
         "deepseek/deepseek-chat",
         "deepseek/deepseek-reasoner",
+        "Qwen/Qwen3-8B",
+        "Qwen/Qwen3-14B",
+        "Qwen/Qwen3-Next-80B-A3B-Instruct",
     ],
     required=True,
 )
@@ -40,9 +43,9 @@ print(args)
 DATASET_DIR = args.data_dir
 DATASET_NAME = DATASET_DIR.split("/")[-1]
 RESULT_DIR = f"results/{DATASET_NAME}/{args.model}"
-MAX_MODEL_LEN = 128000
-MAX_CONTEXT_TOKENS = 90000
-MAX_OUTPUT_TOKENS = 5000
+MAX_MODEL_LEN = 65536
+MAX_CONTEXT_TOKENS = 57344
+MAX_OUTPUT_TOKENS = 8192
 
 print(
     f"DATASET: {DATASET_NAME}",
@@ -70,12 +73,46 @@ def print_outputs(outputs):
     print("-" * 80)
 
 
+sampling_params = {}
+if args.model in ["Qwen/Qwen3-8B", "Qwen/Qwen3-14B"]:
+    sampling_params = {
+        "api_base": "http://localhost:8000/v1",
+        "api_key": "EMPTY",
+        # Standard OpenAI parameters
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "max_tokens": MAX_OUTPUT_TOKENS,
+        # vLLM-specific (or Qwen3-specific) parameters
+        "top_k": 20,
+        "min_p": 0.0,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    lite_llm_model_name = "hosted_vllm/" + args.model
+elif args.model == "Qwen/Qwen3-Next-80B-A3B-Instruct":
+    sampling_params = {
+        "api_base": "http://localhost:10021/v1",
+        "api_key": "EMPTY",
+        # Standard OpenAI parameters
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "max_tokens": MAX_OUTPUT_TOKENS,
+        # vLLM-specific (or Qwen3-specific) parameters
+        "top_k": 20,
+        "min_p": 0.0,
+    }
+    lite_llm_model_name = "openai/" + args.model
+else:
+    lite_llm_model_name = args.model
+print(f"Sampling params: {sampling_params}")
+
+
 rag = GraphRAG(
     dataset=DATASET_NAME,
-    model=args.model,
-    model_max_token_size=MAX_MODEL_LEN,
     graph_storage_cls=Neo4jStorage,
     addon_params=neo4j_config,
+    model=lite_llm_model_name,
+    model_max_token_size=MAX_MODEL_LEN,
+    model_sampling_params=sampling_params,
 )
 
 
@@ -90,7 +127,7 @@ def BFS(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="BFS",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_node=0.5,
             local_token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
@@ -109,7 +146,7 @@ def cypher_single_entity(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_query",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_node=0.5,
             local_token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
@@ -128,7 +165,7 @@ def cypher_only(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_only",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_node=0.5,
             local_token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
@@ -145,7 +182,7 @@ def adaptive(question, id_mapping):
         local_context_length=MAX_CONTEXT_TOKENS,
         traversal_type="adaptive",
         response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-        local_token_ratio_for_node=0.6,
+        local_token_ratio_for_node=0.5,
         local_token_ratio_for_edge=0.4,
         failure_retries=3,
     )

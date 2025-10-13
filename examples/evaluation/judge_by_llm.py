@@ -18,23 +18,16 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 
-# CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-# CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-MODEL_ID = "us.deepseek.r1-v1:0"
-bedrock_cli = boto3.client(service_name="bedrock-runtime", region_name="us-west-2")
-# client = OpenAI(
-#     api_key=os.getenv("DEEPSEEK_API_KEY"),
-#     base_url="https://api.deepseek.com",
-# )
-client = OpenAI()
-
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
+)
 
 ANSWER_PATH = [
-    f"/home/ubuntu/PolyG/examples/results/{args.dataset}/{args.model}/results_rephrased_final.jsonl",
-    f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased_final.jsonl",
-    f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased_final.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
 ]
-OUTPUT_FILE = f"/home/ubuntu/PolyG/examples/results/{args.dataset}/{args.model}/judgements_rephrased_top20.jsonl"
+OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements_spo_nested.jsonl"
 
 
 SYSTEM_ROLE = """
@@ -157,27 +150,6 @@ Output your evaluation in the following JSON format (wrap the JSON in triple bac
 ERROR_MSG = "When processing your generated json evaluation result, errors occurred which indicates that you have made a mistake. Please fix the error and generate the response again. The error is: {}."
 
 
-def bedrock_generator(
-    prompt: str,
-    system_prompt: str | None = None,
-    history_messages: List[Tuple] = [],
-    **kwargs,
-) -> str:
-    messages, system = [], []
-    if system_prompt:
-        system.append({"text": system_prompt})
-
-    history_messages_formated = [
-        {"role": r, "content": [{"text": m}]} for r, m in history_messages
-    ]
-
-    messages.extend(history_messages_formated)
-    messages.append({"role": "user", "content": [{"text": prompt}]})
-
-    response = bedrock_cli.converse(modelId=MODEL_ID, messages=messages, system=system)
-    return response["output"]["message"]["content"][0]["text"]
-
-
 def openai_generator(
     prompt: str,
     system_prompt: str | None = None,
@@ -194,7 +166,7 @@ def openai_generator(
     messages.append({"role": "user", "content": prompt})
 
     response = client.chat.completions.create(
-        model=args.model, messages=messages, stream=False
+        model="deepseek-reasoner", messages=messages, stream=False
     )
     return response.choices[0].message.content
 
@@ -203,18 +175,16 @@ answers = []
 for path in ANSWER_PATH:
     with open(path, "r") as f:
         for item in jsonlines.Reader(f):
-            if item["method"] == "adaptive":
-                continue
             answers.append(item)
 
 print(f"Total number of answers: {len(answers)}")
 
 question_types = [
-    "single_entity_abstract_rephrased",
-    "single_entity_concrete_rephrased",
-    "multi_entity_abstract_rephrased",
-    "multi_entity_concrete_rephrased",
-    "nested_question_rephrased",
+    # "single_entity_abstract",
+    # "single_entity_concrete",
+    # "multi_entity_abstract",
+    "multi_entity_concrete",
+    "nested_question",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
 for item in answers:
@@ -269,7 +239,7 @@ for question_type in question_types:
                     question_type=question_type,
                     gt_answer=gt,
                 )
-                result = bedrock_generator(
+                result = openai_generator(
                     prompt=prompt,
                     system_prompt=SYSTEM_ROLE,
                     history_messages=history_msgs,
@@ -292,6 +262,9 @@ for question_type in question_types:
 
                 # convert str to dict
                 result = json.loads(modified_json_str)
+
+                result["question_type"] = question_type
+                result["question"] = question
 
                 break
             except Exception as e:

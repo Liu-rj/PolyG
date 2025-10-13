@@ -8,11 +8,11 @@ args = argparser.parse_args()
 
 
 if args.dataset == "physics":
-    LLM_JUDGE_PATH = f"../results/physics/{args.model}/judgements_rephrased.jsonl"
+    LLM_JUDGE_PATH = f"../results/physics/{args.model}/judgements.jsonl"
 elif args.dataset == "amazon":
-    LLM_JUDGE_PATH = f"../results/amazon/{args.model}/judgements_rephrased.jsonl"
+    LLM_JUDGE_PATH = f"../results/amazon/{args.model}/judgements.jsonl"
 elif args.dataset == "goodreads":
-    LLM_JUDGE_PATH = f"../results/goodreads/{args.model}/judgements_rephrased.jsonl"
+    LLM_JUDGE_PATH = f"../results/goodreads/{args.model}/judgements.jsonl"
 else:
     raise ValueError(f"Unknown dataset: {args.dataset}")
 
@@ -26,11 +26,11 @@ print(f"Number of judgements: {len(judgements)}")
 
 
 question_types = [
-    "single_entity_abstract_rephrased",
-    "single_entity_concrete_rephrased",
-    "multi_entity_abstract_rephrased",
-    "multi_entity_concrete_rephrased",
-    "nested_question_rephrased",
+    "single_entity_abstract",
+    "single_entity_concrete",
+    "multi_entity_abstract",
+    "multi_entity_concrete",
+    "nested_question",
 ]
 question_judgement = {key: [] for key in question_types}
 for judgement in judgements:
@@ -67,8 +67,8 @@ for question_type in question_types:
     for criterion, methods in method_wins.items():
         for method, value in methods.items():
             if len(question_judgement[question_type]) > 0:
-                method_wins[criterion][method] = value / len(
-                    question_judgement[question_type]
+                method_wins[criterion][method] = round(
+                    value / len(question_judgement[question_type]), 4
                 )
             else:
                 method_wins[criterion][method] = 0
