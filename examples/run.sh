@@ -113,17 +113,25 @@
 # model=gpt-4o-mini
 
 # gpt-4.1-mini
-model=gpt-4.1-mini
+# model=gpt-4.1-mini
 
 
-python experiment.py --data_dir=../datasets/physics --benchmark_dir=../benchmarks/physics --model=$model
-python evaluation/judge_by_llm.py --dataset=physics --model=$model
-python evaluation/compute_f1.py --dataset=physics --model=$model
+# python experiment.py --data_dir=../datasets/physics --benchmark_dir=../benchmarks/physics --model=$model
+# python evaluation/judge_by_llm.py --dataset=physics --model=$model
+# python evaluation/compute_f1.py --dataset=physics --model=$model
 
-python experiment.py --data_dir=../datasets/goodreads --benchmark_dir=../benchmarks/goodreads --model=$model
-python evaluation/judge_by_llm.py --dataset=goodreads --model=$model
-python evaluation/compute_f1.py --dataset=goodreads --model=$model
+# python experiment.py --data_dir=../datasets/goodreads --benchmark_dir=../benchmarks/goodreads --model=$model
+# python evaluation/judge_by_llm.py --dataset=goodreads --model=$model
+# python evaluation/compute_f1.py --dataset=goodreads --model=$model
 
-python experiment.py --data_dir=../datasets/amazon --benchmark_dir=../benchmarks/amazon --model=$model
-python evaluation/judge_by_llm.py --dataset=amazon --model=$model
-python evaluation/compute_f1.py --dataset=amazon --model=$model
+# python experiment.py --data_dir=../datasets/amazon --benchmark_dir=../benchmarks/amazon --model=$model
+# python evaluation/judge_by_llm.py --dataset=amazon --model=$model
+# python evaluation/compute_f1.py --dataset=amazon --model=$model
+
+python experiment.py --data_dir=../datasets/physics --benchmark_dir=../benchmarks/physics --model=Qwen/Qwen3-14B
+cd /home/renjie/fast-graphrag/examples
+conda activate fastgrag
+python experiment.py --data_dir=/home/renjie/PolyG/datasets/physics --benchmark_dir=/home/renjie/PolyG/benchmarks/physics --model=Qwen/Qwen3-14B
+cd /home/renjie/PolyG/examples/evaluation
+conda activate polyg
+python judge_by_llm.py --dataset physics --model Qwen/Qwen3-14B

@@ -15,3 +15,4 @@ sentence-transformers
 igraph
 datasets
 protobuf
+vllm==0.11.0

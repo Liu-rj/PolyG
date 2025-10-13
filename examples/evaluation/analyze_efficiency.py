@@ -1,3 +1,4 @@
+import os
 import jsonlines
 import argparse
 from collections import defaultdict
@@ -10,9 +11,9 @@ args = argparser.parse_args()
 
 
 ANSWER_PATH = [
-    f"/home/ubuntu/PolyG/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
-    f"/home/ubuntu/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
-    f"/home/ubuntu/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
 ]
 
 
@@ -23,14 +24,16 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 question_types = [
-    "single_entity_abstract_rephrased",
-    "single_entity_concrete_rephrased",
-    "multi_entity_abstract_rephrased",
-    "multi_entity_concrete_rephrased",
-    "nested_question_rephrased",
+    "single_entity_abstract",
+    "single_entity_concrete",
+    "multi_entity_abstract",
+    "multi_entity_concrete",
+    "nested_question",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
 for item in answers:
+    if item["question_type"] not in question_types:
+        continue
     question_answer[item["question_type"]][item["question"]].append(item)
 
 method_names = [

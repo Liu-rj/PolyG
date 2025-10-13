@@ -5,7 +5,6 @@ import argparse
 import string
 import re
 from collections import defaultdict
-from typing import List, Tuple
 from openai import OpenAI
 
 
@@ -16,19 +15,16 @@ args = argparser.parse_args()
 
 
 ANSWER_PATH = [
-    f"results/{args.dataset}/{args.model}/results_rephrased_rog.jsonl",
-    # f"/home/renjie/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
-    # f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
 ]
+OUTPUT_PATH = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
 
-OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation_rog.jsonl"
 
 client = OpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
 )
-CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-# CHAT_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
-# CHAT_MODEL_ID = "us.deepseek.r1-v1:0"
 
 SYSTEM_ROLE = """
 ---Role---
@@ -74,31 +70,10 @@ Your Output Format (exactly as shown below, encapsulated in triple backticks):
 """
 
 
-def bedrock_generator(
-    prompt: str,
-    system_prompt: str | None = None,
-) -> str:
-    bedrock_cli = boto3.client(
-        service_name="bedrock-runtime",
-        region_name="us-west-2",
-    )
-
-    messages, system = [], []
-    if system_prompt:
-        system.append({"text": system_prompt})
-
-    messages.append({"role": "user", "content": [{"text": prompt}]})
-
-    response = bedrock_cli.converse(
-        modelId=CHAT_MODEL_ID, messages=messages, system=system
-    )
-    return response["output"]["message"]["content"][0]["text"]
-
-
 def openai_generator(
     prompt: str,
     system_prompt: str | None = None,
-) -> str | None:
+) -> str:
     messages = []
     if system_prompt:
         messages.append({"role": "system", "content": system_prompt})
@@ -108,17 +83,7 @@ def openai_generator(
     response = client.chat.completions.create(
         model="deepseek-chat", messages=messages, stream=False
     )
-    return response.choices[0].message.content
-
-
-# def compute_score(result: List, gt: List) -> Tuple[float, float, float]:
-#     tp = len(set(result) & set(gt))
-#     fp = len(set(result) - set(gt))
-#     fn = len(set(gt) - set(result))
-#     precision = tp / (tp + fp) if tp + fp != 0 else 0
-#     recall = tp / (tp + fn) if tp + fn != 0 else 0
-#     f1 = 2 * precision * recall / (precision + recall) if precision + recall != 0 else 0
-#     return precision, recall, f1
+    return response.choices[0].message.content  # type: ignore
 
 
 def normalize(s: str) -> str:
@@ -176,7 +141,6 @@ for path in ANSWER_PATH:
         for item in jsonlines.Reader(f):
             answers.append(item)
 
-
 method_names = [
     "BFS",
     "cypher_single_entity",
@@ -193,74 +157,46 @@ for item in answers:
 
 print(f"Number of questions: {len(question_answer)}")
 
-method_precision = {method: 0 for method in method_names}
-method_recall = {method: 0 for method in method_names}
-method_f1 = {method: 0 for method in method_names}
-method_acc = {method: 0 for method in method_names}
-method_hit = {method: 0 for method in method_names}
+method_precision = {method: 0.0 for method in method_names}
+method_recall = {method: 0.0 for method in method_names}
+method_f1 = {method: 0.0 for method in method_names}
+method_acc = {method: 0.0 for method in method_names}
+method_hit = {method: 0.0 for method in method_names}
 method_counts = {method: 0 for method in method_names}
 for it, (question, answers) in enumerate(question_answer.items()):
     print(f"Question {it+1}: {question}, Number of answers: {len(answers)}")
     for answer in answers:
+        assert answer["question_type"] in ["single_entity_concrete", "nested_question"]
+
         method, gt = answer["method"], answer["gt_answer"]
         for i in range(len(gt)):
             gt[i] = gt[i].strip('"').lower()
 
-        if method == "adaptive":
-            # check the original answer list
-            result = answer["answer_list"].split(", ")
+        if "answer_list" in answer and len(answer["answer_list"]) > 0:
+            result = answer["answer_list"]
             for i in range(len(result)):
                 result[i] = result[i].strip('"').lower()
-            f1_al, precision_al, recall_al = eval_f1(result, gt)
-            prediction_str = " ".join(result)
-            acc_al = eval_acc(prediction_str, gt)
-            hit_al = eval_hit(prediction_str, gt)
-
-            # check the model response
-            result = openai_generator(
-                prompt=PROMPT.format(query=question, reponse=answer["model_answer"]),
-                system_prompt=SYSTEM_ROLE,
-            )
-            print(result)
-            try:
-                result = eval(result.split("```")[1])
-            except Exception as e:
-                print(e)
-                result = result.strip("[]").split(", ")
-            for i in range(len(result)):
-                result[i] = str(result[i]).strip('"').lower()
-            f1_ma, precision_ma, recall_ma = eval_f1(result, gt)
-            prediction_str = " ".join(result)
-            acc_ma = eval_acc(prediction_str, gt)
-            hit_ma = eval_hit(prediction_str, gt)
-
-            f1 = max(f1_al, f1_ma)
-            if f1 == f1_al:
-                precision, recall, acc, hit = precision_al, recall_al, acc_al, hit_al
-            else:
-                precision, recall, acc, hit = precision_ma, recall_ma, acc_ma, hit_ma
         else:
-            result = openai_generator(
+            response = openai_generator(
                 prompt=PROMPT.format(query=question, reponse=answer["model_answer"]),
                 system_prompt=SYSTEM_ROLE,
             )
 
-            print(result)
+            print(response)
+            result_str = response.split("```")[1]
             try:
-                result = eval(result.split("```")[1])
+                result = eval(result_str)
             except Exception as e:
                 print(e)
-                result = result.strip("[]").split(", ")
+                result = result_str.strip("[]").split(", ")
             for i in range(len(result)):
                 result[i] = str(result[i]).strip('"').lower()
 
-            # precision, recall, f1 = compute_score(result, gt)
-            f1, precision, recall = eval_f1(result, gt)
-            prediction_str = " ".join(result)
-            acc = eval_acc(prediction_str, gt)
-            hit = eval_hit(prediction_str, gt)
-
-        # print(f"Method: {method}, Precision: {precision}, Recall: {recall}, F1: {f1}")
+        # precision, recall, f1 = compute_score(result, gt)
+        f1, precision, recall = eval_f1(result, gt)
+        prediction_str = " ".join(result)
+        acc = eval_acc(prediction_str, gt)
+        hit = eval_hit(prediction_str, gt)
         print(
             f"Method: {method}, Precision: {precision}, Recall: {recall}, F1: {f1}, Acc: {acc}, Hit: {hit}"
         )
@@ -273,6 +209,7 @@ for it, (question, answers) in enumerate(question_answer.items()):
         method_hit[method] += hit
 
         result_entry = {
+            "question_type": answer["question_type"],
             "question": question,
             "method": method,
             "answer": result,
