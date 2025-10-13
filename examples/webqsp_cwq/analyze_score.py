@@ -3,11 +3,11 @@ import argparse
 
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument("--dataset", type=str, default="physics", required=True)
+argparser.add_argument("--dataset", type=str, default="webqsp", required=True)
 argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=True)
 args = argparser.parse_args()
 
-RESULT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation_polyg_new.jsonl"
+RESULT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
 
 method_names = [
     "BFS",
@@ -18,11 +18,11 @@ method_names = [
     "adaptive",
 ]
 
-method_precision = {method: 0 for method in method_names}
-method_recall = {method: 0 for method in method_names}
-method_f1 = {method: 0 for method in method_names}
-method_acc = {method: 0 for method in method_names}
-method_hit = {method: 0 for method in method_names}
+method_precision = {method: 0.0 for method in method_names}
+method_recall = {method: 0.0 for method in method_names}
+method_f1 = {method: 0.0 for method in method_names}
+method_acc = {method: 0.0 for method in method_names}
+method_hit = {method: 0.0 for method in method_names}
 method_counts = {method: 0 for method in method_names}
 
 with jsonlines.open(RESULT_PATH, "r") as reader:

@@ -151,8 +151,8 @@ You are a helpful assistant responding to user questions.
 ---Setting---
 
 You will be provided with some helpful references. The provided reference data tables may appear in the following forms:
-1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths.
-2. Multiple reasoning paths are provided, indicating relations between entities.
+1. The cypher query used to retrieve the reference data.
+1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths indicating relations between entities.
 
 ---Goal---
 

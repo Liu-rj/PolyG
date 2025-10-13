@@ -26,6 +26,9 @@ argparser.add_argument(
         "openai/gpt-4o-mini",
         "deepseek/deepseek-chat",
         "deepseek/deepseek-reasoner",
+        "Qwen/Qwen3-8B",
+        "Qwen/Qwen3-14B",
+        "Qwen/Qwen3-Next-80B-A3B-Instruct",
     ],
     required=True,
 )
@@ -33,18 +36,15 @@ argparser.add_argument(
     "--benchmark", type=str, default="webqsp", choices=["webqsp", "cwq"], required=True
 )
 args = argparser.parse_args()
+print(args)
 
-DATASET_DIR = args.data_dir
-DATASET_NAME = DATASET_DIR.split("/")[-1]
-RESULT_DIR = f"results/{DATASET_NAME}/{args.model}"
-MAX_MODEL_LEN = 128000
-MAX_CONTEXT_TOKENS = 100000
-MAX_OUTPUT_TOKENS = 5000
+RESULT_DIR = f"results/{args.benchmark}/{args.model}"
+MAX_MODEL_LEN = 65536
+MAX_CONTEXT_TOKENS = 57344
+MAX_OUTPUT_TOKENS = 8192
 
 print(
-    f"DATASET: {DATASET_NAME}",
-    f"Dataset dir: {DATASET_DIR}",
-    f"Benchmark dir: {args.benchmark_dir}",
+    f"Benchmark dir: {args.benchmark}",
     f"Result dir: {RESULT_DIR}",
 )
 
@@ -70,12 +70,46 @@ def print_outputs(outputs):
     print("-" * 80)
 
 
+sampling_params = {}
+if args.model in ["Qwen/Qwen3-8B", "Qwen/Qwen3-14B"]:
+    sampling_params = {
+        "api_base": "http://localhost:8000/v1",
+        "api_key": "EMPTY",
+        # Standard OpenAI parameters
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "max_tokens": MAX_OUTPUT_TOKENS,
+        # vLLM-specific (or Qwen3-specific) parameters
+        "top_k": 20,
+        "min_p": 0.0,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    lite_llm_model_name = "hosted_vllm/" + args.model
+elif args.model == "Qwen/Qwen3-Next-80B-A3B-Instruct":
+    sampling_params = {
+        "api_base": "http://localhost:10021/v1",
+        "api_key": "EMPTY",
+        # Standard OpenAI parameters
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "max_tokens": MAX_OUTPUT_TOKENS,
+        # vLLM-specific (or Qwen3-specific) parameters
+        "top_k": 20,
+        "min_p": 0.0,
+    }
+    lite_llm_model_name = "openai/" + args.model
+else:
+    lite_llm_model_name = args.model
+print(f"Sampling params: {sampling_params}")
+
+
 rag = GraphRAG(
-    dataset=DATASET_NAME,
-    model=args.model,
-    model_max_token_size=MAX_MODEL_LEN,
+    dataset=args.benchmark,
     graph_storage_cls=Neo4jStorage,
     addon_params=neo4j_config,
+    model=lite_llm_model_name,
+    model_max_token_size=MAX_MODEL_LEN,
+    model_sampling_params=sampling_params,
 )
 
 
@@ -90,7 +124,7 @@ def BFS(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="BFS",
             response_type="a simple sentence that indicates the answer.",
-            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_node=0.5,
             local_token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
@@ -109,7 +143,7 @@ def cypher_single_entity(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_query",
             response_type="a simple sentence that indicates the answer.",
-            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_node=0.5,
             local_token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
@@ -128,7 +162,7 @@ def cypher_only(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_only",
             response_type="a simple sentence that indicates the answer.",
-            local_token_ratio_for_node=0.6,
+            local_token_ratio_for_node=0.5,
             local_token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
@@ -145,7 +179,7 @@ def adaptive(question, id_mapping):
         local_context_length=MAX_CONTEXT_TOKENS,
         traversal_type="cypher_query",
         response_type="a simple sentence that indicates the answer.",
-        local_token_ratio_for_node=0.6,
+        local_token_ratio_for_node=0.5,
         local_token_ratio_for_edge=0.4,
         failure_retries=3,
     )
@@ -187,7 +221,7 @@ def upsert_to_neo4j(args: argparse.Namespace, nx_graph: nx.DiGraph):
                 f"MERGE (n:{args.benchmark}:node {{id: $node_id}})"
                 "SET n += $properties"
             )
-            session.run(query, node_id=node_id, properties=node_prop)
+            session.run(query, node_id=node_id, properties=node_prop)  # type: ignore
 
         # 2. Create Relationships
         for u, v, properties in tqdm(nx_graph.edges(data=True), ncols=100):
@@ -199,17 +233,17 @@ def upsert_to_neo4j(args: argparse.Namespace, nx_graph: nx.DiGraph):
                 f"MATCH (b:{args.benchmark}:node {{id: $target_id}}) "
                 f"MERGE (a)-[r:{rel_type}]->(b) "  # Using MERGE to avoid duplicate relationships
             )
-            session.run(query, source_id=u, target_id=v)
+            session.run(query, source_id=u, target_id=v)  # type: ignore
 
         # 3. Create indexes for faster lookup
-        session.run(f"CREATE INDEX IF NOT EXISTS FOR (n:{args.benchmark}) ON (n.id)")
+        session.run(f"CREATE INDEX IF NOT EXISTS FOR (n:{args.benchmark}) ON (n.id)")  # type: ignore
 
     print("NetworkX graph successfully inserted into Neo4j.")
 
 
 def remove_from_neo4j(args: argparse.Namespace):
     with driver.session() as session:
-        session.run(f"MATCH (n:{args.benchmark}:node) DETACH DELETE n")
+        session.run(f"MATCH (n:{args.benchmark}:node) DETACH DELETE n")  # type: ignore
     print(f"All nodes and relations in the {args.benchmark} graph have been removed.")
 
 
@@ -230,30 +264,18 @@ def extract_graph_schema(nx_graph: nx.DiGraph) -> str:
 if __name__ == "__main__":
     remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
-    output_file = os.path.join(RESULT_DIR, "results_rephrased.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_test.jsonl")
 
     dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
-    # dataset = load_dataset("./datasets/cwq", split="test")
-
-    # # randomly sample 100 examples
-    # dataset = dataset.shuffle(seed=42).select(range(100))
-    # with open("../datasets/cwq/test_ids.txt", "r") as f:
-    #     test_ids = f.read().splitlines()
-    # print(f"Number of test ids: {len(test_ids)}")
-    # print(f"Number of unique test ids: {len(set(test_ids))}")
 
     for it, sample in enumerate(dataset):
-        # if sample["id"] not in test_ids:
-        #     continue
         question = sample["question"]
         nx_graph = build_graph(sample["graph"])
         id_mapping = {}
         for entity in sample["q_entity"]:
             id_mapping[entity] = entity
         upsert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
-        rag.concrete_graph_schema = extract_graph_schema(
-            nx_graph
-        )  # Extract schema if needed
+        rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
 
         results = []
         results.append(adaptive(question, id_mapping.copy()))

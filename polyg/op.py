@@ -322,7 +322,7 @@ async def build_schema_example(kg_inst: BaseGraphStorage, node_ids: List[ID]):
         relations_section_list.append(
             ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
         )
-    return list_to_csv(relations_section_list)
+    return list_to_csv(relations_section_list[:100])
 
 
 async def cypher_only(
@@ -481,17 +481,6 @@ async def guided_walk(
             print(f"Token length: {cur_token_len}")
             print("Generated cypher query:", cypher_query)
 
-            # tic = time.time()
-            # p_context, node_ids, dest_ids = await kg_inst.exec_query_and_get_path(
-            #     cypher_query
-            # )
-            # print(p_context)
-            # print(node_ids)
-            # print(dest_ids)
-            # if len(p_context) == 0 and len(node_ids) == 0:
-            #     raise ValueError("No result found, please adjust the query")
-            # print(f"Query execution time: {time.time() - tic:.2f}s")
-
             tic = time.time()
             results = await kg_inst.exec_query(cypher_query)
             if len(results) == 0:
@@ -510,75 +499,64 @@ async def guided_walk(
                 ]
             )
 
-    # if len(p_context) == 0 and len(node_ids) == 0:
-    #     return PROMPTS["fail_response"], token_len, llm_calls, []
-
-    # dest_datas = await asyncio.gather(*[kg_inst.get_node(d) for d in dest_ids])
-    # assert all(x is not None for x in dest_datas)
-    # ret_names = set([d["name"] for d in dest_datas])  # type: ignore
-
-    # related_edges = []
-    # if global_config["dataset"] in ["webqsp", "cwq"]:
-    #     rets = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in dest_ids])
-    #     for edge_list in rets:
-    #         related_edges.extend(edge_list)
-    #     node_ids.update([e[1] for e in related_edges])
-
-    # node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
-    # assert all(x is not None for x in node_datas)
-    # for it, node in enumerate(node_datas):
-    #     id_mapping[node["name"]] = node["id"]  # type: ignore
-
-    # keys = ["id", "name", "node_type", "description"]
-    # entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
-    # entites_section_list = [entity_header]
-    # for i, n in enumerate(node_datas):
-    #     assert n is not None
-    #     raw_data = [n.get(k, "UNKNOWN") for k in keys]
-    #     entites_section_list.append(
-    #         ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
-    #     )
-    # entities_context = list_to_csv(entites_section_list)
-
-    # relation_header = ",\t".join(
-    #     [
-    #         f"{enclose_string_with_quotes(data)}"
-    #         for data in ["id", "source", "target", "relation"]
-    #     ]
-    # )
-    # relations_section_list = [relation_header]
-    # for i, e in enumerate(related_edges):
-    #     raw_data = [i, e[0], e[1], e[2]]
-    #     relations_section_list.append(
-    #         ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
-    #     )
-    # relations_context = list_to_csv(relations_section_list)
-
     tic = time.time()
-    entry_ids = list(id_mapping.values())
-    ret_ids = entry_ids + ret_ids
-    node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in ret_ids])
-    node_datas = [n for n in node_datas if n is not None] # remove None
+    aux_node_ids = set(id_mapping.values())
+    aux_edges = []
+    if global_config["dataset"] in ["webqsp", "cwq"]:
+        rets = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in ret_ids])
+        for edge_list in rets:
+            aux_edges.extend(edge_list)
+        aux_node_ids.update([e[1] for e in aux_edges])
+
+    all_node_ids = list(aux_node_ids) + ret_ids
+    node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in all_node_ids])
+    node_datas = [n for n in node_datas if n is not None]  # remove None
     for item in node_datas:
-        id_mapping[item["name"]] = item["id"] # type: ignore
-    ret_names = [n["name"] for n in node_datas[len(entry_ids) :]] # type: ignore
+        id_mapping[item["name"]] = item["id"]  # type: ignore
+    ret_names = [n["name"] for n in node_datas[len(aux_node_ids) :]]  # type: ignore
     print(ret_names)
     print(f"Get node data time: {time.time() - tic:.2f}s")
 
-    keys = ["name", "node_type", "description"]
-    entity_header = ",\t".join([f"{enclose_string_with_quotes(data)}" for data in keys])
+    node_keys = ["name", "node_type", "description"]
+    entity_header = ",\t".join(
+        [f"{enclose_string_with_quotes(data)}" for data in node_keys]
+    )
     entites_section_list = [entity_header]
     for i, n in enumerate(node_datas):
-        raw_data = [n.get(k, "UNKNOWN") for k in keys] # type: ignore
+        raw_data = [n.get(k, "UNKNOWN") for k in node_keys]  # type: ignore
         entites_section_list.append(
             ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
         )
-    entities_context = list_to_csv(entites_section_list)
+    truncated_entities_list = truncate_list_by_token_size(
+        entites_section_list,
+        max_token_size=int(
+            query_param.local_context_length * query_param.local_token_ratio_for_node
+        ),
+    )
+    entities_context = list_to_csv(truncated_entities_list)
+
+    edge_keys = ["id", "source", "target", "relation"]
+    relation_header = ",\t".join(
+        [f"{enclose_string_with_quotes(data)}" for data in edge_keys]
+    )
+    relations_section_list = [relation_header]
+    for i, e in enumerate(aux_edges):
+        raw_data = [i, e[0], e[1], e[2]]
+        relations_section_list.append(
+            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+        )
+    truncated_relations_list = truncate_list_by_token_size(
+        relations_section_list,
+        max_token_size=int(
+            query_param.local_context_length * query_param.local_token_ratio_for_edge
+        ),
+    )
+    relations_context = list_to_csv(truncated_relations_list)
 
     all_context = ALL_CONTEXT.format(
         cypher_query=cypher_query,
         entities_context=entities_context,
-        relations_context="",
+        relations_context=relations_context,
         reasoning_path_context="",
     )
 
@@ -672,7 +650,7 @@ async def topk_csp(
         return PROMPTS["fail_response"], token_len, llm_calls, []
 
     node_datas = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
-    node_datas = [n for n in node_datas if n is not None] # remove None
+    node_datas = [n for n in node_datas if n is not None]  # remove None
     for node in node_datas:
         id_mapping[node["name"]] = node["id"]  # type: ignore
 
