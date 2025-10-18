@@ -121,7 +121,7 @@ You are a helpful assistant responding to user questions.
 
 You will be provided with some helpful references. The provided reference data tables may appear in the following forms:
 1. The cypher query used to retrieve the reference data.
-1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths indicating relations between entities.
+1. Four tables are provided: 1. entity table, 2. relation table, 3. reasoning paths indicating relations between entities, and 4. auxiliary data table.
 
 Questions can be about node inquiries or relations between nodes. Entities in the question may not have direct relationship and answering the question will need to consider multi-hop relations.
 
@@ -152,7 +152,7 @@ You are a helpful assistant responding to user questions.
 
 You will be provided with some helpful references. The provided reference data tables may appear in the following forms:
 1. The cypher query used to retrieve the reference data.
-1. Three tables are provided: 1. entity table, 2. relation table, and 3. reasoning paths indicating relations between entities.
+1. Four tables are provided: 1. entity table, 2. relation table, 3. reasoning paths indicating relations between entities, and 4. auxiliary data table.
 
 ---Goal---
 

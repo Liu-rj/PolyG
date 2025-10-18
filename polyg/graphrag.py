@@ -1,39 +1,19 @@
 import asyncio
 import os
-import networkx as nx
 import tiktoken
 import time
 import json
+import transformers
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
-from functools import partial
 from typing import Callable, Dict, List, Optional, Type, Union, cast, Tuple
-from tqdm import tqdm
-from .prompt import (
-    PROMPTS,
-    SCHEMA_MAP,
-)
+from .prompt import PROMPTS, SCHEMA_MAP
 from .utils import num_tokens
-from .op import (
-    local_query,
-    cypher_only,
-    guided_walk,
-    topk_csp,
-)
-from .utils import (
-    EmbeddingFunc,
-    compute_mdhash_id,
-    limit_async_func_call,
-    convert_response_to_json,
-    always_get_an_event_loop,
-    logger,
-)
+from .op import retrieve_and_generate
+from .utils import limit_async_func_call, always_get_an_event_loop, logger
 from .storage import Neo4jStorage
-from .base import (
-    BaseGraphStorage,
-    QueryParam,
-)
+from .base import BaseGraphStorage, QueryParam
 from .llm import LLM
+from .retriever import *
 
 
 @dataclass
@@ -48,6 +28,9 @@ class GraphRAG:
     model_max_async: int = 16
     llm: LLM = field(init=False)
     model_func: Callable = field(init=False)
+    token_encoder: tiktoken.Encoding | transformers.PreTrainedTokenizer = field(
+        init=False
+    )
 
     # graph schema
     concrete_graph_schema: str = "null"
@@ -68,6 +51,7 @@ class GraphRAG:
 
         self.llm = LLM(self.model, self.model_sampling_params)
         self.model_func = limit_async_func_call(self.model_max_async)(self.llm.generate)
+        self.token_encoder = self.llm.token_encoder
 
         self.entity_relation_graph = self.graph_storage_cls(
             namespace="", global_config=asdict(self)
@@ -172,13 +156,17 @@ class GraphRAG:
                 print(f"Subquery: {subquery}, id_mapping: {sub_id_mapping}")
 
                 if traversal_type == "cypher_query":
-                    func = guided_walk
+                    retrive_func = guided_walk_retriever
                 elif traversal_type == "cypher_path_search":
-                    func = topk_csp
-                elif traversal_type in ["BFS", "topk_shortest_paths"]:
-                    func = local_query
+                    retrive_func = topk_csp_retriever
+                elif traversal_type == "BFS":
+                    retrive_func = bfs_retriever
+                elif traversal_type == "topk_shortest_paths":
+                    retrive_func = shortest_path_retriever
                 elif traversal_type == "cypher_only":
-                    func = cypher_only
+                    retrive_func = cypher_only_retriever
+                elif traversal_type == "BFS+PPR":
+                    retrive_func = bfs_ppr_retriever
                 else:
                     logger.error(f"Unsupported traversal type: {traversal_type}")
                     return (
@@ -189,12 +177,15 @@ class GraphRAG:
                         [],
                     )
 
-                response, token_len, api_calls, answer_list = await func(
-                    subquery,
-                    sub_id_mapping,
-                    self.entity_relation_graph,
-                    param,
-                    asdict(self),
+                response, token_len, api_calls, answer_list = (
+                    await retrieve_and_generate(
+                        subquery,
+                        sub_id_mapping,
+                        self.entity_relation_graph,
+                        retrive_func,
+                        param,
+                        asdict(self),
+                    )
                 )
 
                 total_api_calls += api_calls
@@ -211,7 +202,7 @@ class GraphRAG:
                 history=history,
             )
             response = await self.model_func(prompt=prompt)
-            token_len = num_tokens(prompt)
+            token_len = num_tokens(prompt, self.token_encoder)
             total_api_calls += 1
             total_tokens += token_len
 
@@ -236,7 +227,7 @@ class GraphRAG:
 
         response = await use_model_func(prompt=prompt)
         query_param.question_classification_result = response
-        token_len = num_tokens(prompt)
+        token_len = num_tokens(prompt, self.token_encoder)
         print(response)
 
         try:
@@ -280,7 +271,7 @@ class GraphRAG:
                     description = step[len(traversal) + 1 :]
                     plan[i] = (traversal.split(".")[1].strip(), description.strip())
 
-                total_tokens += num_tokens(prompt)
+                total_tokens += num_tokens(prompt, self.token_encoder)
                 break
             except Exception as e:
                 logger.error(f"Error in decomposing query: {e}")
@@ -348,7 +339,7 @@ class GraphRAG:
                         new_map = v["id_mapping"].replace("'", '"')
                         concrete_queries[k]["id_mapping"] = json.loads(new_map)
 
-                total_tokens += num_tokens(prompt)
+                total_tokens += num_tokens(prompt, self.token_encoder)
                 break
             except Exception as e:
                 logger.error(f"Error in instantiating query: {e}")

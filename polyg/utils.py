@@ -8,13 +8,12 @@ import numbers
 from dataclasses import dataclass
 from functools import wraps
 from hashlib import md5
-from typing import Any, Union, List, Callable
-
+from typing import Any, Union, List, Callable, Dict
+import transformers
 import numpy as np
 import tiktoken
 
 logger = logging.getLogger("polyg")
-ENCODER = None
 
 
 def always_get_an_event_loop() -> asyncio.AbstractEventLoop:
@@ -106,7 +105,7 @@ def extract_values_from_json(
     return extracted_values
 
 
-def convert_response_to_json(response: str) -> dict:
+def convert_response_to_json(response: str) -> Dict:
     """Convert response string to JSON, with error handling and fallback to non-standard JSON extraction."""
     prediction_json = extract_first_complete_json(response)
 
@@ -122,38 +121,26 @@ def convert_response_to_json(response: str) -> dict:
     return prediction_json
 
 
-def num_tokens(text: str, token_encoder: tiktoken.Encoding | None = None) -> int:
+def num_tokens(
+    text: str,
+    token_encoder: tiktoken.Encoding | transformers.PreTrainedTokenizer,
+) -> int:
     """Return the number of tokens in the given text."""
-    if token_encoder is None:
-        token_encoder = tiktoken.get_encoding("cl100k_base")
     return len(token_encoder.encode(text))
 
 
-def encode_string_by_tiktoken(content: str, model_name: str = "gpt-4o"):
-    global ENCODER
-    if ENCODER is None:
-        ENCODER = tiktoken.encoding_for_model(model_name)
-    tokens = ENCODER.encode(content)
-    return tokens
-
-
-def decode_tokens_by_tiktoken(tokens: list[int], model_name: str = "gpt-4o"):
-    global ENCODER
-    if ENCODER is None:
-        ENCODER = tiktoken.encoding_for_model(model_name)
-    content = ENCODER.decode(tokens)
-    return content
-
-
 def truncate_list_by_token_size(
-    list_data: List, max_token_size: int, key: Callable | None = None
-):
+    list_data: List,
+    max_token_size: int,
+    token_encoder: tiktoken.Encoding | transformers.PreTrainedTokenizer,
+    key: Callable | None = None,
+) -> List:
     """Truncate a list of data by token size"""
     if max_token_size <= 0:
         return []
     tokens = 0
     for i, data in enumerate(list_data):
-        tokens += len(encode_string_by_tiktoken(key(data) if callable(key) else data))
+        tokens += num_tokens(key(data) if callable(key) else data, token_encoder)
         if tokens > max_token_size:
             return list_data[:i]
     return list_data

@@ -8,8 +8,6 @@ from ..base import BaseGraphStorage, ID
 from ..utils import logger
 from contextlib import asynccontextmanager
 
-neo4j_lock = asyncio.Lock()
-
 
 @asynccontextmanager
 async def transaction_context(session, **kwargs):
@@ -34,8 +32,9 @@ class Neo4jStorage(BaseGraphStorage):
         self.async_driver = AsyncGraphDatabase.driver(
             self.neo4j_url,
             auth=self.neo4j_auth,
-            max_connection_pool_size=100,
-            connection_timeout=3600,
+            max_connection_pool_size=3000,  # Increased pool size
+            connection_timeout=300,  # 5 minutes for establishing new connections
+            connection_acquisition_timeout=300,  # 5 minutes to acquire from pool
         )
 
     async def has_node(self, node_id: ID) -> bool:
@@ -105,29 +104,58 @@ class Neo4jStorage(BaseGraphStorage):
     async def get_edge(self, src_id: ID, tgt_id: ID) -> Union[Dict, None]:
         async with self.async_driver.session() as session:
             result = await session.run(
-                f"MATCH (s:{self.namespace})-[r]-(t:{self.namespace}) "
+                f"MATCH (s:{self.namespace})-[r]->(t:{self.namespace}) "
                 "WHERE s.id = $source_id AND t.id = $target_id "
-                "RETURN TYPE(r) AS edge_data",  # type: ignore
+                "RETURN TYPE(r) AS edge_type, properties(r) AS edge_data",  # type: ignore
                 source_id=src_id,
                 target_id=tgt_id,
             )
             record = await result.single()
-            return {"relation": record["edge_data"]} if record else None
+            if record is None:
+                return None
+            else:
+                edge_data = record["edge_data"]
+                edge_data["relation"] = record["edge_type"]
+                edge_data["src_id"] = src_id
+                edge_data["tgt_id"] = tgt_id
+                return edge_data
 
-    async def get_node_edges(self, node_id: ID) -> List[tuple[ID, ID, str]]:
+    async def get_node_edges(self, node_id: ID) -> List[Dict]:
+        in_edges = await self.get_node_in_edges(node_id)
+        out_edges = await self.get_node_out_edges(node_id)
+        return in_edges + out_edges
+
+    async def get_node_in_edges(self, node_id: ID) -> List[Dict]:
         async with self.async_driver.session() as session:
             result = await session.run(
-                f"MATCH (s:{self.namespace})-[r]-(t:{self.namespace}) WHERE s.id = $source_id "
-                "RETURN s.id AS source, t.id AS target, Type(r) AS relation",  # type: ignore
+                f"MATCH (s:{self.namespace})-[r]->(t:{self.namespace}) WHERE t.id = $target_id "
+                "RETURN s.id AS sid, t.id AS tid, Type(r) AS edge_type, properties(r) AS edge_data",  # type: ignore
+                target_id=node_id,
+            )
+            edges = []
+            async for record in result:
+                edge_data = record["edge_data"]
+                edge_data["relation"] = record["edge_type"]
+                edges.append(
+                    {"src_id": record["sid"], "tgt_id": record["tid"], **edge_data}
+                )
+            return edges
+
+    async def get_node_out_edges(self, node_id: ID) -> List[Dict]:
+        async with self.async_driver.session() as session:
+            result = await session.run(
+                f"MATCH (s:{self.namespace})-[r]->(t:{self.namespace}) WHERE s.id = $source_id "
+                "RETURN s.id AS sid, t.id AS tid, Type(r) AS edge_type, properties(r) AS edge_data",  # type: ignore
                 source_id=node_id,
             )
             edges = []
             async for record in result:
-                edges.append((record["source"], record["target"], record["relation"]))
+                edge_data = record["edge_data"]
+                edge_data["relation"] = record["edge_type"]
+                edges.append(
+                    {"src_id": record["sid"], "tgt_id": record["tid"], **edge_data}
+                )
             return edges
-
-    async def index_done_callback(self):
-        await self.async_driver.close()
 
     async def exec_query(self, query: str) -> List[Any]:
         result_list = []
@@ -143,8 +171,8 @@ class Neo4jStorage(BaseGraphStorage):
 
     async def exec_query_and_get_path(
         self, query: str
-    ) -> Tuple[List[str], Set[ID], Set[ID]]:
-        paths, node_ids, dest_ids = [], set(), set()
+    ) -> Tuple[List[List], Set[ID], Set[ID]]:
+        all_paths, node_ids, dest_ids = [], set(), set()
 
         async with self.async_driver.session() as session:
             async with transaction_context(session, timeout=60) as tx:
@@ -155,36 +183,37 @@ class Neo4jStorage(BaseGraphStorage):
                     for key in record.keys():
                         if "path" in key.lower():
                             path = record[key]
-                            path_repr = []
+                            path_list = []
 
                             # Process nodes and relationships in the path
                             for i, node in enumerate(path.nodes):
                                 node_ids.add(node["id"])  # Add node
-                                path_repr.append(node["name"])  # Add node name
+                                path_list.append(node["name"])  # Add node name
                                 if i < len(path.relationships):
                                     rel = path.relationships[i]
-                                    path_repr.append(f"({rel.type})")
+                                    path_list.append(f"({rel.type})")
 
                             # Join the path representation as a readable string
-                            paths.append(" -> ".join(path_repr))
+                            all_paths.append(path_list)
 
                         if "target" in key.lower():
                             dest = record[key]
                             dest_ids.add(dest["id"])  # Add target node
                             node_ids.add(dest["id"])  # Also add to node_ids
 
-            return paths, node_ids, dest_ids
+            return all_paths, node_ids, dest_ids
 
     async def topk_shortest_paths(self, src_id: ID, tgt_id: ID) -> List[List[ID]]:
+        return []
         paths = []
 
         async with self.async_driver.session() as session:
             async with transaction_context(session, timeout=60) as tx:
                 results = await tx.run(
                     f"""
-                    MATCH p = SHORTEST 20 (s:{self.namespace} {{id: $source_id}})
+                    MATCH path = SHORTEST 20 (s:{self.namespace} {{id: $source_id}})
                     -[*]->(t:{self.namespace} {{id: $target_id}})
-                    RETURN [n in nodes(p) | n.id] AS path
+                    RETURN path
                     """,
                     source_id=src_id,
                     target_id=tgt_id,

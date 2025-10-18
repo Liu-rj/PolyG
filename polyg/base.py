@@ -7,8 +7,10 @@ class QueryParam:
     mode: Literal["local", "global", "naive"] = "global"
     response_type: str = "Multiple Paragraphs"
     # local search
-    local_token_ratio_for_node: float = 0.5
-    local_token_ratio_for_edge: float = 0.5
+    token_ratio_for_node: float = 0.5
+    token_ratio_for_edge: float = 0.4
+    token_ratio_for_reasoning_path: float = 1
+    token_ratio_for_auxiliary_data: float = 1
     edge_depth: int = 1
     local_context_length: int = 10000
     traversal_type: Literal[
@@ -18,6 +20,7 @@ class QueryParam:
         "cypher_path_search",
         "cypher_only",
         "adaptive",
+        "BFS+PPR",
     ] = "adaptive"
     question_classification_result: str | None = None
     # failure self-correction
@@ -25,6 +28,18 @@ class QueryParam:
 
 
 ID = TypeVar("ID")
+
+
+@dataclass
+class RetrievalResult:
+    cypher_query: str
+    nodes_data: List[Dict]
+    edges_data: List[Dict]
+    reasoning_paths: List
+    auxiliary_data: List[Dict]
+    used_tokens: int
+    num_llm_calls: int
+    answer_list: List
 
 
 @dataclass
@@ -50,7 +65,13 @@ class BaseGraphStorage:
     async def get_edge(self, src_id: ID, tgt_id: ID) -> Union[Dict, None]:
         raise NotImplementedError
 
-    async def get_node_edges(self, node_id: ID) -> List[tuple[ID, ID, str]]:
+    async def get_node_edges(self, node_id: ID) -> List[Dict]:
+        raise NotImplementedError
+
+    async def get_node_in_edges(self, node_id: ID) -> List[Dict]:
+        raise NotImplementedError
+
+    async def get_node_out_edges(self, node_id: ID) -> List[Dict]:
         raise NotImplementedError
 
     async def topk_shortest_paths(self, src_id: ID, tgt_id: ID) -> List[List[ID]]:
@@ -67,5 +88,5 @@ class BaseGraphStorage:
 
     async def exec_query_and_get_path(
         self, query: str
-    ) -> Tuple[List[str], Set[ID], Set[ID]]:
+    ) -> Tuple[List[List], Set[ID], Set[ID]]:
         raise NotImplementedError
