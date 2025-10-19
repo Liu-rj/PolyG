@@ -127,8 +127,8 @@ def BFS(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="BFS",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.5,
-            local_token_ratio_for_edge=0.4,
+            token_ratio_for_node=0.5,
+            token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
     )
@@ -146,8 +146,8 @@ def cypher_single_entity(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_query",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.5,
-            local_token_ratio_for_edge=0.4,
+            token_ratio_for_node=0.5,
+            token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
     )
@@ -165,8 +165,8 @@ def cypher_only(question, id_mapping):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_only",
             response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-            local_token_ratio_for_node=0.5,
-            local_token_ratio_for_edge=0.4,
+            token_ratio_for_node=0.5,
+            token_ratio_for_edge=0.4,
             failure_retries=0,
         ),
     )
@@ -182,8 +182,8 @@ def adaptive(question, id_mapping):
         local_context_length=MAX_CONTEXT_TOKENS,
         traversal_type="adaptive",
         response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-        local_token_ratio_for_node=0.5,
-        local_token_ratio_for_edge=0.4,
+        token_ratio_for_node=0.5,
+        token_ratio_for_edge=0.4,
         failure_retries=3,
     )
     response, duration, token_len, api_calls, answer_list = rag.query(
@@ -203,8 +203,37 @@ def adaptive(question, id_mapping):
     )
 
 
+def BFS_PPR(question, id_mapping):
+    print(f"Question: {question}")
+    query_param = QueryParam(
+        mode="local",
+        edge_depth=2,
+        local_context_length=MAX_CONTEXT_TOKENS,
+        traversal_type="BFS+PPR",
+        response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
+        token_ratio_for_node=0.5,
+        token_ratio_for_edge=0.4,
+        failure_retries=3,
+    )
+    response, duration, token_len, api_calls, answer_list = rag.query(
+        question,
+        id_mapping,
+        param=query_param,
+    )
+    print_outputs(response)
+    return (
+        "BFS+PPR",
+        response,
+        duration,
+        token_len,
+        api_calls,
+        answer_list,
+        query_param.question_classification_result,
+    )
+
+
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_bfs_ppr.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
@@ -229,6 +258,7 @@ if __name__ == "__main__":
             results.append(BFS(question, id_mapping.copy()))
             results.append(cypher_single_entity(question, id_mapping.copy()))
             results.append(cypher_only(question, id_mapping.copy()))
+            results.append(BFS_PPR(question, id_mapping.copy()))
 
             result_entrees = []
             for result in results:

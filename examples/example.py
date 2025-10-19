@@ -85,8 +85,8 @@ if __name__ == "__main__":
         local_context_length=MAX_CONTEXT_TOKENS,
         traversal_type="adaptive",
         response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-        local_token_ratio_for_node=0.6,
-        local_token_ratio_for_edge=0.4,
+        token_ratio_for_node=0.5,
+        token_ratio_for_edge=0.4,
         failure_retries=3,
     )
     response, duration, token_len, api_calls, answer_list = rag.query(
