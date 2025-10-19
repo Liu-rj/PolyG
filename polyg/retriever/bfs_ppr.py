@@ -23,6 +23,7 @@ async def bfs_ppr_retriever(
 
     unique_edges = set()
     for _ in range(query_param.edge_depth):
+        print(f"Number of seed nodes: {len(seed_nodes)}")
         all_nodes.update(seed_nodes)
         related_edges = await asyncio.gather(
             *[kg_inst.get_node_edges(nid) for nid in seed_nodes]
@@ -36,7 +37,6 @@ async def bfs_ppr_retriever(
             unique_edges.update(hashable_edges)
 
         seed_nodes = next_frontiers
-        print(f"Number of nodes: {len(all_nodes)}")
     all_nodes.update(seed_nodes)
     num_edges = len(unique_edges)
 

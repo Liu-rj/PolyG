@@ -226,9 +226,13 @@ async def retrieve_and_generate(
     all_llm_calls = 0
 
     tic = time.perf_counter()
-    retrieval_result: RetrievalResult = await retriever(
-        query, id_mapping, kg_inst, query_param, global_config
-    )
+    try:
+        retrieval_result: RetrievalResult = await retriever(
+            query, id_mapping, kg_inst, query_param, global_config
+        )
+    except Exception as e:
+        logger.error(f"Error during retrieval: {e}")
+        return PROMPTS["fail_response"], token_consumption, all_llm_calls, []
     ndata = retrieval_result.nodes_data
     edata = retrieval_result.edges_data
     for data in ndata:
