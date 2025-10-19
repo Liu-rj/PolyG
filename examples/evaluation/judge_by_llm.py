@@ -1,10 +1,10 @@
-import boto3
+import asyncio
 import json
 import jsonlines
 import re
 import argparse
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI
 from collections import defaultdict
 from dotenv import load_dotenv
 from typing import List, Tuple
@@ -18,16 +18,16 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 
-client = OpenAI(
+client = AsyncOpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
 )
 
 ANSWER_PATH = [
-    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
 ]
-OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements_spo_nested.jsonl"
+OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements.jsonl"
 
 
 SYSTEM_ROLE = """
@@ -150,7 +150,7 @@ Output your evaluation in the following JSON format (wrap the JSON in triple bac
 ERROR_MSG = "When processing your generated json evaluation result, errors occurred which indicates that you have made a mistake. Please fix the error and generate the response again. The error is: {}."
 
 
-def openai_generator(
+async def openai_generator(
     prompt: str,
     system_prompt: str | None = None,
     history_messages: List[dict] = [],
@@ -165,10 +165,83 @@ def openai_generator(
     messages.extend(history_messages)
     messages.append({"role": "user", "content": prompt})
 
-    response = client.chat.completions.create(
+    response = await client.chat.completions.create(
         model="deepseek-reasoner", messages=messages, stream=False
     )
     return response.choices[0].message.content
+
+
+async def judge_question_responses(question, answers):
+    question = question.replace('"', "'")
+    print(f"Question: {question}")
+    gt, prompt, result, result_dict = "N/A", "", "", None
+
+    answer_str = "Answers:\n\n"
+    for it, answer_tuple in enumerate(answers):
+        method, answer, gt = answer_tuple
+        answer_str += "-------------------------------------\n"
+        answer_str += f"Answer {it + 1} (Method {method}): {answer}\n\n"
+    answer_str += "-------------------------------------\n"
+
+    sys_prompt = PROMPT_WITH_GT if gt != "N/A" else PROMPT_WITHOUT_GT
+    history_msgs = []
+
+    while True:
+        try:
+            prompt = sys_prompt.format(
+                query=question,
+                answer=answer_str,
+                question_type=question_type,
+                gt_answer=gt,
+            )
+            result = await openai_generator(
+                prompt=prompt,
+                system_prompt=SYSTEM_ROLE,
+                history_messages=history_msgs,
+            )
+            assert result is not None, "No response from the model."
+            print(result)
+            result = result.split("```")[1].strip("json")
+
+            # Regular expression to extract the Explanation parts
+            pattern1 = re.compile(r'"Explanation":\s*"(.*?)"\n')
+
+            # Function to replace double quotes with single quotes in the explanation content
+            def replace_double_quotes(match):
+                content = match.group(1)
+                modified_content = content.replace('"', "'").replace("\\'", "'")
+                return f'"Explanation": "{modified_content}"\n'
+
+            # Replace double quotes in the Explanation contents
+            modified_json_str = pattern1.sub(replace_double_quotes, result)
+
+            # convert str to dict
+            result_dict = json.loads(modified_json_str)
+
+            result_dict["question_type"] = question_type
+            result_dict["question"] = question
+
+            break
+        except Exception as e:
+            print(f"Error: {e}")
+            history_msgs.extend(
+                [
+                    ("user", prompt),
+                    ("assistant", result),
+                    ("user", ERROR_MSG.format(str(e))),
+                ]
+            )
+
+    return result_dict
+
+
+async def main_judge(question_answer_pairs):
+    return await asyncio.gather(
+        *[
+            judge_question_responses(question, answers)
+            for question, answers in question_answer_pairs.items()
+        ]
+    )
 
 
 answers = []
@@ -180,9 +253,9 @@ for path in ANSWER_PATH:
 print(f"Total number of answers: {len(answers)}")
 
 question_types = [
-    # "single_entity_abstract",
-    # "single_entity_concrete",
-    # "multi_entity_abstract",
+    "single_entity_abstract",
+    "single_entity_concrete",
+    "multi_entity_abstract",
     "multi_entity_concrete",
     "nested_question",
 ]
@@ -210,73 +283,16 @@ method_names = [
     "cypher_only",
     "Fastgraphrag_PPR",
     "GraphCoT",
+    "BFS+PPR",
     "adaptive",
 ]
 all_method_wins = {}
 for question_type in question_types:
     method_wins = {name: {method: 0 for method in method_names} for name in criteria}
-    for it, (question, answers) in enumerate(question_answer[question_type].items()):
 
-        question = question.replace('"', "'")
-        print(f"Question {it + 1}: {question}")
-        gt, prompt, result = "N/A", "", ""
+    results = asyncio.run(main_judge(question_answer[question_type]))
 
-        answer_str = "Answers:\n\n"
-        for it, answer_tuple in enumerate(answers):
-            method, answer, gt = answer_tuple
-            answer_str += "-------------------------------------\n"
-            answer_str += f"Answer {it + 1} (Method {method}): {answer}\n\n"
-        answer_str += "-------------------------------------\n"
-
-        sys_prompt = PROMPT_WITH_GT if gt != "N/A" else PROMPT_WITHOUT_GT
-        history_msgs = []
-
-        while True:
-            try:
-                prompt = sys_prompt.format(
-                    query=question,
-                    answer=answer_str,
-                    question_type=question_type,
-                    gt_answer=gt,
-                )
-                result = openai_generator(
-                    prompt=prompt,
-                    system_prompt=SYSTEM_ROLE,
-                    history_messages=history_msgs,
-                )
-                assert result is not None, "No response from the model."
-                print(result)
-                result = result.split("```")[1].strip("json")
-
-                # Regular expression to extract the Explanation parts
-                pattern1 = re.compile(r'"Explanation":\s*"(.*?)"\n')
-
-                # Function to replace double quotes with single quotes in the explanation content
-                def replace_double_quotes(match):
-                    content = match.group(1)
-                    modified_content = content.replace('"', "'").replace("\\'", "'")
-                    return f'"Explanation": "{modified_content}"\n'
-
-                # Replace double quotes in the Explanation contents
-                modified_json_str = pattern1.sub(replace_double_quotes, result)
-
-                # convert str to dict
-                result = json.loads(modified_json_str)
-
-                result["question_type"] = question_type
-                result["question"] = question
-
-                break
-            except Exception as e:
-                print(f"Error: {e}")
-                history_msgs.extend(
-                    [
-                        ("user", prompt),
-                        ("assistant", result),
-                        ("user", ERROR_MSG.format(str(e))),
-                    ]
-                )
-
+    for result in results:
         for criterion in criteria:
             winner = result[criterion]["Winner"]
             for key in method_wins[criterion].keys():

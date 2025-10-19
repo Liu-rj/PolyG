@@ -1,11 +1,11 @@
+import asyncio
 import os
-import boto3
 import jsonlines
 import argparse
 import string
 import re
 from collections import defaultdict
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 
 argparser = argparse.ArgumentParser()
@@ -15,14 +15,14 @@ args = argparser.parse_args()
 
 
 ANSWER_PATH = [
-    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
 ]
 OUTPUT_PATH = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
 
 
-client = OpenAI(
+client = AsyncOpenAI(
     api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com"
 )
 
@@ -70,7 +70,7 @@ Your Output Format (exactly as shown below, encapsulated in triple backticks):
 """
 
 
-def openai_generator(
+async def openai_generator(
     prompt: str,
     system_prompt: str | None = None,
 ) -> str:
@@ -80,7 +80,7 @@ def openai_generator(
 
     messages.append({"role": "user", "content": prompt})
 
-    response = client.chat.completions.create(
+    response = await client.chat.completions.create(
         model="deepseek-chat", messages=messages, stream=False
     )
     return response.choices[0].message.content  # type: ignore
@@ -135,36 +135,9 @@ def eval_f1(prediction, answer):
         return 2 * precision * recall / (precision + recall), precision, recall
 
 
-answers = []
-for path in ANSWER_PATH:
-    with open(path, "r") as f:
-        for item in jsonlines.Reader(f):
-            answers.append(item)
-
-method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
-    "adaptive",
-]
-question_answer = defaultdict(list)
-for item in answers:
-    if item["gt_answer"] == "N/A" or item["method"] not in method_names:
-        continue
-    question_answer[item["question"]].append(item)
-
-print(f"Number of questions: {len(question_answer)}")
-
-method_precision = {method: 0.0 for method in method_names}
-method_recall = {method: 0.0 for method in method_names}
-method_f1 = {method: 0.0 for method in method_names}
-method_acc = {method: 0.0 for method in method_names}
-method_hit = {method: 0.0 for method in method_names}
-method_counts = {method: 0 for method in method_names}
-for it, (question, answers) in enumerate(question_answer.items()):
-    print(f"Question {it+1}: {question}, Number of answers: {len(answers)}")
+async def evaluate_question_responses(question, answers):
+    print(f"Question: {question}, Number of answers: {len(answers)}")
+    answers_score = []
     for answer in answers:
         assert answer["question_type"] in ["single_entity_concrete", "nested_question"]
 
@@ -177,7 +150,7 @@ for it, (question, answers) in enumerate(question_answer.items()):
             for i in range(len(result)):
                 result[i] = result[i].strip('"').lower()
         else:
-            response = openai_generator(
+            response = await openai_generator(
                 prompt=PROMPT.format(query=question, reponse=answer["model_answer"]),
                 system_prompt=SYSTEM_ROLE,
             )
@@ -197,9 +170,76 @@ for it, (question, answers) in enumerate(question_answer.items()):
         prediction_str = " ".join(result)
         acc = eval_acc(prediction_str, gt)
         hit = eval_hit(prediction_str, gt)
-        print(
-            f"Method: {method}, Precision: {precision}, Recall: {recall}, F1: {f1}, Acc: {acc}, Hit: {hit}"
+
+        answers_score.append(
+            {
+                "question_type": answer["question_type"],
+                "question": question,
+                "method": method,
+                "answer": result,
+                "ground_truth": gt,
+                "precision": precision,
+                "recall": recall,
+                "f1": f1,
+                "acc": acc,
+                "hit": hit,
+            }
         )
+
+        print(answers_score)
+
+    return answers_score
+
+
+async def main_evaluation(question_answer_pairs):
+    return await asyncio.gather(
+        *[
+            evaluate_question_responses(question, answers)
+            for question, answers in question_answer_pairs.items()
+        ]
+    )
+
+
+answers = []
+for path in ANSWER_PATH:
+    with open(path, "r") as f:
+        for item in jsonlines.Reader(f):
+            answers.append(item)
+
+method_names = [
+    "BFS",
+    "cypher_single_entity",
+    "Fastgraphrag_PPR",
+    "GraphCoT",
+    "cypher_only",
+    "BFS+PPR",
+    "adaptive",
+]
+question_answer = defaultdict(list)
+for item in answers:
+    if item["gt_answer"] == "N/A" or item["method"] not in method_names:
+        continue
+    question_answer[item["question"]].append(item)
+
+print(f"Number of questions: {len(question_answer)}")
+
+method_precision = {method: 0.0 for method in method_names}
+method_recall = {method: 0.0 for method in method_names}
+method_f1 = {method: 0.0 for method in method_names}
+method_acc = {method: 0.0 for method in method_names}
+method_hit = {method: 0.0 for method in method_names}
+method_counts = {method: 0 for method in method_names}
+
+all_records = asyncio.run(main_evaluation(question_answer))
+
+for qa_records in all_records:
+    for method_record in qa_records:
+        method = method_record["method"]
+        precision = method_record["precision"]
+        recall = method_record["recall"]
+        f1 = method_record["f1"]
+        acc = method_record["acc"]
+        hit = method_record["hit"]
 
         method_counts[method] += 1
         method_precision[method] += precision
@@ -208,21 +248,8 @@ for it, (question, answers) in enumerate(question_answer.items()):
         method_acc[method] += acc
         method_hit[method] += hit
 
-        result_entry = {
-            "question_type": answer["question_type"],
-            "question": question,
-            "method": method,
-            "answer": result,
-            "ground_truth": gt,
-            "precision": precision,
-            "recall": recall,
-            "f1": f1,
-            "acc": acc,
-            "hit": hit,
-        }
-
         with jsonlines.open(OUTPUT_PATH, "a") as f:
-            f.write(result_entry)
+            f.write(method_record)
 
 for method in method_names:
     counts = method_counts[method]

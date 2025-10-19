@@ -49,6 +49,7 @@ method_names = [
     "Fastgraphrag_PPR",
     "GraphCoT",
     "cypher_only",
+    "BFS+PPR",
     "adaptive",
 ]
 global_method_wins = {name: {method: 0 for method in method_names} for name in criteria}
