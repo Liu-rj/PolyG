@@ -25,9 +25,10 @@ client = AsyncOpenAI(
 ANSWER_PATH = [
     f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_bfs_ppr.jsonl",
     f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
 ]
-OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements.jsonl"
+OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements_w_bfs_ppr_new.jsonl"
 
 
 SYSTEM_ROLE = """
@@ -270,13 +271,6 @@ for item in answers:
 for question_type, qa_pairs in question_answer.items():
     print(f"Total number of questions: {len(qa_pairs)}")
 
-criteria = [
-    "Comprehensiveness",
-    "Diversity",
-    "Empowerment",
-    "Directness",
-    "Overall Winner",
-]
 method_names = [
     "BFS",
     "cypher_single_entity",
@@ -286,25 +280,9 @@ method_names = [
     "BFS+PPR",
     "adaptive",
 ]
-all_method_wins = {}
 for question_type in question_types:
-    method_wins = {name: {method: 0 for method in method_names} for name in criteria}
-
     results = asyncio.run(main_judge(question_answer[question_type]))
 
     for result in results:
-        for criterion in criteria:
-            winner = result[criterion]["Winner"]
-            for key in method_wins[criterion].keys():
-                if key in winner:
-                    method_wins[criterion][key] += 1
-
         with jsonlines.open(OUTPUT_FILE, "a") as writer:
             writer.write(result)
-
-    all_method_wins[question_type] = method_wins
-    print(method_wins)
-
-for question_type, method_wins in all_method_wins.items():
-    print(f"Question Type: {question_type}")
-    print(method_wins)

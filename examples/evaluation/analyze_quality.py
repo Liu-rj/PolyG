@@ -8,7 +8,7 @@ args = argparser.parse_args()
 
 
 if args.dataset == "physics":
-    LLM_JUDGE_PATH = f"../results/physics/{args.model}/judgements.jsonl"
+    LLM_JUDGE_PATH = f"../results/physics/{args.model}/judgements_w_bfs_ppr.jsonl"
 elif args.dataset == "amazon":
     LLM_JUDGE_PATH = f"../results/amazon/{args.model}/judgements.jsonl"
 elif args.dataset == "goodreads":
@@ -52,17 +52,20 @@ method_names = [
     "BFS+PPR",
     "adaptive",
 ]
+method_names = [name.lower() for name in method_names]
 global_method_wins = {name: {method: 0 for method in method_names} for name in criteria}
 all_questions = 0
 for question_type in question_types:
     method_wins = {name: {method: 0.0 for method in method_names} for name in criteria}
     for judgement in question_judgement[question_type]:
         for criterion in criteria:
-            winner = judgement[criterion]["Winner"]
-            for key in method_wins[criterion].keys():
-                if key in winner:
-                    method_wins[criterion][key] += 1
-                    global_method_wins[criterion][key] += 1
+            winners = judgement[criterion]["Winner"]
+            winners = winners if isinstance(winners, list) else winners.split(", ")
+            for winner in winners:
+                winner = winner.lower().lstrip("method").strip()
+                if winner in method_wins[criterion]:
+                    method_wins[criterion][winner] += 1
+                    global_method_wins[criterion][winner] += 1
 
     all_questions += len(question_judgement[question_type])
     for criterion, methods in method_wins.items():
