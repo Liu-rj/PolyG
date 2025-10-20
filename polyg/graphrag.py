@@ -16,6 +16,16 @@ from .llm import LLM
 from .retriever import *
 
 
+TRAVERSAL_FUNCTIONS = {
+    "cypher_query": guided_walk_retriever,
+    "cypher_path_search": topk_csp_retriever,
+    "BFS": bfs_retriever,
+    "topk_shortest_paths": shortest_path_retriever,
+    "cypher_only": cypher_only_retriever,
+    "BFS+PPR": bfs_ppr_retriever,
+}
+
+
 @dataclass
 class GraphRAG:
     dataset: str
@@ -155,18 +165,8 @@ class GraphRAG:
                 sub_id_mapping = query_dict["id_mapping"]
                 print(f"Subquery: {subquery}, id_mapping: {sub_id_mapping}")
 
-                if traversal_type == "cypher_query":
-                    retrive_func = guided_walk_retriever
-                elif traversal_type == "cypher_path_search":
-                    retrive_func = topk_csp_retriever
-                elif traversal_type == "BFS":
-                    retrive_func = bfs_retriever
-                elif traversal_type == "topk_shortest_paths":
-                    retrive_func = shortest_path_retriever
-                elif traversal_type == "cypher_only":
-                    retrive_func = cypher_only_retriever
-                elif traversal_type == "BFS+PPR":
-                    retrive_func = bfs_ppr_retriever
+                if traversal_type in TRAVERSAL_FUNCTIONS:
+                    retrive_func = TRAVERSAL_FUNCTIONS[traversal_type]
                 else:
                     logger.error(f"Unsupported traversal type: {traversal_type}")
                     return (
@@ -283,12 +283,6 @@ class GraphRAG:
                 )
                 prompt = PROMPTS["error_retry"].format(str(e))
         return plan_str, plan, len(plan), total_tokens
-
-    async def merge_query(self, query_plan: List[Tuple[str, str]]):
-        for i, step in enumerate(query_plan):
-            if step[0] != "<s,p,*>":
-                return None
-        return "cypher_query"
 
     async def instantiate_query(
         self,
