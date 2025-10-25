@@ -48,10 +48,11 @@ class GraphRAG:
     # storage
     graph_storage_cls: Type[BaseGraphStorage] = Neo4jStorage
 
-    # extension
-    create_working_dir: bool = False
+    # retrieval
+    retrieve_func: Callable | None = field(default=None)
 
     # extension
+    create_working_dir: bool = False
     addon_params: dict = field(default_factory=dict)
 
     def __post_init__(self):
@@ -165,24 +166,27 @@ class GraphRAG:
                 sub_id_mapping = query_dict["id_mapping"]
                 print(f"Subquery: {subquery}, id_mapping: {sub_id_mapping}")
 
-                if traversal_type in TRAVERSAL_FUNCTIONS:
-                    retrive_func = TRAVERSAL_FUNCTIONS[traversal_type]
+                if self.retrieve_func is None:
+                    if traversal_type in TRAVERSAL_FUNCTIONS:
+                        retrieve_func = TRAVERSAL_FUNCTIONS[traversal_type]
+                    else:
+                        logger.error(f"Unsupported traversal type: {traversal_type}")
+                        return (
+                            PROMPTS["fail_response"],
+                            time.time() - start,
+                            total_tokens,
+                            total_api_calls,
+                            [],
+                        )
                 else:
-                    logger.error(f"Unsupported traversal type: {traversal_type}")
-                    return (
-                        PROMPTS["fail_response"],
-                        time.time() - start,
-                        total_api_calls,
-                        0,
-                        [],
-                    )
+                    retrieve_func = self.retrieve_func
 
                 response, token_len, api_calls, answer_list = (
                     await retrieve_and_generate(
                         subquery,
                         sub_id_mapping,
                         self.entity_relation_graph,
-                        retrive_func,
+                        retrieve_func,
                         param,
                         asdict(self),
                     )

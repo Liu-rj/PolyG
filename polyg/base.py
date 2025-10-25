@@ -13,18 +13,12 @@ class QueryParam:
     token_ratio_for_auxiliary_data: float = 1
     edge_depth: int = 1
     local_context_length: int = 10000
-    traversal_type: Literal[
-        "BFS",
-        "topk_shortest_paths",
-        "cypher_query",
-        "cypher_path_search",
-        "cypher_only",
-        "adaptive",
-        "BFS+PPR",
-    ] = "adaptive"
+    traversal_type: str = "adaptive"
     question_classification_result: str | None = None
     # failure self-correction
     failure_retries: int = 1
+    # additional field for future use
+    extra_data: Dict = field(default_factory=dict)
 
 
 ID = TypeVar("ID")

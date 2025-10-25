@@ -1,14 +1,20 @@
 import os
+import random
+import torch
 import logging
-from datasets import load_dataset
+import numpy as np
 import argparse
 import jsonlines
 import networkx as nx
+from datasets import load_dataset
 from polyg import GraphRAG, QueryParam
 from polyg.storage import Neo4jStorage
 from neo4j import GraphDatabase
 from tqdm import tqdm
 from dotenv import load_dotenv
+from retriever import subgraphrag_retriever
+from dataloader import RetrieverDataset, collate_retriever
+from model import Retriever
 
 load_dotenv()
 
@@ -34,6 +40,12 @@ argparser.add_argument(
 )
 argparser.add_argument(
     "--benchmark", type=str, default="webqsp", choices=["webqsp", "cwq"], required=True
+)
+argparser.add_argument(
+    "--path",
+    type=str,
+    required=True,
+    help="Path to a saved model checkpoint, e.g., webqsp_Nov08-01:14:47/cpt.pth",
 )
 args = argparser.parse_args()
 print(args)
@@ -61,13 +73,6 @@ neo4j_config = {
 driver = GraphDatabase.driver(
     neo4j_config["neo4j_url"], auth=neo4j_config["neo4j_auth"]
 )
-
-
-def print_outputs(outputs):
-    print("=" * 80)
-    print("Generated reponse:")
-    print(outputs)
-    print("-" * 80)
 
 
 sampling_params = {}
@@ -106,6 +111,7 @@ print(f"Sampling params: {sampling_params}")
 rag = GraphRAG(
     dataset=args.benchmark,
     graph_storage_cls=Neo4jStorage,
+    retrieve_func=subgraphrag_retriever,
     addon_params=neo4j_config,
     model=lite_llm_model_name,
     model_max_token_size=MAX_MODEL_LEN,
@@ -113,7 +119,25 @@ rag = GraphRAG(
 )
 
 
-def BFS(question, id_mapping):
+def print_outputs(outputs):
+    print("=" * 80)
+    print("Generated response:")
+    print(outputs)
+    print("-" * 80)
+
+
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
+def subgraphrag(question, id_mapping, extra_data):
     print(f"Question: {question}")
     response, duration, token_len, api_calls, answer_list = rag.query(
         question,
@@ -122,82 +146,16 @@ def BFS(question, id_mapping):
             mode="local",
             edge_depth=1,
             local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="BFS",
+            traversal_type="subgraphrag",
             response_type="a simple sentence that indicates the answer.",
             token_ratio_for_node=0.5,
             token_ratio_for_edge=0.4,
             failure_retries=0,
+            extra_data=extra_data,
         ),
     )
     print_outputs(response)
-    return "BFS", response, duration, token_len, api_calls, answer_list
-
-
-def cypher_single_entity(question, id_mapping):
-    print(f"Question: {question}")
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=QueryParam(
-            mode="local",
-            local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="cypher_query",
-            response_type="a simple sentence that indicates the answer.",
-            token_ratio_for_node=0.5,
-            token_ratio_for_edge=0.4,
-            failure_retries=0,
-        ),
-    )
-    print_outputs(response)
-    return "cypher_single_entity", response, duration, token_len, api_calls, answer_list
-
-
-def cypher_only(question, id_mapping):
-    print(f"Question: {question}")
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=QueryParam(
-            mode="local",
-            local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="cypher_only",
-            response_type="a simple sentence that indicates the answer.",
-            token_ratio_for_node=0.5,
-            token_ratio_for_edge=0.4,
-            failure_retries=0,
-        ),
-    )
-    print_outputs(response)
-    return "cypher_only", response, duration, token_len, api_calls, answer_list
-
-
-def adaptive(question, id_mapping):
-    print(f"Question: {question}")
-    query_param = QueryParam(
-        mode="local",
-        edge_depth=1,
-        local_context_length=MAX_CONTEXT_TOKENS,
-        traversal_type="cypher_query",
-        response_type="a simple sentence that indicates the answer.",
-        token_ratio_for_node=0.5,
-        token_ratio_for_edge=0.4,
-        failure_retries=3,
-    )
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=query_param,
-    )
-    print_outputs(response)
-    return (
-        "adaptive",
-        response,
-        duration,
-        token_len,
-        api_calls,
-        answer_list,
-        query_param.question_classification_result,
-    )
+    return "subgraphrag", response, duration, token_len, api_calls, answer_list
 
 
 def build_graph(graph: list) -> nx.DiGraph:
@@ -262,6 +220,21 @@ def extract_graph_schema(nx_graph: nx.DiGraph) -> str:
 
 
 if __name__ == "__main__":
+    device = torch.device(f"cuda:0")
+
+    cpt = torch.load(args.path, map_location="cpu")
+    config = cpt["config"]
+    set_seed(config["env"]["seed"])
+    torch.set_num_threads(config["env"]["num_threads"])
+
+    infer_set = RetrieverDataset(config=config, split="test", skip_no_path=False)
+
+    emb_size = infer_set[0]["q_emb"].shape[-1]
+    model = Retriever(emb_size, **config["retriever"]).to(device)
+    model.load_state_dict(cpt["model_state_dict"])
+    model = model.to(device)
+    model.eval()
+
     remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
     output_file = os.path.join(RESULT_DIR, "results.jsonl")
@@ -269,6 +242,9 @@ if __name__ == "__main__":
     dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
     for it, sample in enumerate(dataset):
+        raw_sample = infer_set[it]
+        collate_sample = collate_retriever([raw_sample])
+
         question = sample["question"]
         nx_graph = build_graph(sample["graph"])
         id_mapping = {}
@@ -278,10 +254,13 @@ if __name__ == "__main__":
         rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
 
         results = []
-        results.append(adaptive(question, id_mapping.copy()))
-        results.append(BFS(question, id_mapping.copy()))
-        results.append(cypher_single_entity(question, id_mapping.copy()))
-        results.append(cypher_only(question, id_mapping.copy()))
+        results.append(
+            subgraphrag(
+                question,
+                id_mapping.copy(),
+                {"model": model, "sample": collate_sample, "device": device},
+            )
+        )
 
         result_entrees = []
         for result in results:
