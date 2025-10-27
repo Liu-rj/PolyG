@@ -158,8 +158,6 @@ You will be provided with some helpful references. The provided reference data t
 
 Generate a response to the user's question following the given target length and format.
 
-If the reference tables do not provide sufficient evidence, use your internal knowledge to answer the question.
-
 ---Target response length and format---
 
 {response_type}

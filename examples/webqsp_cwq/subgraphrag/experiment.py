@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 from retriever import subgraphrag_retriever
 from dataloader import RetrieverDataset, collate_retriever
 from model import Retriever
+from prompts import icl_user_prompt, icl_ass_prompt
 
 load_dotenv()
 
@@ -50,7 +51,7 @@ argparser.add_argument(
 args = argparser.parse_args()
 print(args)
 
-RESULT_DIR = f"results/{args.benchmark}/{args.model}"
+RESULT_DIR = f"../results/{args.benchmark}/{args.model}"
 MAX_MODEL_LEN = 65536
 MAX_CONTEXT_TOKENS = 57344
 MAX_OUTPUT_TOKENS = 8192
@@ -111,12 +112,12 @@ print(f"Sampling params: {sampling_params}")
 rag = GraphRAG(
     dataset=args.benchmark,
     graph_storage_cls=Neo4jStorage,
-    retrieve_func=subgraphrag_retriever,
     addon_params=neo4j_config,
     model=lite_llm_model_name,
     model_max_token_size=MAX_MODEL_LEN,
     model_sampling_params=sampling_params,
 )
+rag.register_retriever("subgraphrag", subgraphrag_retriever)
 
 
 def print_outputs(outputs):
@@ -147,7 +148,12 @@ def subgraphrag(question, id_mapping, extra_data):
             edge_depth=1,
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="subgraphrag",
-            response_type="a simple sentence that indicates the answer.",
+            response_type=(
+                "Based on the triplets from a knowledge graph, please answer the given question. "
+                "Please keep the answers as simple as possible and return all the possible answers "
+                """as a list, each with a prefix "ans:"."""
+                f"Example Question and Response: \n\n {icl_user_prompt} \n\n {icl_ass_prompt}"
+            ),
             token_ratio_for_node=0.5,
             token_ratio_for_edge=0.4,
             failure_retries=0,
@@ -237,7 +243,7 @@ if __name__ == "__main__":
 
     remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
-    output_file = os.path.join(RESULT_DIR, "results.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_subgraphrag.jsonl")
 
     dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
@@ -258,7 +264,12 @@ if __name__ == "__main__":
             subgraphrag(
                 question,
                 id_mapping.copy(),
-                {"model": model, "sample": collate_sample, "device": device},
+                {
+                    "model": model,
+                    "sample": collate_sample,
+                    "device": device,
+                    "topk": 100,
+                },
             )
         )
 

@@ -16,16 +16,6 @@ from .llm import LLM
 from .retriever import *
 
 
-TRAVERSAL_FUNCTIONS = {
-    "cypher_query": guided_walk_retriever,
-    "cypher_path_search": topk_csp_retriever,
-    "BFS": bfs_retriever,
-    "topk_shortest_paths": shortest_path_retriever,
-    "cypher_only": cypher_only_retriever,
-    "BFS+PPR": bfs_ppr_retriever,
-}
-
-
 @dataclass
 class GraphRAG:
     dataset: str
@@ -48,9 +38,6 @@ class GraphRAG:
     # storage
     graph_storage_cls: Type[BaseGraphStorage] = Neo4jStorage
 
-    # retrieval
-    retrieve_func: Callable | None = field(default=None)
-
     # extension
     create_working_dir: bool = False
     addon_params: dict = field(default_factory=dict)
@@ -68,8 +55,24 @@ class GraphRAG:
             namespace="", global_config=asdict(self)
         )
 
+        self.traversal_functions = {
+            "cypher_query": guided_walk_retriever,
+            "cypher_path_search": topk_csp_retriever,
+            "BFS": bfs_retriever,
+            "topk_shortest_paths": shortest_path_retriever,
+            "cypher_only": cypher_only_retriever,
+            "BFS+PPR": bfs_ppr_retriever,
+        }
+
         _print_config = ",\n  ".join([f"{k} = {v}" for k, v in asdict(self).items()])
         logger.debug(f"GraphRAG init with param:\n\n  {_print_config}\n")
+
+    def register_retriever(self, name: str, func: Callable) -> None:
+        """
+        Register a custom retriever function.
+        """
+        self.traversal_functions[name] = func
+        logger.info(f"Registered custom retriever: {name}")
 
     def query(
         self, query: str, id_mapping: dict, param: QueryParam = QueryParam()
@@ -166,20 +169,17 @@ class GraphRAG:
                 sub_id_mapping = query_dict["id_mapping"]
                 print(f"Subquery: {subquery}, id_mapping: {sub_id_mapping}")
 
-                if self.retrieve_func is None:
-                    if traversal_type in TRAVERSAL_FUNCTIONS:
-                        retrieve_func = TRAVERSAL_FUNCTIONS[traversal_type]
-                    else:
-                        logger.error(f"Unsupported traversal type: {traversal_type}")
-                        return (
-                            PROMPTS["fail_response"],
-                            time.time() - start,
-                            total_tokens,
-                            total_api_calls,
-                            [],
-                        )
+                if traversal_type in self.traversal_functions:
+                    retrieve_func = self.traversal_functions[traversal_type]
                 else:
-                    retrieve_func = self.retrieve_func
+                    logger.error(f"Unsupported traversal type: {traversal_type}")
+                    return (
+                        PROMPTS["fail_response"],
+                        time.time() - start,
+                        total_tokens,
+                        total_api_calls,
+                        [],
+                    )
 
                 response, token_len, api_calls, answer_list = (
                     await retrieve_and_generate(

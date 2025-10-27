@@ -16,9 +16,15 @@ class LLM:
 
         if model.startswith("openai/"):
             self.token_encoder = tiktoken.get_encoding("cl100k_base")
-        else:
+        elif model.startswith("deepseek"):
+            self.token_encoder = AutoTokenizer.from_pretrained(
+                "deepseek-ai/DeepSeek-V3.1"
+            )
+        elif model.startswith("hosted_vllm/"):
             tokenizer = AutoTokenizer.from_pretrained(model.lstrip("hosted_vllm/"))
             self.token_encoder = tokenizer
+        else:
+            raise ValueError(f"Unsupported model: {model}")
 
     async def generate(
         self,
