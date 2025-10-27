@@ -150,8 +150,8 @@ def subgraphrag(question, id_mapping, extra_data):
             traversal_type="subgraphrag",
             response_type=(
                 "Based on the triplets from a knowledge graph, please answer the given question. "
-                "Please keep the answers as simple as possible and return all the possible answers "
-                """as a list, each with a prefix "ans:"."""
+                'Please keep the answers as simple as possible and return all the possible answers as a list, each with a prefix "ans:". '
+                'Format your above answers by listing each answer on a separate line, starting with the prefix "ans:".'
                 f"Example Question and Response: \n\n {icl_user_prompt} \n\n {icl_ass_prompt}"
             ),
             token_ratio_for_node=0.5,
