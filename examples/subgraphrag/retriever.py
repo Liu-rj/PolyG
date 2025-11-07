@@ -48,6 +48,20 @@ def prepare_sample(device, sample):
     )
 
 
+def unique_preserve_order(input_list):
+    seen = set()
+    unique_list = []
+    for item in input_list:
+        if item not in seen:
+            unique_list.append(item)
+            seen.add(item)
+    return unique_list
+
+
+def triplet_to_str(triplet):
+    return f"({triplet[0]},{triplet[1]},{triplet[2]})"
+
+
 async def subgraphrag_retriever(
     query: str,
     id_mapping: dict[str, ID],
@@ -59,6 +73,7 @@ async def subgraphrag_retriever(
     model: Retriever = extra_data["model"]
     sample = extra_data["sample"]
     device = extra_data["device"]
+    maxk = extra_data["maxk"]
     topk = extra_data["topk"]
 
     (
@@ -88,23 +103,28 @@ async def subgraphrag_retriever(
         topic_entity_one_hot,
     )
     pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
-    top_K_results = torch.topk(pred_triple_scores, min(topk, len(pred_triple_scores)))
+    top_K_results = torch.topk(pred_triple_scores, min(maxk, len(pred_triple_scores)))
     top_K_scores = top_K_results.values.cpu().tolist()
     top_K_triple_IDs = top_K_results.indices.cpu().tolist()
 
     entity_list = text_entity_list + non_text_entity_list
-    all_nodes = set()
+    triples = []
+    for triple_id in top_K_triple_IDs:
+        triples.append(
+            (
+                entity_list[h_id_tensor[triple_id].item()],
+                relation_list[r_id_tensor[triple_id].item()],
+                entity_list[t_id_tensor[triple_id].item()],
+            )
+        )
+
     edges_data = []
-    for j, triple_id in enumerate(top_K_triple_IDs):
-        all_nodes.add(entity_list[h_id_tensor[triple_id].item()])
-        all_nodes.add(entity_list[t_id_tensor[triple_id].item()])
+    all_nodes = set()
+    input_triplets = unique_preserve_order(triples)[:topk]
+    for triple in input_triplets:
+        all_nodes.update([triple[0], triple[2]])
         edges_data.append(
-            {
-                "src_id": entity_list[h_id_tensor[triple_id].item()],
-                "tgt_id": entity_list[t_id_tensor[triple_id].item()],
-                "relation": relation_list[r_id_tensor[triple_id].item()],
-                "score": top_K_scores[j],
-            }
+            {"src_id": triple[0], "relation": triple[1], "tgt_id": triple[2]}
         )
 
     nodes_data = [{"id": nid, "name": nid} for nid in all_nodes]

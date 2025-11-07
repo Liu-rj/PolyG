@@ -206,6 +206,12 @@ class RetrieverDataset:
     def __getitem__(self, i):
         return self.processed_dict_list[i]
 
+    def get_by_id(self, id):
+        for sample in self.processed_dict_list:
+            if sample["id"] == id:
+                return sample
+        raise KeyError(f"Sample with id {id} not found.")
+
 
 def collate_retriever(data):
     sample = data[0]

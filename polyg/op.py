@@ -5,7 +5,7 @@ import tiktoken
 import transformers
 from typing import Union, List, Tuple, Dict, Callable
 from .base import BaseGraphStorage, QueryParam, ID, RetrievalResult
-from .prompt import PROMPTS, SCHEMA_MAP
+from .prompt import PROMPTS
 from .utils import (
     logger,
     truncate_list_by_token_size,
@@ -16,25 +16,25 @@ from .utils import (
 
 
 ALL_CONTEXT = """
------Cypher Query-----
+Cypher Query:
 ```cypher
 {cypher_query}
 ```
 
------Entities-----
+Entities:
 ```csv
 {entities_context}
 ```
 
------Relationships-----
+Relations:
 ```csv
 {relations_context}
 ```
 
------Reasoning Path-----
+Reasoning Paths:
 {reasoning_path_context}
 
------Auxiliary Data-----
+Auxiliary Data:
 {auxdata_context}
 """
 
@@ -105,7 +105,10 @@ def form_entity_relation_context(
         ),
         token_encoder=token_encoder,
     )
-    entities_context = list_to_csv(truncated_entities_list)
+    if len(truncated_entities_list) == 0:
+        entities_context = "No entities."
+    else:
+        entities_context = list_to_csv(truncated_entities_list)
     print(f"Form entity context time: {time.perf_counter() - tic:.2f}s")
 
     # build relation context
@@ -131,7 +134,10 @@ def form_entity_relation_context(
         ),
         token_encoder=token_encoder,
     )
-    relations_context = list_to_csv(truncated_relations_list)
+    if len(truncated_relations_list) == 0:
+        relations_context = "No relations."
+    else:
+        relations_context = list_to_csv(truncated_relations_list)
     print(f"Form relation context time: {time.perf_counter() - tic:.2f}s")
 
     # build reasoning path context
@@ -149,7 +155,10 @@ def form_entity_relation_context(
         ),
         token_encoder=token_encoder,
     )
-    reasoning_path_context = "\n".join(truncated_reasoning_paths)
+    if len(truncated_reasoning_paths) == 0:
+        reasoning_path_context = "No reasoning paths."
+    else:
+        reasoning_path_context = "\n".join(truncated_reasoning_paths)
     print(f"Form reasoning path time: {time.perf_counter() - tic:.2f}s")
 
     # build auxiliary data context
