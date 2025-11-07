@@ -1,5 +1,7 @@
 # PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions
 
+This repo provides the PolyBench and PolyG implementation of the paper [PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions](https://arxiv.org/abs/2504.02112).
+
 ## Installation
 
 * Create a new env with python 3.12:
@@ -34,7 +36,7 @@ Store the knowledge graphs into `datasets` directory (from the root directory of
 
 * Convert the graphs into desired formats:
 
-Go to `examples/preprocess` directory, run
+Go to `preprocess_dataset` directory, run
 
 ```shell
 python preprocess_graph.py --path dataset/physics
@@ -44,7 +46,7 @@ python preprocess_graph.py --path dataset/amazon
 
 * Import the data to Neo4j:
 
-At the `examples/preprocess` directory, run
+At the `preprocess_dataset` directory, run
 
 ```shell
 bash neo4j_bulk_insert.sh
@@ -52,8 +54,42 @@ bash neo4j_bulk_insert.sh
 
 * PolyBench:
 
-Our proposed PolyBench is available at `benchmarks` directory.
+Our proposed PolyBench is available in `benchmarks` directory.
 
-## Run the experiments
+## Use PolyG
 
-The scripts to reproduce the experimental results are provide in `examples\run.sh`.
+* Run a toy example (on the physics graph):
+
+At the `examples` directory, run
+
+```shell
+python example.py --model openai/gpt-4o --data_dir ../datasets/physics
+```
+
+* Run end-to-end evaluation on PolyBench:
+
+At the `examples` directory, run
+
+```shell
+python experiment.py --model openai/gpt-4o --data_dir ../datasets/physics --benchmark_dir ../benchmarks/physics
+python experiment.py --model openai/gpt-4o --data_dir ../datasets/goodreads --benchmark_dir ../benchmarks/goodreads
+python experiment.py --model openai/gpt-4o --data_dir ../datasets/amazon --benchmark_dir ../benchmarks/amazon
+```
+
+Results will be stored in `examples/results/[graph name]/[model name]/results.jsonl`.
+
+To evaluate the results, checkout to `examples/evaluation` directory, run:
+
+```shell
+# for win rates
+python judge_by_llm.py --model openai/gpt-4o --dataset physics
+python judge_by_llm.py --model openai/gpt-4o --dataset goodreads
+python judge_by_llm.py --model openai/gpt-4o --dataset amazon
+
+# for F1-score, Precision, Recall, Accuracy and Hit
+python compute_f1_hit.py --model openai/gpt-4o --dataset physics
+python compute_f1_hit.py --model openai/gpt-4o --dataset goodreads
+python compute_f1_hit.py --model openai/gpt-4o --dataset amazon
+```
+
+Results will be saved in `examples/results/[graph name]/[model name]/judegments.jsonl` and `examples/results/[graph name]/[model name]/detailed_evaluation.jsonl`.
