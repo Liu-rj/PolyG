@@ -48,6 +48,20 @@ def prepare_sample(device, sample):
     )
 
 
+def unique_preserve_order(input_list):
+    seen = set()
+    unique_list = []
+    for item in input_list:
+        if item not in seen:
+            unique_list.append(item)
+            seen.add(item)
+    return unique_list
+
+
+def triplet_to_str(triplet):
+    return f"({triplet[0]},{triplet[1]},{triplet[2]})"
+
+
 async def subgraphrag_retriever(
     query: str,
     id_mapping: dict[str, ID],
@@ -88,30 +102,44 @@ async def subgraphrag_retriever(
         topic_entity_one_hot,
     )
     pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
-    top_K_results = torch.topk(pred_triple_scores, min(topk, len(pred_triple_scores)))
-    top_K_scores = top_K_results.values.cpu().tolist()
+    top_K_results = torch.topk(pred_triple_scores, min(500, len(pred_triple_scores)))
+    # top_K_scores = top_K_results.values.cpu().tolist()
     top_K_triple_IDs = top_K_results.indices.cpu().tolist()
 
     entity_list = text_entity_list + non_text_entity_list
-    all_nodes = set()
-    edges_data = []
-    for j, triple_id in enumerate(top_K_triple_IDs):
-        all_nodes.add(entity_list[h_id_tensor[triple_id].item()])
-        all_nodes.add(entity_list[t_id_tensor[triple_id].item()])
-        edges_data.append(
-            {
-                "src_id": entity_list[h_id_tensor[triple_id].item()],
-                "tgt_id": entity_list[t_id_tensor[triple_id].item()],
-                "relation": relation_list[r_id_tensor[triple_id].item()],
-                "score": top_K_scores[j],
-            }
+    triples = []
+    for triple_id in top_K_triple_IDs:
+        triples.append(
+            (
+                entity_list[h_id_tensor[triple_id].item()],
+                relation_list[r_id_tensor[triple_id].item()],
+                entity_list[t_id_tensor[triple_id].item()],
+            )
         )
 
-    nodes_data = [{"id": nid, "name": nid} for nid in all_nodes]
+    edges_data = []
+    input_triplets = unique_preserve_order(triples)[:topk]
+    # edges_data = [triplet_to_str(triplet) for triplet in input_triplets]
+    for triple in input_triplets:
+        edges_data.append(
+            {"src_id": triple[0], "relation": triple[1], "tgt_id": triple[2]}
+        )
+
+    # input_triplets = extra_data['scored_triplets']
+    # input_triplets = [(triplet[0], triplet[1], triplet[2]) for triplet in input_triplets]
+
+    # input_triplets = unique_preserve_order(input_triplets)
+    # input_triplets = input_triplets[:100]
+    # # edges_data = []
+    # # for triple in input_triplets:
+    # #     edges_data.append(
+    # #         {"src_id": triple[0], "relation": triple[1], "tgt_id": triple[2]}
+    # #     )
+    # input_triplets = [triplet_to_str(triplet) for triplet in input_triplets]
 
     return RetrievalResult(
-        cypher_query="",
-        nodes_data=nodes_data,  # type: ignore
+        cypher_query="No cypher query.",
+        nodes_data=[],
         edges_data=edges_data,
         reasoning_paths=[],
         auxiliary_data=[],

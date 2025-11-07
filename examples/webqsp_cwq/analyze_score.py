@@ -7,7 +7,9 @@ argparser.add_argument("--dataset", type=str, default="webqsp", required=True)
 argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=True)
 args = argparser.parse_args()
 
-RESULT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation_subgraphrag.jsonl"
+RESULT_PATH = (
+    f"results/{args.dataset}/{args.model}/detailed_evaluation_subgraphrag.jsonl"
+)
 
 method_names = [
     "BFS",
@@ -28,6 +30,8 @@ method_counts = {method: 0 for method in method_names}
 
 with jsonlines.open(RESULT_PATH, "r") as reader:
     results = list(reader)
+
+# results = results[:1000]
 
 for item in results:
     method = item["method"]

@@ -5,7 +5,13 @@ import tiktoken
 import transformers
 from typing import Union, List, Tuple, Dict, Callable
 from .base import BaseGraphStorage, QueryParam, ID, RetrievalResult
-from .prompt import PROMPTS, SCHEMA_MAP
+from .prompt import (
+    PROMPTS,
+    SCHEMA_MAP,
+    icl_sys_prompt,
+    icl_ass_prompt,
+    icl_user_prompt,
+)
 from .utils import (
     logger,
     truncate_list_by_token_size,
@@ -15,27 +21,47 @@ from .utils import (
 )
 
 
+# ALL_CONTEXT = """
+# -----Cypher Query-----
+# ```cypher
+# {cypher_query}
+# ```
+
+# -----Entities-----
+# ```csv
+# {entities_context}
+# ```
+
+# -----Relationships-----
+# {relations_context}
+
+# -----Reasoning Path-----
+# {reasoning_path_context}
+
+# -----Auxiliary Data-----
+# {auxdata_context}
+# """
+
+# ALL_CONTEXT = """
+# Cypher Query:
+# {cypher_query}
+
+# Entities:
+# {entities_context}
+
+# Relations:
+# {relations_context}
+
+# Reasoning Paths:
+# {reasoning_path_context}
+
+# Auxiliary Data:
+# {auxdata_context}
+# """
+
 ALL_CONTEXT = """
------Cypher Query-----
-```cypher
-{cypher_query}
-```
-
------Entities-----
-```csv
-{entities_context}
-```
-
------Relationships-----
-```csv
+Relations:
 {relations_context}
-```
-
------Reasoning Path-----
-{reasoning_path_context}
-
------Auxiliary Data-----
-{auxdata_context}
 """
 
 
@@ -48,9 +74,27 @@ async def sort_entity_relation(
     )
     nodes_data = [{**n, "rank": d} for n, d in zip(nodes_data, nodes_degree)]  # type: ignore
     nodes_data = sorted(nodes_data, key=lambda x: x["rank"], reverse=True)
-
     nodes_data_map = {n["id"]: n for n in nodes_data}
     logger.info(f"Get node data time: {time.perf_counter() - tic:.2f}s")
+
+    tic = time.perf_counter()
+    edges_nid = set()
+    for e in edges_data:
+        if e["src_id"] not in nodes_data_map:
+            edges_nid.add(e["src_id"])
+        if e["tgt_id"] not in nodes_data_map:
+            edges_nid.add(e["tgt_id"])
+    edges_nid = list(edges_nid)
+    edge_node_data = await asyncio.gather(*[kg_inst.get_node(nid) for nid in edges_nid])
+    for it, ndata in enumerate(edge_node_data):
+        if ndata is None:
+            print(edges_nid[it])
+    edge_node_degree = await asyncio.gather(
+        *[kg_inst.node_degree(nid) for nid in edges_nid]
+    )
+    edge_node_data = [{**n, "rank": d} for n, d in zip(edge_node_data, edge_node_degree)]  # type: ignore
+    nodes_data_map.update({n["id"]: n for n in edge_node_data})
+    logger.info(f"Get edge node data time: {time.perf_counter() - tic:.2f}s")
 
     tic = time.perf_counter()
     edges_name = [
@@ -105,33 +149,46 @@ def form_entity_relation_context(
         ),
         token_encoder=token_encoder,
     )
-    entities_context = list_to_csv(truncated_entities_list)
+    if len(truncated_entities_list) == 0:
+        entities_context = "No entities."
+    else:
+        entities_context = list_to_csv(truncated_entities_list)
     print(f"Form entity context time: {time.perf_counter() - tic:.2f}s")
 
     # build relation context
+    # tic = time.perf_counter()
+    # relations_section_list = []
+    # relation_header = ", ".join(
+    #     [
+    #         f"{enclose_string_with_quotes(data)}"
+    #         for data in ["id", "source", "relation", "target"]
+    #     ]
+    # )
+    # relations_section_list.append(relation_header)
+    # for i, e in enumerate(edges_data):
+    #     # raw_data = [i, e["src_tgt"][0], e["src_tgt"][1], e["relation"]]
+    #     raw_data = [i, e["src_id"], e["relation"], e["tgt_id"]]
+    #     relations_section_list.append(
+    #         ", ".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+    #     )
+
+    # truncated_relations_list = truncate_list_by_token_size(
+    #     relations_section_list,
+    #     max_token_size=int(
+    #         query_param.local_context_length * query_param.token_ratio_for_edge
+    #     ),
+    #     token_encoder=token_encoder,
+    # )
+    # relations_context = list_to_csv(truncated_relations_list)
+    # print(f"Form relation context time: {time.perf_counter() - tic:.2f}s")
+
     tic = time.perf_counter()
     relations_section_list = []
-    relation_header = ",\t".join(
-        [
-            f"{enclose_string_with_quotes(data)}"
-            for data in ["id", "source", "target", "relation"]
-        ]
-    )
-    relations_section_list.append(relation_header)
+    # relations_section_list.append(("(source,relation,target)"))
     for i, e in enumerate(edges_data):
-        raw_data = [i, e["src_tgt"][0], e["src_tgt"][1], e["relation"]]
-        relations_section_list.append(
-            ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
-        )
+        relations_section_list.append(f'({e["src_id"]},{e["relation"]},{e["tgt_id"]})')
 
-    truncated_relations_list = truncate_list_by_token_size(
-        relations_section_list,
-        max_token_size=int(
-            query_param.local_context_length * query_param.token_ratio_for_edge
-        ),
-        token_encoder=token_encoder,
-    )
-    relations_context = list_to_csv(truncated_relations_list)
+    relations_context = "\n".join(relations_section_list)
     print(f"Form relation context time: {time.perf_counter() - tic:.2f}s")
 
     # build reasoning path context
@@ -149,7 +206,10 @@ def form_entity_relation_context(
         ),
         token_encoder=token_encoder,
     )
-    reasoning_path_context = "\n".join(truncated_reasoning_paths)
+    if len(truncated_reasoning_paths) == 0:
+        reasoning_path_context = "No reasoning paths."
+    else:
+        reasoning_path_context = "\n".join(truncated_reasoning_paths)
     print(f"Form reasoning path time: {time.perf_counter() - tic:.2f}s")
 
     # build auxiliary data context
@@ -177,27 +237,38 @@ def form_entity_relation_context(
         auxdata_context = list_to_csv(truncated_auxdata_list)
     print(f"Build auxiliary context time: {time.perf_counter() - tic:.2f}s")
 
-    return ALL_CONTEXT.format(
-        cypher_query=cypher_query,
-        entities_context=entities_context,
-        relations_context=relations_context,
-        reasoning_path_context=reasoning_path_context,
-        auxdata_context=auxdata_context,
-    )
+    # return ALL_CONTEXT.format(
+    #     cypher_query=cypher_query,
+    #     entities_context=entities_context,
+    #     relations_context=relations_context,
+    #     reasoning_path_context=reasoning_path_context,
+    #     auxdata_context=auxdata_context,
+    # )
+    return ALL_CONTEXT.format(relations_context=relations_context)
 
 
 async def gen_model_response(
     query: str, context: str, query_param: QueryParam, global_config: dict
 ) -> Tuple[str, int]:
-    tic = time.perf_counter()
-    if global_config["dataset"] in ["webqsp", "cwq"]:
-        sys_prompt_temp = PROMPTS["guided_walk_response"]
-    else:
-        sys_prompt_temp = PROMPTS["local_rag_response"]
-    sys_prompt = sys_prompt_temp.format(
-        context_data=context, response_type=query_param.response_type
-    )
-    print(f"Form prompt time: {time.perf_counter() - tic:.2f}s")
+    query = "Question:\n" + query
+    if query[-1] != "?":
+        query += "?"
+
+    # tic = time.perf_counter()
+    # if global_config["dataset"] in ["webqsp", "cwq"]:
+    #     sys_prompt_temp = PROMPTS["webqsp_cwq_response"]
+    # else:
+    #     sys_prompt_temp = PROMPTS["local_rag_response"]
+    # sys_prompt = sys_prompt_temp.format(
+    #     context_data=context, response_type=query_param.response_type
+    # )
+    # print(f"Form prompt time: {time.perf_counter() - tic:.2f}s")
+
+    query = "\n\n".join([context, query])
+    conversation = [("system", icl_sys_prompt)]
+    conversation.append(("user", icl_user_prompt))
+    conversation.append(("assistant", icl_ass_prompt))
+    sys_prompt = icl_sys_prompt + icl_user_prompt + icl_ass_prompt
 
     context_token_len = num_tokens(sys_prompt + query, global_config["token_encoder"])
     print(f"Context length: {context_token_len}")
@@ -208,7 +279,8 @@ async def gen_model_response(
         return PROMPTS["token_limit_exceeded"], 0
 
     tic = time.perf_counter()
-    response = await global_config["model_func"](query, system_prompt=sys_prompt)
+    # response = await global_config["model_func"](query, system_prompt=sys_prompt)
+    response = await global_config["model_func"](query, history_messages=conversation)
     print(f"LLM generate time: {time.perf_counter() - tic:.2f}s")
 
     return response, context_token_len
@@ -242,9 +314,10 @@ async def retrieve_and_generate(
     logger.info(f"Get relations time: {time.perf_counter() - tic:.2f}s")
     logger.info(f"Using {len(ndata)} entites, {len(edata)} relations")
 
-    tic = time.perf_counter()
-    sorted_ndata, sorted_edata = await sort_entity_relation(ndata, edata, kg_inst)
-    logger.info(f"Sort entities and relations time: {time.perf_counter() - tic:.2f}s")
+    # tic = time.perf_counter()
+    # sorted_ndata, sorted_edata = await sort_entity_relation(ndata, edata, kg_inst)
+    # logger.info(f"Sort entities and relations time: {time.perf_counter() - tic:.2f}s")
+    sorted_ndata, sorted_edata = ndata, edata
 
     tic = time.perf_counter()
     context = form_entity_relation_context(
@@ -257,6 +330,7 @@ async def retrieve_and_generate(
         global_config["token_encoder"],
     )
     logger.info(f"Form context time: {time.perf_counter() - tic:.2f}s")
+    # context = "Triplets:\n" + "\n".join(sorted_edata)
 
     tic = time.perf_counter()
     response, context_token_len = await gen_model_response(

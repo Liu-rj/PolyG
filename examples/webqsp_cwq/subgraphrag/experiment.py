@@ -16,6 +16,7 @@ from retriever import subgraphrag_retriever
 from dataloader import RetrieverDataset, collate_retriever
 from model import Retriever
 from prompts import icl_user_prompt, icl_ass_prompt
+from prepare_data import get_data
 
 load_dotenv()
 
@@ -149,13 +150,10 @@ def subgraphrag(question, id_mapping, extra_data):
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="subgraphrag",
             response_type=(
-                "Based on the triplets from a knowledge graph, please answer the given question. "
-                'Please keep the answers as simple as possible and return all the possible answers as a list, each with a prefix "ans:". '
-                'Format your above answers by listing each answer on a separate line, starting with the prefix "ans:".'
-                f"Example Question and Response: \n\n {icl_user_prompt} \n\n {icl_ass_prompt}"
+                'Please return formatted answers by listing each answer on a separate line, starting with the prefix "ans:".'
             ),
-            token_ratio_for_node=0.5,
-            token_ratio_for_edge=0.4,
+            token_ratio_for_node=0,
+            token_ratio_for_edge=0.9,
             failure_retries=0,
             extra_data=extra_data,
         ),
@@ -241,23 +239,30 @@ if __name__ == "__main__":
     model = model.to(device)
     model.eval()
 
-    remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+    # pred_file_path = "webqsp_Oct20-10:11:32/predictions.jsonl"
+    # score_dict_path = "webqsp_Oct20-10:11:32/retrieval_result.pth"
+    # data = get_data(
+    #     args.benchmark, pred_file_path, score_dict_path, "test", "scored_100"
+    # )
+
+    # remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
     output_file = os.path.join(RESULT_DIR, "results_subgraphrag.jsonl")
 
-    dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
+    # dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
-    for it, sample in enumerate(dataset):
-        raw_sample = infer_set[it]
-        collate_sample = collate_retriever([raw_sample])
+    # for it, sample in enumerate(data):
+    for it in range(len(infer_set)):
+        sample = infer_set[it]
+        collate_sample = collate_retriever([sample])
 
         question = sample["question"]
-        nx_graph = build_graph(sample["graph"])
+        # nx_graph = build_graph(raw_sample["graph"])
         id_mapping = {}
         for entity in sample["q_entity"]:
             id_mapping[entity] = entity
-        insert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
-        rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
+        # insert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
+        # rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
 
         results = []
         results.append(
@@ -269,7 +274,9 @@ if __name__ == "__main__":
                     "sample": collate_sample,
                     "device": device,
                     "topk": 100,
+                    # "scored_triplets": data[it]["scored_triplets"],
                 },
+                # {"scored_triplets": sample["scored_triplets"]},
             )
         )
 
@@ -291,7 +298,7 @@ if __name__ == "__main__":
             result_entrees.append(result_entree)
             print(result_entree)
 
-        remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+        # remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
         with jsonlines.open(output_file, "a") as writer:
             writer.write_all(result_entrees)
