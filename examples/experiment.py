@@ -258,7 +258,6 @@ if __name__ == "__main__":
             results.append(BFS(question, id_mapping.copy()))
             results.append(cypher_single_entity(question, id_mapping.copy()))
             results.append(cypher_only(question, id_mapping.copy()))
-            results.append(BFS_PPR(question, id_mapping.copy()))
 
             result_entrees = []
             for result in results:

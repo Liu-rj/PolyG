@@ -25,10 +25,9 @@ client = AsyncOpenAI(
 ANSWER_PATH = [
     f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
-    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_bfs_ppr.jsonl",
     f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
 ]
-OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements_w_bfs_ppr_new.jsonl"
+OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements.jsonl"
 
 
 SYSTEM_ROLE = """
@@ -277,7 +276,6 @@ method_names = [
     "cypher_only",
     "Fastgraphrag_PPR",
     "GraphCoT",
-    "BFS+PPR",
     "adaptive",
 ]
 for question_type in question_types:
