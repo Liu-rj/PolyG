@@ -52,7 +52,7 @@ argparser.add_argument(
 args = argparser.parse_args()
 print(args)
 
-RESULT_DIR = f"../results/{args.benchmark}/{args.model}"
+RESULT_DIR = f"results/{args.benchmark}/{args.model}"
 MAX_MODEL_LEN = 65536
 MAX_CONTEXT_TOKENS = 57344
 MAX_OUTPUT_TOKENS = 8192
