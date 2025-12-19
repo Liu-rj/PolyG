@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     # remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
-    output_file = os.path.join(RESULT_DIR, "results_subgraphrag.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_subgraphrag_triplet_format_only_relation_no_parentheses_with_quotes_with_id_column_conversation.jsonl")
 
     # dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
@@ -274,6 +274,7 @@ if __name__ == "__main__":
                     "sample": collate_sample,
                     "device": device,
                     "topk": 100,
+                    "maxk": 500,
                     # "scored_triplets": data[it]["scored_triplets"],
                 },
                 # {"scored_triplets": sample["scored_triplets"]},

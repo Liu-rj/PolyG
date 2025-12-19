@@ -74,6 +74,7 @@ async def subgraphrag_retriever(
     sample = extra_data["sample"]
     device = extra_data["device"]
     topk = extra_data["topk"]
+    maxk = extra_data["maxk"]
 
     (
         h_id_tensor,
@@ -102,7 +103,7 @@ async def subgraphrag_retriever(
         topic_entity_one_hot,
     )
     pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
-    top_K_results = torch.topk(pred_triple_scores, min(500, len(pred_triple_scores)))
+    top_K_results = torch.topk(pred_triple_scores, min(maxk, len(pred_triple_scores)))
     # top_K_scores = top_K_results.values.cpu().tolist()
     top_K_triple_IDs = top_K_results.indices.cpu().tolist()
 

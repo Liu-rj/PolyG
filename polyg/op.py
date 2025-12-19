@@ -186,7 +186,7 @@ def form_entity_relation_context(
     relations_section_list = []
     # relations_section_list.append(("(source,relation,target)"))
     for i, e in enumerate(edges_data):
-        relations_section_list.append(f'({e["src_id"]},{e["relation"]},{e["tgt_id"]})')
+        relations_section_list.append(f'{i},"{e["src_id"]}","{e["relation"]}","{e["tgt_id"]}"')
 
     relations_context = "\n".join(relations_section_list)
     print(f"Form relation context time: {time.perf_counter() - tic:.2f}s")
