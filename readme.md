@@ -1,5 +1,10 @@
 # PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions
 
+<div align="center">
+  <img src="fig/hf-logo.svg" width="15" height="15" /> <a href="https://huggingface.co/datasets/Liu-rj/PolyBench">dataset</a> 📖 <a href="https://arxiv.org/pdf/2504.02112">arxiv</a>
+</div>
+&nbsp;
+
 This repo provides the PolyBench and PolyG implementation of the paper [PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions](https://arxiv.org/abs/2504.02112).
 
 ## Installation
