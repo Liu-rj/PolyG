@@ -35,7 +35,6 @@ argparser.add_argument(
         "deepseek/deepseek-reasoner",
         "Qwen/Qwen3-8B",
         "Qwen/Qwen3-14B",
-        "Qwen/Qwen3-Next-80B-A3B-Instruct",
     ],
     required=True,
 )
@@ -91,19 +90,6 @@ if args.model in ["Qwen/Qwen3-8B", "Qwen/Qwen3-14B"]:
         "chat_template_kwargs": {"enable_thinking": False},
     }
     lite_llm_model_name = "hosted_vllm/" + args.model
-elif args.model == "Qwen/Qwen3-Next-80B-A3B-Instruct":
-    sampling_params = {
-        "api_base": "http://localhost:10021/v1",
-        "api_key": "EMPTY",
-        # Standard OpenAI parameters
-        "temperature": 0.7,
-        "top_p": 0.8,
-        "max_tokens": MAX_OUTPUT_TOKENS,
-        # vLLM-specific (or Qwen3-specific) parameters
-        "top_k": 20,
-        "min_p": 0.0,
-    }
-    lite_llm_model_name = "openai/" + args.model
 else:
     lite_llm_model_name = args.model
 print(f"Sampling params: {sampling_params}")
