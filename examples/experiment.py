@@ -233,49 +233,39 @@ def BFS_PPR(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_bfs_ppr.jsonl")
-    # if os.path.exists(output_file):
-    #     os.remove(output_file)
+    output_file = os.path.join(RESULT_DIR, "results.jsonl")
 
-    question_types = [
-        "single_entity_abstract",
-        "single_entity_concrete",
-        "multi_entity_abstract",
-        "multi_entity_concrete",
-        "nested_question",
-    ]
-    for question_type in question_types:
-        contents = []
-        with open(os.path.join(args.benchmark_dir, f"{question_type}.jsonl"), "r") as f:
-            for item in jsonlines.Reader(f):
-                contents.append(item)
+    contents = []
+    with open(os.path.join(args.benchmark_dir, f"{DATASET_NAME}.jsonl"), "r") as f:
+        for item in jsonlines.Reader(f):
+            contents.append(item)
 
-        for item in contents:
-            results = []
-            question, id_mapping = item["question"], item["entity"]
+    for item in contents:
+        results = []
+        question, id_mapping = item["question"], item["entity"]
 
-            results.append(adaptive(question, id_mapping.copy()))
-            results.append(BFS(question, id_mapping.copy()))
-            results.append(cypher_single_entity(question, id_mapping.copy()))
-            results.append(cypher_only(question, id_mapping.copy()))
+        results.append(adaptive(question, id_mapping.copy()))
+        results.append(BFS(question, id_mapping.copy()))
+        results.append(cypher_single_entity(question, id_mapping.copy()))
+        results.append(cypher_only(question, id_mapping.copy()))
 
-            result_entrees = []
-            for result in results:
-                result_entree = {
-                    "question_type": question_type,
-                    "question": question,
-                    "method": result[0],
-                    "model_answer": result[1],
-                    "duration": round(result[2], 2),
-                    "token_count": result[3],
-                    "api_calls": result[4],
-                    "answer_list": result[5],
-                    "gt_answer": item["answer"],
-                }
-                if len(result) > 6:
-                    result_entree["question_classification_result"] = result[6]
-                result_entrees.append(result_entree)
-                print(result_entree)
+        result_entrees = []
+        for result in results:
+            result_entree = {
+                "question_type": item["type"],
+                "question": question,
+                "method": result[0],
+                "model_answer": result[1],
+                "duration": round(result[2], 2),
+                "token_count": result[3],
+                "api_calls": result[4],
+                "answer_list": result[5],
+                "gt_answer": item["answer"],
+            }
+            if len(result) > 6:
+                result_entree["question_classification_result"] = result[6]
+            result_entrees.append(result_entree)
+            print(result_entree)
 
-            with jsonlines.open(output_file, "a") as writer:
-                writer.write_all(result_entrees)
+        with jsonlines.open(output_file, "a") as writer:
+            writer.write_all(result_entrees)
