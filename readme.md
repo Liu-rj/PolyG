@@ -1,11 +1,15 @@
 # PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions
 
 <div align="center">
-  <img src="fig/hf-logo.svg" width="15" height="15" /> <a href="https://huggingface.co/datasets/Liu-rj/PolyBench">dataset</a> 📖 <a href="https://arxiv.org/pdf/2504.02112">arxiv</a>
+  <img src="fig/hf-logo.svg" width="15" height="15" /> <a href="https://huggingface.co/datasets/Liu-rj/PolyBench">Dataset</a>&nbsp;&nbsp; | &nbsp;&nbsp;📖 <a href="https://arxiv.org/pdf/2504.02112">Arxiv</a>
 </div>
 &nbsp;
 
 This repo provides the PolyBench and PolyG implementation of the paper [PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions](https://arxiv.org/abs/2504.02112).
+
+<div align="center">
+  <img src="fig/workflow.png" />
+</div>
 
 ## Installation
 
@@ -59,7 +63,21 @@ bash neo4j_bulk_insert.sh
 
 * PolyBench:
 
-Our proposed PolyBench is available in `benchmarks` directory.
+Our proposed PolyBench is available in `benchmarks` directory and on [huggingface](https://huggingface.co/datasets/Liu-rj/PolyBench).
+
+`[dataset_name].jsonl`, for example `physics.jsonl`, contains the full question set for each dataset.
+
+We also provide seperate question set for each type (`*_raw.jsonl` contains the unparaphrased version):
+
+* `subject_centered.jsonl` contains the question set for type `<s,*,*>`.
+
+* `object_discovery.jsonl` contains the question set for type `<s,p,*>`.
+
+* `predicate_discovery.jsonl` contains the question set for type `<s,*,o>`.
+
+* `fact_check.jsonl` contains the question set for type `<s,p,o>`.
+
+* `nested_question.jsonl` contains the question set for type `nested`.
 
 ## Use PolyG
 
