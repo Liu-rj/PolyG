@@ -18,7 +18,7 @@ neo4j_config = {
 }
 
 
-single_entity_concrete_template = {
+object_discovery_template = {
     "physics": {
         "author": {
             "What paper have the author '{}' published?": {
@@ -312,7 +312,7 @@ single_entity_concrete_template = {
 }
 
 
-multi_entity_concrete_template = {
+fact_check_template = {
     "physics": {
         "Have the author '{}' cited or been cited by the work of the author '{}' and what are those works?": {
             "cypher_template": """
@@ -388,51 +388,8 @@ multi_entity_concrete_template = {
             """,
             "hops": 4,
         },
-        # NGW"What is the collaboration relationship between the authors of the paper '{}' and '{}'?": {
-        #     "cypher_template": """
-        #     MATCH (paper1:physics:paper)-[:author]->(author1:physics:author)
-        #     -[:paper]->(sharedPaper:physics:paper)<-[:paper]-(author2:physics:author)
-        #     <-[:author]-(paper2:physics:paper)
-        #     WHERE author1 <> author2
-        #     RETURN paper1.name AS name1, paper1.id AS id1, paper2.name AS name2, paper2.id AS id2
-        #     """,
-        #     "cypher": """
-        #     MATCH path = (paper1:physics:paper {{id: '{}'}})
-        #     -[:author]->(author1:physics:author)
-        #     -[:paper]->(sharedPaper:physics:paper)
-        #     -[:author]->(author2:physics:author)
-        #     -[:paper]->(paper2:physics:paper {{id: '{}'}})
-        #     WHERE author1 <> author2
-        #     RETURN path LIMIT 10
-        #     """,
-        #     "hops": 4,
-        # },
     },
     "amazon": {
-        # NGW"Are the items '{}' and '{}' both also bought with items of some other brands? If so, tell me about those brands and their items.": {
-        #     "cypher_template": """
-        #     MATCH (itemA:amazon:item)-[:also_bought_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)<-[:brand]-(viewedItemB:amazon:item)<-[:also_bought_item]-(itemB:amazon:item)
-        #     WHERE itemA <> itemB
-        #     RETURN itemA.name AS name1, itemA.id AS id1, itemB.name AS name2, itemB.id AS id2
-        #     """,
-        #     "cypher": """
-        #     MATCH path = (itemA:amazon:item {{id: '{}'}})-[:also_bought_item]->(viewedItemA:amazon:item)-[:brand]->(brandA:amazon:brand)-[:item]->(viewedItemB:amazon:item)-[:also_bought_item]->(itemB:amazon:item {{id: '{}'}})
-        #     RETURN path LIMIT 10
-        #     """,
-        #     "hops": 4,
-        # },
-        # NGW"Are the items '{}' and '{}' both also viewed with items of some other brands and what are those items?": {
-        #     "cypher_template": """
-        #     MATCH (item1:amazon:item)-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)<-[:brand]-(also_viewed2:amazon:item)<-[:also_viewed_item]-(item2:amazon:item)
-        #     WHERE item1 <> item2
-        #     RETURN item1.name AS name1, item1.id AS id1, item2.name AS name2, item2.id AS id2
-        #     """,
-        #     "cypher": """
-        #     MATCH path = (item1:amazon:item {{id: '{}'}})-[:also_viewed_item]->(also_viewed1:amazon:item)-[:brand]->(brand:amazon:brand)-[:item]->(also_viewed2:amazon:item)-[:also_viewed_item]->(item2:amazon:item {{id: '{}'}})
-        #     RETURN path LIMIT 10
-        #     """,
-        #     "hops": 4,
-        # },
         "Have the items of the brands '{}' and '{}' ever both been also bought with some other items, and if so, what are those items?": {
             "cypher_template": """
             MATCH (brandA:amazon:brand)-[:item]->(itemA:amazon:item)-[:also_bought_item]->(viewedItem:amazon:item)<-[:also_bought_item]-(itemB:amazon:item)<-[:item]-(brandB:amazon:brand)
@@ -483,30 +440,6 @@ multi_entity_concrete_template = {
         },
     },
     "goodreads": {
-        # NGW"What is the relationship between authors '{}' and '{}' regarding collaborated books?": {
-        #     "cypher_template": """
-        #     MATCH path = (author1:goodreads:author)-[:book]->(book:goodreads:book)<-[:book]-(author2:goodreads:author)
-        #     WHERE author1 <> author2
-        #     RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
-        #     """,
-        #     "cypher": """
-        #     MATCH path = (author1:goodreads:author {{id: '{}'}})-[:book]->(book:goodreads:book)-[:author]->(author2:goodreads:author {{id: '{}'}})
-        #     RETURN path LIMIT 10
-        #     """,
-        #     "hops": 2,
-        # },
-        # NGW"Have the authors '{}' and '{}' published books that belongs to the same series and what are they?": {
-        #     "cypher_template": """
-        #     MATCH path = (author1:goodreads:author)-[:book]->(book1:goodreads:book)-[:series]->(series:goodreads:series)<-[:series]-(book2:goodreads:book)<-[:book]-(author2:goodreads:author)
-        #     WHERE author1 <> author2
-        #     RETURN author1.name AS name1, author1.id AS id1, author2.name AS name2, author2.id AS id2
-        #     """,
-        #     "cypher": """
-        #     MATCH path = (author1:goodreads:author {{id: '{}'}})-[:book]->(book1:goodreads:book)-[:series]->(series:goodreads:series)-[:book]->(book2:goodreads:book)-[:author]->(author2:goodreads:author {{id: '{}'}})
-        #     RETURN path LIMIT 10
-        #     """,
-        #     "hops": 4,
-        # },
         "Have the authors '{}' and '{}' ever published books in the same publishers? If so, tell me some examples.": {
             "cypher_template": """
             MATCH path = (author1:goodreads:author)-[:book]->(book1:goodreads:book)-[:publisher]->(publisher:goodreads:publisher)<-[:publisher]-(book2:goodreads:book)<-[:book]-(author2:goodreads:author)
@@ -554,17 +487,6 @@ multi_entity_concrete_template = {
             """,
             "hops": 4,
         },
-        # NGW"Are there authors who have published books in both the series '{}' and '{}' and what are they?": {
-        #     "cypher_template": """
-        #     MATCH (series1:goodreads:series)-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:series]->(series2:goodreads:series)
-        #     RETURN series1.name AS name1, series1.id AS id1, series2.name AS name2, series2.id AS id2
-        #     """,
-        #     "cypher": """
-        #     MATCH path = (series1:goodreads:series {{id: '{}'}})-[:book]->(book1:goodreads:book)-[:author]->(author:goodreads:author)-[:book]->(book2:goodreads:book)-[:series]->(series2:goodreads:series {{id: '{}'}})
-        #     RETURN path LIMIT 10
-        #     """,
-        #     "hops": 4,
-        # },
     },
 }
 
@@ -754,7 +676,7 @@ nested_question_template = {
 }
 
 
-def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
+def gen_subject_centered(graph: nx.Graph, n: int, output_path: str):
     all_nodes = list(graph.nodes())
     questions = []
     i = 0
@@ -772,7 +694,7 @@ def gen_single_entity_abstract(graph: nx.Graph, n: int, output_path: str):
             "qid": i,
             "question": question,
             "entity": {node_data["name"]: node},
-            "type": "single_entity_abstract",
+            "type": "<s,*,*>",
             "hops": 1,
             "answer": "N/A",
         }
@@ -799,7 +721,7 @@ def choose_random_node(neo4j_driver, namespace):
         return node["name"], node["id"]
 
 
-def gen_single_entity_concrete(n: int, graph_name: str, output_path: str):
+def gen_object_discovery(n: int, graph_name: str, output_path: str):
     neo4j_url = neo4j_config["neo4j_url"]
     neo4j_auth = neo4j_config["neo4j_auth"]
     driver = GraphDatabase.driver(
@@ -808,7 +730,7 @@ def gen_single_entity_concrete(n: int, graph_name: str, output_path: str):
         max_connection_pool_size=100,
         connection_timeout=60,
     )
-    q_templates = single_entity_concrete_template[graph_name]
+    q_templates = object_discovery_template[graph_name]
     questions = []
     for node_type, templates in q_templates.items():
         for q, content in templates.items():
@@ -870,7 +792,7 @@ def gen_single_entity_concrete(n: int, graph_name: str, output_path: str):
                     "qid": len(questions),
                     "question": question,
                     "entity": {node_name: node},
-                    "type": "single_entity_concrete",
+                    "type": "<s,p,*>",
                     "hops": n_hop,
                     "answer": result_names,
                 }
@@ -884,7 +806,7 @@ def gen_single_entity_concrete(n: int, graph_name: str, output_path: str):
             writer.write(row)
 
 
-def gen_multi_entity_abstract(
+def gen_predicate_discovery(
     graph: nx.Graph, n: int, hops: List[int], output_path: str
 ):
     def bfs_with_path_length(graph, start_node, length):
@@ -922,7 +844,7 @@ def gen_multi_entity_abstract(
                     start_node_data["name"]: start_node,
                     end_node_data["name"]: end_node,
                 },
-                "type": "multi_entity_abstract",
+                "type": "<s,*,o>",
                 "hops": n_hop,
                 "answer": "N/A",
             }
@@ -956,7 +878,7 @@ def all_shortest_paths(
         return paths
 
 
-def gen_multi_entity_concrete(n: int, graph_name: str, output_path: str):
+def gen_fact_check(n: int, graph_name: str, output_path: str):
     neo4j_url = neo4j_config["neo4j_url"]
     neo4j_auth = neo4j_config["neo4j_auth"]
     driver = GraphDatabase.driver(
@@ -965,7 +887,7 @@ def gen_multi_entity_concrete(n: int, graph_name: str, output_path: str):
         max_connection_pool_size=100,
         connection_timeout=60,
     )
-    q_templates = multi_entity_concrete_template[graph_name]
+    q_templates = fact_check_template[graph_name]
     questions = []
     for it, (q, content) in enumerate(q_templates.items()):
         q_cypher_t, n_hop = content["cypher_template"], content["hops"]
@@ -1039,7 +961,7 @@ def gen_multi_entity_concrete(n: int, graph_name: str, output_path: str):
                     line["name1"]: line["id1"],
                     line["name2"]: line["id2"],
                 },
-                "type": "multi_entity_concrete",
+                "type": "<s,p,o>",
                 "hops": n_hop,
                 "answer": "N/A",
             }
@@ -1130,7 +1052,7 @@ def gen_nested_question(n: int, graph_name: str, output_path: str):
                 "qid": len(questions),
                 "question": question,
                 "entity": entity_mappings,
-                "type": "nested_question",
+                "type": "nested",
                 "answer": answer,
             }
             questions.append(q_entity)
@@ -1159,26 +1081,26 @@ print("# edges:", graph.number_of_edges())
 
 
 # generate questions
-gen_single_entity_abstract(
+gen_subject_centered(
     graph,
     80,
-    os.path.join(args.output_path, "single_entity_abstract_raw.jsonl"),
+    os.path.join(args.output_path, "subject_centered_raw.jsonl"),
 )
-gen_single_entity_concrete(
+gen_object_discovery(
     10,
     dataset_name,
-    os.path.join(args.output_path, "single_entity_concrete_raw.jsonl"),
+    os.path.join(args.output_path, "object_discovery_raw.jsonl"),
 )
-gen_multi_entity_abstract(
+gen_predicate_discovery(
     graph,
     20,
     [2, 3, 4, 5],
-    os.path.join(args.output_path, "multi_entity_abstract_raw.jsonl"),
+    os.path.join(args.output_path, "predicate_discovery_raw.jsonl"),
 )
-gen_multi_entity_concrete(
+gen_fact_check(
     20,
     dataset_name,
-    os.path.join(args.output_path, "multi_entity_concrete_raw.jsonl"),
+    os.path.join(args.output_path, "fact_check_raw.jsonl"),
 )
 gen_nested_question(
     20,

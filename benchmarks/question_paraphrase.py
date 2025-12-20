@@ -105,10 +105,10 @@ def openai_generator(
 
 if __name__ == "__main__":
     question_types = [
-        "single_entity_abstract_raw",
-        "single_entity_concrete_raw",
-        "multi_entity_abstract_raw",
-        "multi_entity_concrete_raw",
+        "subject_centered_raw",
+        "object_discovery_raw",
+        "predicate_discovery_raw",
+        "fact_check_raw",
         "nested_question_raw",
     ]
     for question_type in question_types:
