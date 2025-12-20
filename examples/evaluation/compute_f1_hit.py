@@ -139,7 +139,7 @@ async def evaluate_question_responses(question, answers):
     print(f"Question: {question}, Number of answers: {len(answers)}")
     answers_score = []
     for answer in answers:
-        assert answer["question_type"] in ["single_entity_concrete", "nested_question"]
+        assert answer["question_type"] in ["object_discovery", "nested_question"]
 
         method, gt = answer["method"], answer["gt_answer"]
         for i in range(len(gt)):

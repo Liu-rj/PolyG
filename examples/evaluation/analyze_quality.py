@@ -26,10 +26,10 @@ print(f"Number of judgements: {len(judgements)}")
 
 
 question_types = [
-    "single_entity_abstract",
-    "single_entity_concrete",
-    "multi_entity_abstract",
-    "multi_entity_concrete",
+    "subject_centered",
+    "object_discovery",
+    "predicate_discovery",
+    "fact_check",
     "nested_question",
 ]
 question_judgement = {key: [] for key in question_types}

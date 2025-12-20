@@ -25,10 +25,10 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 question_types = [
-    "single_entity_abstract",
-    "single_entity_concrete",
-    "multi_entity_abstract",
-    "multi_entity_concrete",
+    "subject_centered",
+    "object_discovery",
+    "predicate_discovery",
+    "fact_check",
     "nested_question",
 ]
 question_answer = {key: defaultdict(list) for key in question_types}
@@ -122,9 +122,3 @@ for method in method_names:
         overall_tokens[method] += method_tokens[method]
     overall_tokens[method] = int(overall_tokens[method] / len(all_tokens))
 print(",".join([str(overall_tokens[method]) for method in method_names]))
-
-# print("=" * 80)
-# print("All API Calls")
-# print(",".join(method_names))
-# for method_api_calss in all_api_calls:
-#     print(",".join([str(method_api_calss[method]) for method in method_names]))
