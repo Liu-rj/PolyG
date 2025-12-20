@@ -58,7 +58,7 @@ This comprehensive set of question patterns is derived from a complete four-clas
 
 * Download the raw graphs
 
-For the dataset (knowledge graphs), please refer to [RGBench](https://github.com/PeterGriffinJin/Graph-CoT). We select the `physics` graph from the academia domain, `goodreads` graph from the literature domain, and `amazon` from the e-commerce domain.
+For the dataset (knowledge graphs), please refer to [GRBench](https://github.com/PeterGriffinJin/Graph-CoT). We select the `physics` graph from the academia domain, `goodreads` graph from the literature domain, and `amazon` from the e-commerce domain.
 
 Store the knowledge graphs into `datasets` directory (from the root directory of this repo).
 
