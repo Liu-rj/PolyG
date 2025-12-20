@@ -116,3 +116,37 @@ python compute_f1_hit.py --model openai/gpt-4o --dataset amazon
 ```
 
 Results will be saved in `examples/results/[graph name]/[model name]/judegments.jsonl` and `examples/results/[graph name]/[model name]/detailed_evaluation.jsonl`.
+
+## LICENSE
+
+```
+Copyright 2025 Renjie Liu
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+## Cite PolyG
+
+If you find PolyG and PolyBench helpful, please cite the paper.
+
+```
+@misc{liu2025polygadaptivegraphtraversal,
+      title={PolyG: Adaptive Graph Traversal for Diverse GraphRAG Questions}, 
+      author={Renjie Liu and Haitian Jiang and Xiao Yan and Bo Tang and Jinyang Li},
+      year={2025},
+      eprint={2504.02112},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2504.02112}, 
+}
+```
