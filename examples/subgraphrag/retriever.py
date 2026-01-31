@@ -104,7 +104,6 @@ async def subgraphrag_retriever(
     )
     pred_triple_scores = torch.sigmoid(pred_triple_logits).reshape(-1)
     top_K_results = torch.topk(pred_triple_scores, min(maxk, len(pred_triple_scores)))
-    # top_K_scores = top_K_results.values.cpu().tolist()
     top_K_triple_IDs = top_K_results.indices.cpu().tolist()
 
     entity_list = text_entity_list + non_text_entity_list
@@ -120,23 +119,10 @@ async def subgraphrag_retriever(
 
     edges_data = []
     input_triplets = unique_preserve_order(triples)[:topk]
-    # edges_data = [triplet_to_str(triplet) for triplet in input_triplets]
     for triple in input_triplets:
         edges_data.append(
             {"src_id": triple[0], "relation": triple[1], "tgt_id": triple[2]}
         )
-
-    # input_triplets = extra_data['scored_triplets']
-    # input_triplets = [(triplet[0], triplet[1], triplet[2]) for triplet in input_triplets]
-
-    # input_triplets = unique_preserve_order(input_triplets)
-    # input_triplets = input_triplets[:100]
-    # # edges_data = []
-    # # for triple in input_triplets:
-    # #     edges_data.append(
-    # #         {"src_id": triple[0], "relation": triple[1], "tgt_id": triple[2]}
-    # #     )
-    # input_triplets = [triplet_to_str(triplet) for triplet in input_triplets]
 
     return RetrievalResult(
         cypher_query="No cypher query.",

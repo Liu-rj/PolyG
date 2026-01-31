@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 from retriever import subgraphrag_retriever
 from dataloader import RetrieverDataset, collate_retriever
 from model import Retriever
-from prompts import icl_user_prompt, icl_ass_prompt
 from prepare_data import get_data
 
 load_dotenv()
@@ -48,6 +47,7 @@ argparser.add_argument(
     required=True,
     help="Path to a saved model checkpoint, e.g., webqsp_Nov08-01:14:47/cpt.pth",
 )
+argparser.add_argument("--topk", type=int, default=100)
 args = argparser.parse_args()
 print(args)
 
@@ -148,67 +148,6 @@ def subgraphrag(question, id_mapping, extra_data):
     return "subgraphrag", response, duration, token_len, api_calls, answer_list
 
 
-def build_graph(graph: list) -> nx.DiGraph:
-    G = nx.DiGraph()
-    for triplet in graph:
-        h, r, t = triplet
-        characters_to_replace = [".", "-", "#", " "]
-        for char in characters_to_replace:
-            r = r.replace(char, "_")
-        G.add_edge(h, t, relation=r.strip())
-    return G
-
-
-def insert_to_neo4j(args: argparse.Namespace, nx_graph: nx.DiGraph):
-    with driver.session() as session:
-        # 1. Create Nodes
-        for node_id, properties in tqdm(nx_graph.nodes(data=True), ncols=100):
-            node_prop = {"name": node_id}
-            # Ensure a label is set for the node
-            query = (
-                f"MERGE (n:{args.benchmark}:node {{id: $node_id}})"
-                "SET n += $properties"
-            )
-            session.run(query, node_id=node_id, properties=node_prop)  # type: ignore
-
-        # 2. Create Relationships
-        for u, v, properties in tqdm(nx_graph.edges(data=True), ncols=100):
-            # Ensure a relation is set
-            rel_type = properties["relation"]
-
-            query = (
-                f"MATCH (a:{args.benchmark}:node {{id: $source_id}})"
-                f"MATCH (b:{args.benchmark}:node {{id: $target_id}}) "
-                f"MERGE (a)-[r:{rel_type}]->(b) "  # Using MERGE to avoid duplicate relationships
-            )
-            session.run(query, source_id=u, target_id=v)  # type: ignore
-
-        # 3. Create indexes for faster lookup
-        session.run(f"CREATE INDEX IF NOT EXISTS FOR (n:{args.benchmark}) ON (n.id)")  # type: ignore
-
-    print("NetworkX graph successfully inserted into Neo4j.")
-
-
-def remove_from_neo4j(args: argparse.Namespace):
-    with driver.session() as session:
-        session.run(f"MATCH (n:{args.benchmark}:node) DETACH DELETE n")  # type: ignore
-    print(f"All nodes and relations in the {args.benchmark} graph have been removed.")
-
-
-def extract_graph_schema(nx_graph: nx.DiGraph) -> str:
-    all_relation_types = set()
-    for u, v, properties in tqdm(nx_graph.edges(data=True), ncols=100):
-        rel_type = properties["relation"]  # Default if not in properties
-        all_relation_types.add(rel_type)
-
-    print("Number of relation types:", len(all_relation_types))
-    schema = ""
-    for i, rel_type in enumerate(all_relation_types):
-        schema += f"{i + 1}. {rel_type}\n"
-
-    return schema
-
-
 if __name__ == "__main__":
     device = torch.device(f"cuda:0")
 
@@ -225,47 +164,45 @@ if __name__ == "__main__":
     model = model.to(device)
     model.eval()
 
-    # pred_file_path = "webqsp_Oct20-10:11:32/predictions.jsonl"
-    # score_dict_path = "webqsp_Oct20-10:11:32/retrieval_result.pth"
-    # data = get_data(
-    #     args.benchmark, pred_file_path, score_dict_path, "test", "scored_100"
-    # )
+    output_file = os.path.join(RESULT_DIR, f"results_dc_{args.topk}.jsonl")
 
-    # remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+    # resume from history
+    start_id = 0
+    if os.path.exists(output_file):
+        with jsonlines.open(output_file) as reader:
+            done_lines = list(reader)
+        questions = set([q["question"] for q in done_lines])
+        done_count = len(questions)
+        print(f"Resuming from {done_count} done questions.")
+        start_id = done_count
 
-    output_file = os.path.join(RESULT_DIR, "results_subgraphrag_triplet_format_only_relation_no_parentheses_with_quotes_with_id_column_conversation.jsonl")
-
-    # dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
-
-    # for it, sample in enumerate(data):
-    for it in range(len(infer_set)):
+    for it in range(start_id, len(infer_set)):
         sample = infer_set[it]
         collate_sample = collate_retriever([sample])
 
         question = sample["question"]
-        # nx_graph = build_graph(raw_sample["graph"])
         id_mapping = {}
         for entity in sample["q_entity"]:
             id_mapping[entity] = entity
-        # insert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
-        # rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
 
         results = []
-        results.append(
-            subgraphrag(
-                question,
-                id_mapping.copy(),
-                {
-                    "model": model,
-                    "sample": collate_sample,
-                    "device": device,
-                    "topk": 100,
-                    "maxk": 500,
-                    # "scored_triplets": data[it]["scored_triplets"],
-                },
-                # {"scored_triplets": sample["scored_triplets"]},
+        try:
+            results.append(
+                subgraphrag(
+                    question,
+                    id_mapping.copy(),
+                    {
+                        "model": model,
+                        "sample": collate_sample,
+                        "device": device,
+                        "topk": args.topk,
+                        "maxk": 500,
+                    },
+                )
             )
-        )
+        except Exception as e:
+            print(f"Error processing sample {it}: {e}")
+            continue
 
         result_entrees = []
         for result in results:
@@ -284,8 +221,6 @@ if __name__ == "__main__":
                 result_entree["question_classification_result"] = result[6]
             result_entrees.append(result_entree)
             print(result_entree)
-
-        # remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
         with jsonlines.open(output_file, "a") as writer:
             writer.write_all(result_entrees)

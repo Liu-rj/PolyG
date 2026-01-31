@@ -30,7 +30,7 @@ class RetrieverDataset:
 
     def _load_processed(self, dataset_name, split):
         processed_file = os.path.join(
-            f"data_files/{dataset_name}/processed/{split}.pkl"
+            f"/home/renjie/SubgraphRAG/retrieve/data_files/{dataset_name}/processed/{split}.pkl"
         )
         with open(processed_file, "rb") as f:
             return pickle.load(f)
@@ -141,7 +141,7 @@ class RetrieverDataset:
         return triple_scores
 
     def _load_emb(self, dataset_name, text_encoder_name, split):
-        file_path = f"data_files/{dataset_name}/emb/{text_encoder_name}/{split}.pth"
+        file_path = f"/home/renjie/SubgraphRAG/retrieve/data_files/{dataset_name}/emb/{text_encoder_name}/{split}.pth"
         dict_file = torch.load(file_path)
 
         return dict_file
