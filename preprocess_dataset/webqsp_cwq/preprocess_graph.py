@@ -8,6 +8,7 @@ import argparse
 from datasets import load_dataset
 from typing import List, Tuple
 from scipy.sparse import csr_matrix
+from tqdm import tqdm
 
 
 argparser = argparse.ArgumentParser()
@@ -59,23 +60,9 @@ def get_entities_to_relationships_map(graph: ig.Graph) -> csr_matrix:
 
 dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
-# dataset = load_dataset(f"../../webqsp_cwq/datasets/cwq", split="test")
-
-# # load id file
-# with open("../../datasets/cwq/test_ids.txt", "r") as f:
-#     test_ids = f.read().splitlines()
-# print(f"Number of unique test examples: {len(set(test_ids))}")
-
-for it, sample in enumerate(dataset):
-    # if sample["id"] not in test_ids:
-    #     continue
-    # print(f"Processing sample {it} with id {sample['id']}")
+for it, sample in tqdm(enumerate(dataset), ncols=100, total=len(dataset)):  # type: ignore
     question = sample["question"]
     G = build_graph(sample["graph"])
-
-    print("# nodes:", G.number_of_nodes())
-    print("# edges:", G.number_of_edges())
-    print(f"graph is directed: {G.is_directed()}")
 
     nodes = {}
     for node_id, properties in G.nodes(data=True):
@@ -86,8 +73,6 @@ for it, sample in enumerate(dataset):
             if relation not in nodes[node_id]["neighbors"]:
                 nodes[node_id]["neighbors"][relation] = []
             nodes[node_id]["neighbors"][relation].append(v)
-
-    print(f"Number of nodes: {len(nodes)}")
 
     # save the graph in JSON format
     json.dump(
@@ -117,7 +102,6 @@ for it, sample in enumerate(dataset):
 
     # add node and edge list
     G_ig.add_vertices(all_nodes, attributes=ig_nodes_data)
-    print(G_ig.summary())
     G_ig.add_edges(all_edges, all_edges_data)
 
     del all_nodes, all_edges, all_nodes_data, all_edges_data
@@ -125,8 +109,13 @@ for it, sample in enumerate(dataset):
     e2r = get_entities_to_relationships_map(G_ig)
 
     # # Print summary
-    print(G_ig.summary())
     ig.Graph.write_picklez(G_ig, os.path.join(args.path, f"graph_igraph_data_{it}.pklz"))  # type: ignore
 
     with open(os.path.join(args.path, f"map_e2r_blob_data_{it}.pkl"), "wb") as f:
         pickle.dump(e2r, f)
+
+    if it == 0:
+        ig.Graph.write_picklez(G_ig, os.path.join(args.path, f"graph_igraph_data.pklz"))  # type: ignore
+
+        with open(os.path.join(args.path, f"map_e2r_blob_data.pkl"), "wb") as f:
+            pickle.dump(e2r, f)
