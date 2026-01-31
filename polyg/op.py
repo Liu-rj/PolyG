@@ -11,6 +11,7 @@ from .prompt import (
     icl_sys_prompt,
     icl_ass_prompt,
     icl_user_prompt,
+    icl_cot_prompt,
 )
 from .utils import (
     logger,
@@ -21,46 +22,31 @@ from .utils import (
 )
 
 
-# ALL_CONTEXT = """
-# -----Cypher Query-----
-# ```cypher
-# {cypher_query}
-# ```
-
-# -----Entities-----
-# ```csv
-# {entities_context}
-# ```
-
-# -----Relationships-----
-# {relations_context}
-
-# -----Reasoning Path-----
-# {reasoning_path_context}
-
-# -----Auxiliary Data-----
-# {auxdata_context}
-# """
-
-# ALL_CONTEXT = """
-# Cypher Query:
-# {cypher_query}
-
-# Entities:
-# {entities_context}
-
-# Relations:
-# {relations_context}
-
-# Reasoning Paths:
-# {reasoning_path_context}
-
-# Auxiliary Data:
-# {auxdata_context}
-# """
-
 ALL_CONTEXT = """
+Cypher Query:
+```cypher
+{cypher_query}
+```
+
+Entities:
+```csv
+{entities_context}
+```
+
 Relations:
+```csv
+{relations_context}
+```
+
+Reasoning Paths:
+{reasoning_path_context}
+
+Auxiliary Data:
+{auxdata_context}
+"""
+
+SUBGRAPHRAG_CONTEXT = """
+Triplets:
 {relations_context}
 """
 
@@ -156,39 +142,41 @@ def form_entity_relation_context(
     print(f"Form entity context time: {time.perf_counter() - tic:.2f}s")
 
     # build relation context
-    # tic = time.perf_counter()
-    # relations_section_list = []
-    # relation_header = ", ".join(
-    #     [
-    #         f"{enclose_string_with_quotes(data)}"
-    #         for data in ["id", "source", "relation", "target"]
-    #     ]
-    # )
-    # relations_section_list.append(relation_header)
-    # for i, e in enumerate(edges_data):
-    #     # raw_data = [i, e["src_tgt"][0], e["src_tgt"][1], e["relation"]]
-    #     raw_data = [i, e["src_id"], e["relation"], e["tgt_id"]]
-    #     relations_section_list.append(
-    #         ", ".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
-    #     )
-
-    # truncated_relations_list = truncate_list_by_token_size(
-    #     relations_section_list,
-    #     max_token_size=int(
-    #         query_param.local_context_length * query_param.token_ratio_for_edge
-    #     ),
-    #     token_encoder=token_encoder,
-    # )
-    # relations_context = list_to_csv(truncated_relations_list)
-    # print(f"Form relation context time: {time.perf_counter() - tic:.2f}s")
-
     tic = time.perf_counter()
-    relations_section_list = []
-    # relations_section_list.append(("(source,relation,target)"))
-    for i, e in enumerate(edges_data):
-        relations_section_list.append(f'{i},"{e["src_id"]}","{e["relation"]}","{e["tgt_id"]}"')
+    if query_param.traversal_type == "subgraphrag":
+        relations_section_list = []
+        for i, e in enumerate(edges_data):
+            relations_section_list.append(
+                f"({e["src_id"]},{e["relation"]},{e["tgt_id"]})"
+            )
 
-    relations_context = "\n".join(relations_section_list)
+        relations_context = "\n".join(relations_section_list)
+    else:
+        relations_section_list = []
+        relation_header = ",\t".join(
+            [
+                f"{enclose_string_with_quotes(data)}"
+                for data in ["id", "source", "target", "relation"]
+            ]
+        )
+        relations_section_list.append(relation_header)
+        for i, e in enumerate(edges_data):
+            raw_data = [i, e["src_tgt"][0], e["src_tgt"][1], e["relation"]]
+            relations_section_list.append(
+                ",\t".join([f"{enclose_string_with_quotes(data)}" for data in raw_data])
+            )
+
+        truncated_relations_list = truncate_list_by_token_size(
+            relations_section_list,
+            max_token_size=int(
+                query_param.local_context_length * query_param.token_ratio_for_edge
+            ),
+            token_encoder=token_encoder,
+        )
+        if len(truncated_relations_list) == 0:
+            relations_context = "No relations."
+        else:
+            relations_context = list_to_csv(truncated_relations_list)
     print(f"Form relation context time: {time.perf_counter() - tic:.2f}s")
 
     # build reasoning path context
@@ -237,14 +225,16 @@ def form_entity_relation_context(
         auxdata_context = list_to_csv(truncated_auxdata_list)
     print(f"Build auxiliary context time: {time.perf_counter() - tic:.2f}s")
 
-    # return ALL_CONTEXT.format(
-    #     cypher_query=cypher_query,
-    #     entities_context=entities_context,
-    #     relations_context=relations_context,
-    #     reasoning_path_context=reasoning_path_context,
-    #     auxdata_context=auxdata_context,
-    # )
-    return ALL_CONTEXT.format(relations_context=relations_context)
+    if query_param.traversal_type == "subgraphrag":
+        return SUBGRAPHRAG_CONTEXT.format(relations_context=relations_context)
+    else:
+        return ALL_CONTEXT.format(
+            cypher_query=cypher_query,
+            entities_context=entities_context,
+            relations_context=relations_context,
+            reasoning_path_context=reasoning_path_context,
+            auxdata_context=auxdata_context,
+        )
 
 
 async def gen_model_response(
@@ -254,21 +244,13 @@ async def gen_model_response(
     if query[-1] != "?":
         query += "?"
 
-    # tic = time.perf_counter()
-    # if global_config["dataset"] in ["webqsp", "cwq"]:
-    #     sys_prompt_temp = PROMPTS["webqsp_cwq_response"]
-    # else:
-    #     sys_prompt_temp = PROMPTS["local_rag_response"]
-    # sys_prompt = sys_prompt_temp.format(
-    #     context_data=context, response_type=query_param.response_type
-    # )
-    # print(f"Form prompt time: {time.perf_counter() - tic:.2f}s")
-
+    tic = time.perf_counter()
     query = "\n\n".join([context, query])
     conversation = [("system", icl_sys_prompt)]
     conversation.append(("user", icl_user_prompt))
     conversation.append(("assistant", icl_ass_prompt))
     sys_prompt = icl_sys_prompt + icl_user_prompt + icl_ass_prompt
+    print(f"Form prompt time: {time.perf_counter() - tic:.2f}s")
 
     context_token_len = num_tokens(sys_prompt + query, global_config["token_encoder"])
     print(f"Context length: {context_token_len}")
@@ -279,9 +261,21 @@ async def gen_model_response(
         return PROMPTS["token_limit_exceeded"], 0
 
     tic = time.perf_counter()
-    # response = await global_config["model_func"](query, system_prompt=sys_prompt)
     response = await global_config["model_func"](query, history_messages=conversation)
     print(f"LLM generate time: {time.perf_counter() - tic:.2f}s")
+
+    if query_param.traversal_type == "subgraphrag" and (
+        "ans:" not in response.lower()
+        or "ans: not available" in response.lower()
+        or "ans: no information available" in response.lower()
+    ):
+        conversation.append(("user", query))
+
+        tic = time.perf_counter()
+        response = await global_config["model_func"](
+            icl_cot_prompt, history_messages=conversation
+        )
+        print(f"LLM generate time: {time.perf_counter() - tic:.2f}s")
 
     return response, context_token_len
 
@@ -314,10 +308,12 @@ async def retrieve_and_generate(
     logger.info(f"Get relations time: {time.perf_counter() - tic:.2f}s")
     logger.info(f"Using {len(ndata)} entites, {len(edata)} relations")
 
-    # tic = time.perf_counter()
-    # sorted_ndata, sorted_edata = await sort_entity_relation(ndata, edata, kg_inst)
-    # logger.info(f"Sort entities and relations time: {time.perf_counter() - tic:.2f}s")
-    sorted_ndata, sorted_edata = ndata, edata
+    tic = time.perf_counter()
+    if query_param.traversal_type == "subgraphrag":
+        sorted_ndata, sorted_edata = ndata, edata
+    else:
+        sorted_ndata, sorted_edata = await sort_entity_relation(ndata, edata, kg_inst)
+    logger.info(f"Sort entities and relations time: {time.perf_counter() - tic:.2f}s")
 
     tic = time.perf_counter()
     context = form_entity_relation_context(
@@ -330,7 +326,6 @@ async def retrieve_and_generate(
         global_config["token_encoder"],
     )
     logger.info(f"Form context time: {time.perf_counter() - tic:.2f}s")
-    # context = "Triplets:\n" + "\n".join(sorted_edata)
 
     tic = time.perf_counter()
     response, context_token_len = await gen_model_response(

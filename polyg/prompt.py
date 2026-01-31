@@ -732,233 +732,49 @@ icl_sys_prompt = (
     ' Please return formatted answers as a list, each prefixed with "ans:".'
 )
 
-# icl_user_prompt = """
-# Relations:
-# (Lou Seal,sports.mascot.team,San Francisco Giants)
-# (San Francisco Giants,sports.sports_team.championships,2012 World Series)
-# (San Francisco Giants,sports.sports_championship_event.champion,2014 World Series)
-# (San Francisco Giants,time.participant.event,2014 Major League Baseball season)
-# (San Francisco Giants,time.participant.event,2010 World Series)
-# (San Francisco Giants,time.participant.event,2010 Major League Baseball season)
-# (San Francisco Giants,sports.sports_team.championships,2014 World Series)
-# (San Francisco Giants,sports.sports_team.team_mascot,Crazy Crab)
-# (San Francisco Giants,sports.sports_team.championships,2010 World Series)
-# (San Francisco Giants,sports.professional_sports_team.owner_s,Bill Neukom)
-# (San Francisco Giants,time.participant.event,2012 World Series)
-# (San Francisco,sports.sports_team_location.teams,San Francisco Giants)
-# (San Francisco Giants,sports.sports_team.arena_stadium,AT&T Park)
-# (AT&T Park,location.location.events,2012 World Series)
-# (m.011zsc4_,organization.leadership.organization,San Francisco Giants)
-# (San Francisco Giants,sports.sports_team.previously_known_as,New York Giants)
-# (AT&T Park,location.location.events,2010 World Series)
-# (Crazy Crab,sports.mascot.team,San Francisco Giants)
-# (New York Giants,baseball.baseball_team.league,National League)
-# (San Francisco Giants,sports.sports_team.colors,Black)
-# (San Francisco Giants,sports.sports_team.previously_known_as,New York Gothams)
-# (m.0k079qm,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants)
-# (m.0k079ry,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants)
-# (2010 World Series,time.event.locations,AT&T Park)
-# (San Francisco Giants,time.participant.event,2012 Major League Baseball season)
-# (San Francisco Giants,baseball.baseball_team.league,National League)
-# (m.0crtd80,sports.sports_league_participation.league,National League West)
-# (San Francisco Giants,sports.sports_team.location,San Francisco)
-# (San Francisco Giants,sports.sports_team.sport,Baseball)
-# (m.05n6dtn,baseball.baseball_team_stats.team,San Francisco Giants)
+icl_user_prompt = """Triplets:
+(Lou Seal,sports.mascot.team,San Francisco Giants)
+(San Francisco Giants,sports.sports_team.championships,2012 World Series)
+(San Francisco Giants,sports.sports_championship_event.champion,2014 World Series)
+(San Francisco Giants,time.participant.event,2014 Major League Baseball season)
+(San Francisco Giants,time.participant.event,2010 World Series)
+(San Francisco Giants,time.participant.event,2010 Major League Baseball season)
+(San Francisco Giants,sports.sports_team.championships,2014 World Series)
+(San Francisco Giants,sports.sports_team.team_mascot,Crazy Crab)
+(San Francisco Giants,sports.sports_team.championships,2010 World Series)
+(San Francisco Giants,sports.professional_sports_team.owner_s,Bill Neukom)
+(San Francisco Giants,time.participant.event,2012 World Series)
+(San Francisco,sports.sports_team_location.teams,San Francisco Giants)
+(San Francisco Giants,sports.sports_team.arena_stadium,AT&T Park)
+(AT&T Park,location.location.events,2012 World Series)
+(m.011zsc4_,organization.leadership.organization,San Francisco Giants)
+(San Francisco Giants,sports.sports_team.previously_known_as,New York Giants)
+(AT&T Park,location.location.events,2010 World Series)
+(Crazy Crab,sports.mascot.team,San Francisco Giants)
+(New York Giants,baseball.baseball_team.league,National League)
+(San Francisco Giants,sports.sports_team.colors,Black)
+(San Francisco Giants,sports.sports_team.previously_known_as,New York Gothams)
+(m.0k079qm,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants)
+(m.0k079ry,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants)
+(2010 World Series,time.event.locations,AT&T Park)
+(San Francisco Giants,time.participant.event,2012 Major League Baseball season)
+(San Francisco Giants,baseball.baseball_team.league,National League)
+(m.0crtd80,sports.sports_league_participation.league,National League West)
+(San Francisco Giants,sports.sports_team.location,San Francisco)
+(San Francisco Giants,sports.sports_team.sport,Baseball)
+(m.05n6dtn,baseball.baseball_team_stats.team,San Francisco Giants)
 
-
-# Question:
-# What year did the team with mascot named Lou Seal win the World Series?"""
-
-# icl_user_prompt = """
-# Relations:
-# Lou Seal,sports.mascot.team,San Francisco Giants
-# San Francisco Giants,sports.sports_team.championships,2012 World Series
-# San Francisco Giants,sports.sports_championship_event.champion,2014 World Series
-# San Francisco Giants,time.participant.event,2014 Major League Baseball season
-# San Francisco Giants,time.participant.event,2010 World Series
-# San Francisco Giants,time.participant.event,2010 Major League Baseball season
-# San Francisco Giants,sports.sports_team.championships,2014 World Series
-# San Francisco Giants,sports.sports_team.team_mascot,Crazy Crab
-# San Francisco Giants,sports.sports_team.championships,2010 World Series
-# San Francisco Giants,sports.professional_sports_team.owner_s,Bill Neukom
-# San Francisco Giants,time.participant.event,2012 World Series
-# San Francisco,sports.sports_team_location.teams,San Francisco Giants
-# San Francisco Giants,sports.sports_team.arena_stadium,AT&T Park
-# AT&T Park,location.location.events,2012 World Series
-# m.011zsc4_,organization.leadership.organization,San Francisco Giants
-# San Francisco Giants,sports.sports_team.previously_known_as,New York Giants
-# AT&T Park,location.location.events,2010 World Series
-# Crazy Crab,sports.mascot.team,San Francisco Giants
-# New York Giants,baseball.baseball_team.league,National League
-# San Francisco Giants,sports.sports_team.colors,Black
-# San Francisco Giants,sports.sports_team.previously_known_as,New York Gothams
-# m.0k079qm,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants
-# m.0k079ry,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants
-# 2010 World Series,time.event.locations,AT&T Park
-# San Francisco Giants,time.participant.event,2012 Major League Baseball season
-# San Francisco Giants,baseball.baseball_team.league,National League
-# m.0crtd80,sports.sports_league_participation.league,National League West
-# San Francisco Giants,sports.sports_team.location,San Francisco
-# San Francisco Giants,sports.sports_team.sport,Baseball
-# m.05n6dtn,baseball.baseball_team_stats.team,San Francisco Giants
-
-
-# Question:
-# What year did the team with mascot named Lou Seal win the World Series?"""
-
-# icl_user_prompt = """
-# Relations:
-# 0,Lou Seal,sports.mascot.team,San Francisco Giants
-# 1,San Francisco Giants,sports.sports_team.championships,2012 World Series
-# 2,San Francisco Giants,sports.sports_championship_event.champion,2014 World Series
-# 3,San Francisco Giants,time.participant.event,2014 Major League Baseball season
-# 4,San Francisco Giants,time.participant.event,2010 World Series
-# 5,San Francisco Giants,time.participant.event,2010 Major League Baseball season
-# 6,San Francisco Giants,sports.sports_team.championships,2014 World Series
-# 7,San Francisco Giants,sports.sports_team.team_mascot,Crazy Crab
-# 8,San Francisco Giants,sports.sports_team.championships,2010 World Series
-# 9,San Francisco Giants,sports.professional_sports_team.owner_s,Bill Neukom
-# 10,San Francisco Giants,time.participant.event,2012 World Series
-# 11,San Francisco,sports.sports_team_location.teams,San Francisco Giants
-# 12,San Francisco Giants,sports.sports_team.arena_stadium,AT&T Park
-# 13,AT&T Park,location.location.events,2012 World Series
-# 14,m.011zsc4_,organization.leadership.organization,San Francisco Giants
-# 15,San Francisco Giants,sports.sports_team.previously_known_as,New York Giants
-# 16,AT&T Park,location.location.events,2010 World Series
-# 17,Crazy Crab,sports.mascot.team,San Francisco Giants
-# 18,New York Giants,baseball.baseball_team.league,National League
-# 19,San Francisco Giants,sports.sports_team.colors,Black
-# 20,San Francisco Giants,sports.sports_team.previously_known_as,New York Gothams
-# 21,m.0k079qm,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants
-# 22,m.0k079ry,base.schemastaging.team_training_ground_relationship.team,San Francisco Giants
-# 23,2010 World Series,time.event.locations,AT&T Park
-# 24,San Francisco Giants,time.participant.event,2012 Major League Baseball season
-# 25,San Francisco Giants,baseball.baseball_team.league,National League
-# 26,m.0crtd80,sports.sports_league_participation.league,National League West
-# 27,San Francisco Giants,sports.sports_team.location,San Francisco
-# 28,San Francisco Giants,sports.sports_team.sport,Baseball
-# 29,m.05n6dtn,baseball.baseball_team_stats.team,San Francisco Giants
-
-
-# Question:
-# What year did the team with mascot named Lou Seal win the World Series?"""
-
-# icl_user_prompt = """
-# Relations:
-# ("Lou Seal","sports.mascot.team","San Francisco Giants")
-# ("San Francisco Giants","sports.sports_team.championships","2012 World Series")
-# ("San Francisco Giants","sports.sports_championship_event.champion","2014 World Series")
-# ("San Francisco Giants","time.participant.event","2014 Major League Baseball season")
-# ("San Francisco Giants","time.participant.event","2010 World Series")
-# ("San Francisco Giants","time.participant.event","2010 Major League Baseball season")
-# ("San Francisco Giants","sports.sports_team.championships","2014 World Series")
-# ("San Francisco Giants","sports.sports_team.team_mascot","Crazy Crab")
-# ("San Francisco Giants","sports.sports_team.championships","2010 World Series")
-# ("San Francisco Giants","sports.professional_sports_team.owner_s","Bill Neukom")
-# ("San Francisco Giants","time.participant.event","2012 World Series")
-# ("San Francisco","sports.sports_team_location.teams","San Francisco Giants")
-# ("San Francisco Giants","sports.sports_team.arena_stadium","AT&T Park")
-# ("AT&T Park","location.location.events","2012 World Series")
-# ("m.011zsc4_","organization.leadership.organization","San Francisco Giants")
-# ("San Francisco Giants","sports.sports_team.previously_known_as","New York Giants")
-# ("AT&T Park","location.location.events","2010 World Series")
-# ("Crazy Crab","sports.mascot.team","San Francisco Giants")
-# ("New York Giants","baseball.baseball_team.league","National League")
-# ("San Francisco Giants","sports.sports_team.colors","Black")
-# ("San Francisco Giants","sports.sports_team.previously_known_as","New York Gothams")
-# ("m.0k079qm","base.schemastaging.team_training_ground_relationship.team","San Francisco Giants")
-# ("m.0k079ry","base.schemastaging.team_training_ground_relationship.team","San Francisco Giants")
-# ("2010 World Series","time.event.locations","AT&T Park")
-# ("San Francisco Giants","time.participant.event","2012 Major League Baseball season")
-# ("San Francisco Giants","baseball.baseball_team.league","National League")
-# ("m.0crtd80","sports.sports_league_participation.league","National League West")
-# ("San Francisco Giants","sports.sports_team.location","San Francisco")
-# ("San Francisco Giants","sports.sports_team.sport","Baseball")
-# ("m.05n6dtn","baseball.baseball_team_stats.team","San Francisco Giants")
-
-
-# Question:
-# What year did the team with mascot named Lou Seal win the World Series?"""
-
-# icl_user_prompt = """
-# Relations:
-# "Lou Seal","sports.mascot.team","San Francisco Giants"
-# "San Francisco Giants","sports.sports_team.championships","2012 World Series"
-# "San Francisco Giants","sports.sports_championship_event.champion","2014 World Series"
-# "San Francisco Giants","time.participant.event","2014 Major League Baseball season"
-# "San Francisco Giants","time.participant.event","2010 World Series"
-# "San Francisco Giants","time.participant.event","2010 Major League Baseball season"
-# "San Francisco Giants","sports.sports_team.championships","2014 World Series"
-# "San Francisco Giants","sports.sports_team.team_mascot","Crazy Crab"
-# "San Francisco Giants","sports.sports_team.championships","2010 World Series"
-# "San Francisco Giants","sports.professional_sports_team.owner_s","Bill Neukom"
-# "San Francisco Giants","time.participant.event","2012 World Series"
-# "San Francisco","sports.sports_team_location.teams","San Francisco Giants"
-# "San Francisco Giants","sports.sports_team.arena_stadium","AT&T Park"
-# "AT&T Park","location.location.events","2012 World Series"
-# "m.011zsc4_","organization.leadership.organization","San Francisco Giants"
-# "San Francisco Giants","sports.sports_team.previously_known_as","New York Giants"
-# "AT&T Park","location.location.events","2010 World Series"
-# "Crazy Crab","sports.mascot.team","San Francisco Giants"
-# "New York Giants","baseball.baseball_team.league","National League"
-# "San Francisco Giants","sports.sports_team.colors","Black"
-# "San Francisco Giants","sports.sports_team.previously_known_as","New York Gothams"
-# "m.0k079qm","base.schemastaging.team_training_ground_relationship.team","San Francisco Giants"
-# "m.0k079ry","base.schemastaging.team_training_ground_relationship.team","San Francisco Giants"
-# "2010 World Series","time.event.locations","AT&T Park"
-# "San Francisco Giants","time.participant.event","2012 Major League Baseball season"
-# "San Francisco Giants","baseball.baseball_team.league","National League"
-# "m.0crtd80","sports.sports_league_participation.league","National League West"
-# "San Francisco Giants","sports.sports_team.location","San Francisco"
-# "San Francisco Giants","sports.sports_team.sport","Baseball"
-# "m.05n6dtn","baseball.baseball_team_stats.team","San Francisco Giants"
-
-# Question:
-# What year did the team with mascot named Lou Seal win the World Series?"""
-
-icl_user_prompt = """
-Relations:
-0,"Lou Seal","sports.mascot.team","San Francisco Giants"
-1,"San Francisco Giants","sports.sports_team.championships","2012 World Series"
-2,"San Francisco Giants","sports.sports_championship_event.champion","2014 World Series"
-3,"San Francisco Giants","time.participant.event","2014 Major League Baseball season"
-4,"San Francisco Giants","time.participant.event","2010 World Series"
-5,"San Francisco Giants","time.participant.event","2010 Major League Baseball season"
-6,"San Francisco Giants","sports.sports_team.championships","2014 World Series"
-7,"San Francisco Giants","sports.sports_team.team_mascot","Crazy Crab"
-8,"San Francisco Giants","sports.sports_team.championships","2010 World Series"
-9,"San Francisco Giants","sports.professional_sports_team.owner_s","Bill Neukom"
-10,"San Francisco Giants","time.participant.event","2012 World Series"
-11,"San Francisco","sports.sports_team_location.teams","San Francisco Giants"
-12,"San Francisco Giants","sports.sports_team.arena_stadium","AT&T Park"
-13,"AT&T Park","location.location.events","2012 World Series"
-14,"m.011zsc4_","organization.leadership.organization","San Francisco Giants"
-15,"San Francisco Giants","sports.sports_team.previously_known_as","New York Giants"
-16,"AT&T Park","location.location.events","2010 World Series"
-17,"Crazy Crab","sports.mascot.team","San Francisco Giants"
-18,"New York Giants","baseball.baseball_team.league","National League"
-19,"San Francisco Giants","sports.sports_team.colors","Black"
-20,"San Francisco Giants","sports.sports_team.previously_known_as","New York Gothams"
-21,"m.0k079qm","base.schemastaging.team_training_ground_relationship.team","San Francisco Giants"
-22,"m.0k079ry","base.schemastaging.team_training_ground_relationship.team","San Francisco Giants"
-23,"2010 World Series","time.event.locations","AT&T Park"
-24,"San Francisco Giants","time.participant.event","2012 Major League Baseball season"
-25,"San Francisco Giants","baseball.baseball_team.league","National League"
-26,"m.0crtd80","sports.sports_league_participation.league","National League West"
-27,"San Francisco Giants","sports.sports_team.location","San Francisco"
-28,"San Francisco Giants","sports.sports_team.sport","Baseball"
-29,"m.05n6dtn","baseball.baseball_team_stats.team","San Francisco Giants"
 
 Question:
 What year did the team with mascot named Lou Seal win the World Series?"""
 
 icl_ass_prompt = """To find the year the team with mascot named Lou Seal won the World Series, we need to find the team with mascot named Lou Seal and then find the year they won the World Series.
 
-From the relations, we can see that Lou Seal is the mascot of the San Francisco Giants.
+From the triplets, we can see that Lou Seal is the mascot of the San Francisco Giants.
 
 Now, we need to find the year the San Francisco Giants won the World Series.
 
-From the relations, we can see that San Francisco Giants won the 2010 World Series and 2012 World Series and 2014 World Series.
+From the triplets, we can see that San Francisco Giants won the 2010 World Series and 2012 World Series and 2014 World Series.
 
 So, the team with mascot named Lou Seal (San Francisco Giants) won the World Series in 2010, 2012, and 2014.
 
@@ -968,80 +784,8 @@ ans: 2014 (2014 World Series)
 ans: 2012 (2012 World Series)
 ans: 2010 (2010 World Series)"""
 
-# icl_sys_prompt = (
-#     "Based on the relations table retrieved from a knowledge graph, please answer the question."
-#     ' Please return formatted answers as a list, each prefixed with "ans:".'
-# )
-
-# icl_cot_prompt = (
-#     # "If no answer is found, please provide an answer according to your common sense. "
-#     # "Please keep the answer as simple as possible."
-#     #  'Format your answers by listing each answer on a separate line, starting with the prefix "ans:".'
-#     #  " Use the entity names as they appear in the knowledge graph as your answers."
-#     #  f" Again, the question is: {prompts['question']}"
-#     # 'If there is no sufficient information to answer the question, return "ans: not available".'
-#     "Let's think step by step."
-#     ' Return the most possible answers based on the given relations by listing each answer on a separate line, starting with the prefix "ans:".'
-#         # 'Format your above answers by listing each answer on a separate line, starting with the prefix "ans:".'
-#     ' Otherwise, if there is no sufficient information to answer the question, return "ans: not available".'
-
-# #    'If there is no sufficient information to answer the question, return "ans: not available".'
-# #    'Otherwise, return the most possible answers, each prefixed with "ans:".'
-
-# )
-
-# icl_user_prompt = """
-# -----Relationships-----
-# ```csv
-# "id", "source", "relation", "target"
-# 0, "Lou Seal", "sports.mascot.team", "San Francisco Giants"
-# 1, "San Francisco Giants", "sports.sports_team.championships", "2012 World Series"
-# 2, "San Francisco Giants", "sports.sports_championship_event.champion", "2014 World Series"
-# 3, "San Francisco Giants", "time.participant.event", "2014 Major League Baseball season"
-# 4, "San Francisco Giants", "time.participant.event", "2010 World Series"
-# 5, "San Francisco Giants", "time.participant.event", "2010 Major League Baseball season"
-# 6, "San Francisco Giants", "sports.sports_team.championships", "2014 World Series"
-# 7, "San Francisco Giants", "sports.sports_team.team_mascot", "Crazy Crab"
-# 8, "San Francisco Giants", "sports.sports_team.championships", "2010 World Series"
-# 9, "San Francisco Giants", "sports.professional_sports_team.owner_s", "Bill Neukom"
-# 10, "San Francisco Giants", "time.participant.event", "2012 World Series"
-# 11, "San Francisco", "sports.sports_team_location.teams", "San Francisco Giants"
-# 12, "San Francisco Giants", "sports.sports_team.arena_stadium", "AT&T Park"
-# 13, "AT&T Park", "location.location.events", "2012 World Series"
-# 14, "m.011zsc4_", "organization.leadership.organization", "San Francisco Giants"
-# 15, "San Francisco Giants", "sports.sports_team.previously_known_as", "New York Giants"
-# 16, "AT&T Park", "location.location.events", "2010 World Series"
-# 17, "Crazy Crab", "sports.mascot.team", "San Francisco Giants"
-# 18, "New York Giants", "baseball.baseball_team.league", "National League"
-# 19, "San Francisco Giants", "sports.sports_team.colors", "Black"
-# 20, "San Francisco Giants", "sports.sports_team.previously_known_as", "New York Gothams"
-# 21, "m.0k079qm", "base.schemastaging.team_training_ground_relationship.team", "San Francisco Giants"
-# 22, "m.0k079ry", "base.schemastaging.team_training_ground_relationship.team", "San Francisco Giants"
-# 23, "2010 World Series", "time.event.locations", "AT&T Park"
-# 24, "San Francisco Giants", "time.participant.event", "2012 Major League Baseball season"
-# 25, "San Francisco Giants", "baseball.baseball_team.league", "National League"
-# 26, "m.0crtd80", "sports.sports_league_participation.league", "National League West"
-# 27, "San Francisco Giants", "sports.sports_team.location", "San Francisco"
-# 28, "San Francisco Giants", "sports.sports_team.sport", "Baseball"
-# 29, "m.05n6dtn", "baseball.baseball_team_stats.team", "San Francisco Giants"
-# ```
-
-
-# Question:
-# What year did the team with mascot named Lou Seal win the World Series?"""
-
-# icl_ass_prompt = """To find the year the team with mascot named Lou Seal won the World Series, we need to find the team with mascot named Lou Seal and then find the year they won the World Series.
-
-# From the relations table, we can see that Lou Seal is the mascot of the San Francisco Giants.
-
-# Now, we need to find the year the San Francisco Giants won the World Series.
-
-# From the relations table, we can see that San Francisco Giants won the 2010 World Series and 2012 World Series and 2014 World Series.
-
-# So, the team with mascot named Lou Seal (San Francisco Giants) won the World Series in 2010, 2012, and 2014.
-
-# Therefore, the formatted answers are:
-
-# ans: 2014 (2014 World Series)
-# ans: 2012 (2012 World Series)
-# ans: 2010 (2010 World Series)"""
+icl_cot_prompt = (
+    "Let's think step by step."
+    ' Return the most possible answers based on the given triplets by listing each answer on a separate line, starting with the prefix "ans:".'
+    ' Otherwise, if there is no sufficient information to answer the question, return "ans: not available".'
+)
