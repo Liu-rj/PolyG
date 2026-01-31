@@ -85,19 +85,6 @@ if args.model in ["Qwen/Qwen3-8B", "Qwen/Qwen3-14B"]:
         "chat_template_kwargs": {"enable_thinking": False},
     }
     lite_llm_model_name = "hosted_vllm/" + args.model
-elif args.model == "Qwen/Qwen3-Next-80B-A3B-Instruct":
-    sampling_params = {
-        "api_base": "http://localhost:10021/v1",
-        "api_key": "EMPTY",
-        # Standard OpenAI parameters
-        "temperature": 0.7,
-        "top_p": 0.8,
-        "max_tokens": MAX_OUTPUT_TOKENS,
-        # vLLM-specific (or Qwen3-specific) parameters
-        "top_k": 20,
-        "min_p": 0.0,
-    }
-    lite_llm_model_name = "openai/" + args.model
 else:
     lite_llm_model_name = args.model
 print(f"Sampling params: {sampling_params}")
@@ -123,7 +110,7 @@ def BFS(question, id_mapping):
             edge_depth=1,
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="BFS",
-            response_type="a simple sentence that indicates the answer.",
+            response_type='Please return formatted answers by listing each answer on a separate line, starting with the prefix "ans:".',
             token_ratio_for_node=0.5,
             token_ratio_for_edge=0.4,
             failure_retries=0,
@@ -131,25 +118,6 @@ def BFS(question, id_mapping):
     )
     print_outputs(response)
     return "BFS", response, duration, token_len, api_calls, answer_list
-
-
-def cypher_single_entity(question, id_mapping):
-    print(f"Question: {question}")
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=QueryParam(
-            mode="local",
-            local_context_length=MAX_CONTEXT_TOKENS,
-            traversal_type="cypher_query",
-            response_type="a simple sentence that indicates the answer.",
-            token_ratio_for_node=0.5,
-            token_ratio_for_edge=0.4,
-            failure_retries=0,
-        ),
-    )
-    print_outputs(response)
-    return "cypher_single_entity", response, duration, token_len, api_calls, answer_list
 
 
 def cypher_only(question, id_mapping):
@@ -161,7 +129,7 @@ def cypher_only(question, id_mapping):
             mode="local",
             local_context_length=MAX_CONTEXT_TOKENS,
             traversal_type="cypher_only",
-            response_type="a simple sentence that indicates the answer.",
+            response_type='Please return formatted answers by listing each answer on a separate line, starting with the prefix "ans:".',
             token_ratio_for_node=0.5,
             token_ratio_for_edge=0.4,
             failure_retries=0,
@@ -169,35 +137,6 @@ def cypher_only(question, id_mapping):
     )
     print_outputs(response)
     return "cypher_only", response, duration, token_len, api_calls, answer_list
-
-
-def adaptive(question, id_mapping):
-    print(f"Question: {question}")
-    query_param = QueryParam(
-        mode="local",
-        edge_depth=1,
-        local_context_length=MAX_CONTEXT_TOKENS,
-        traversal_type="cypher_query",
-        response_type="a simple sentence that indicates the answer.",
-        token_ratio_for_node=0.5,
-        token_ratio_for_edge=0.4,
-        failure_retries=3,
-    )
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=query_param,
-    )
-    print_outputs(response)
-    return (
-        "adaptive",
-        response,
-        duration,
-        token_len,
-        api_calls,
-        answer_list,
-        query_param.question_classification_result,
-    )
 
 
 def build_graph(graph: list) -> nx.DiGraph:
@@ -268,7 +207,18 @@ if __name__ == "__main__":
 
     dataset = load_dataset(f"rmanluo/RoG-{args.benchmark}", split="test")
 
-    for it, sample in enumerate(dataset):
+    # resume from history
+    start_id = 0
+    if os.path.exists(output_file):
+        with jsonlines.open(output_file) as reader:
+            done_lines = list(reader)
+        questions = set([q["question"] for q in done_lines])
+        done_count = len(questions)
+        print(f"Resuming from {done_count} done questions.")
+        dataset = dataset.select(range(done_count, len(dataset))) # type: ignore
+        start_id = done_count
+
+    for it, sample in enumerate(dataset, start=start_id):
         question = sample["question"]
         nx_graph = build_graph(sample["graph"])
         id_mapping = {}
@@ -278,9 +228,9 @@ if __name__ == "__main__":
         rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
 
         results = []
-        results.append(adaptive(question, id_mapping.copy()))
+        # results.append(adaptive(question, id_mapping.copy()))
         results.append(BFS(question, id_mapping.copy()))
-        results.append(cypher_single_entity(question, id_mapping.copy()))
+        # results.append(cypher_single_entity(question, id_mapping.copy()))
         results.append(cypher_only(question, id_mapping.copy()))
 
         result_entrees = []

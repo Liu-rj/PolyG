@@ -13,11 +13,7 @@ argparser.add_argument("--model", type=str, default="Qwen/Qwen3-14B", required=T
 args = argparser.parse_args()
 
 
-ANSWER_PATH = [
-    # f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
-    f"../subgraphrag/results/{args.dataset}/{args.model}/results_dc.jsonl",
-    # f"results/{args.dataset}/{args.model}/results.jsonl",
-]
+ANSWER_PATH = f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl"
 OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
 
 
@@ -115,8 +111,10 @@ def remove_duplicates(input_list):
 
 
 def get_pred(prediction, split=None):
+    if isinstance(prediction, list):
+        return remove_duplicates(prediction)
     if split is not None:
-        return prediction.split(split)
+        return remove_duplicates(prediction.split(split))
 
     res = [p for p in prediction.split("\n") if "ans:" in p and "none" not in p.lower()]
     if len(res) >= 1:
@@ -130,21 +128,11 @@ def get_pred(prediction, split=None):
 
 
 answers = []
-for path in ANSWER_PATH:
-    with open(path, "r") as f:
-        for item in jsonlines.Reader(f):
-            answers.append(item)
+with open(ANSWER_PATH, "r") as f:
+    for item in jsonlines.Reader(f):
+        answers.append(item)
 
-method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
-    "BFS+PPR",
-    "subgraphrag",
-    "adaptive",
-]
+method_names = ["GraphCoT"]
 question_answer = defaultdict(list)
 for item in answers:
     if item["gt_answer"] == "N/A" or item["method"] not in method_names:
@@ -186,9 +174,9 @@ for it, (question, answers) in enumerate(question_answer.items()):
             ]
         )
 
-        response = answer["model_answer"]
+        response = str(answer["model_answer"])
         print(response)
-        result = get_pred(response, split=None)
+        result = get_pred(response, split=",")
 
         precision = eval_precision(result, gt, double_check)[0]
         recall = eval_recall(result, gt, double_check)[0]
