@@ -176,7 +176,7 @@ if __name__ == "__main__":
         print(f"Resuming from {done_count} done questions.")
         start_id = done_count
 
-    for it in range(start_id, len(infer_set)):
+    for it in tqdm(range(start_id, len(infer_set))):
         sample = infer_set[it]
         collate_sample = collate_retriever([sample])
 

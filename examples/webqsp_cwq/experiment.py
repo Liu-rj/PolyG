@@ -228,10 +228,14 @@ if __name__ == "__main__":
         rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
 
         results = []
-        # results.append(adaptive(question, id_mapping.copy()))
-        results.append(BFS(question, id_mapping.copy()))
-        # results.append(cypher_single_entity(question, id_mapping.copy()))
-        results.append(cypher_only(question, id_mapping.copy()))
+        try:
+            # results.append(adaptive(question, id_mapping.copy()))
+            results.append(BFS(question, id_mapping.copy()))
+            # results.append(cypher_single_entity(question, id_mapping.copy()))
+            results.append(cypher_only(question, id_mapping.copy()))
+        except Exception as e:
+            print(f"Error processing sample {it}: {e}")
+            continue
 
         result_entrees = []
         for result in results:

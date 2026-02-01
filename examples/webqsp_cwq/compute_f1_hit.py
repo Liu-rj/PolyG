@@ -15,7 +15,7 @@ args = argparser.parse_args()
 
 ANSWER_PATH = [
     # f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
-    f"../subgraphrag/results/{args.dataset}/{args.model}/results_dc.jsonl",
+    f"../subgraphrag/results/{args.dataset}/{args.model}/results_dc_100.jsonl",
     # f"results/{args.dataset}/{args.model}/results.jsonl",
 ]
 OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
