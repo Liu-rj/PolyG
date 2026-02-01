@@ -68,9 +68,6 @@ class BaseGraphStorage:
     async def get_node_out_edges(self, node_id: ID) -> List[Dict]:
         raise NotImplementedError
 
-    async def topk_shortest_paths(self, src_id: ID, tgt_id: ID) -> List[List[ID]]:
-        raise NotImplementedError
-
     async def nodes(self) -> list[ID]:
         raise NotImplementedError
 
@@ -83,4 +80,9 @@ class BaseGraphStorage:
     async def exec_query_and_get_path(
         self, query: str
     ) -> Tuple[List[List], Set[ID], Set[ID]]:
+        raise NotImplementedError
+
+    async def topk_shortest_paths(
+        self, src_id: ID, tgt_id: ID, k: int = 20
+    ) -> List[List[Tuple[ID, str, ID]]]:
         raise NotImplementedError

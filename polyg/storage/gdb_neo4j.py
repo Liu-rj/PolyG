@@ -203,24 +203,85 @@ class Neo4jStorage(BaseGraphStorage):
 
             return all_paths, node_ids, dest_ids
 
-    async def topk_shortest_paths(self, src_id: ID, tgt_id: ID) -> List[List[ID]]:
-        return []
+    async def topk_shortest_paths(
+        self, src_id: ID, tgt_id: ID, k: int = 20
+    ) -> List[List[Tuple[ID, str, ID]]]:
+        """
+        Returns top-k shortest paths as a list of edge tuples.
+        Each path is a list of (src_id, relation_type, tgt_id) tuples.
+
+        Strategy: First try forward directed paths, then backward directed,
+        finally undirected. This avoids duplicate semantic paths.
+        """
         paths = []
+        seen_node_sequences: Set[Tuple[ID, ...]] = set()
+
+        def extract_path(path) -> List[Tuple[ID, str, ID]] | None:
+            """Extract edge tuples from a path, deduplicating by node sequence."""
+            # Get node sequence for deduplication
+            node_seq = tuple(node["id"] for node in path.nodes)
+            if node_seq in seen_node_sequences:
+                return None
+            seen_node_sequences.add(node_seq)
+
+            edge_tuples = []
+            for rel in path.relationships:
+                edge_tuples.append(
+                    (rel.start_node["id"], rel.type, rel.end_node["id"])
+                )
+            return edge_tuples
 
         async with self.async_driver.session() as session:
             async with transaction_context(session, timeout=60) as tx:
+                # 1. Try forward directed: -[*]->
                 results = await tx.run(
                     f"""
-                    MATCH path = SHORTEST 20 (s:{self.namespace} {{id: $source_id}})
+                    MATCH path = SHORTEST {k} (s:{self.namespace} {{id: $source_id}})
                     -[*]->(t:{self.namespace} {{id: $target_id}})
                     RETURN path
                     """,
                     source_id=src_id,
                     target_id=tgt_id,
                 )
-
                 async for record in results:
-                    node_id = record["path"]
-                    paths.append(node_id)
+                    edge_tuples = extract_path(record["path"])
+                    if edge_tuples is not None:
+                        paths.append(edge_tuples)
 
-            return paths
+                if len(paths) >= k:
+                    return paths[:k]
+
+                # 2. Try backward directed: <-[*]-
+                results = await tx.run(
+                    f"""
+                    MATCH path = SHORTEST {k} (s:{self.namespace} {{id: $source_id}})
+                    <-[*]-(t:{self.namespace} {{id: $target_id}})
+                    RETURN path
+                    """,
+                    source_id=src_id,
+                    target_id=tgt_id,
+                )
+                async for record in results:
+                    edge_tuples = extract_path(record["path"])
+                    if edge_tuples is not None:
+                        paths.append(edge_tuples)
+
+                if len(paths) >= k:
+                    return paths[:k]
+
+                # 3. Try undirected: -[*]- (last resort)
+                results = await tx.run(
+                    f"""
+                    MATCH path = SHORTEST {k} (s:{self.namespace} {{id: $source_id}})
+                    -[*]-(t:{self.namespace} {{id: $target_id}})
+                    RETURN path
+                    """,
+                    source_id=src_id,
+                    target_id=tgt_id,
+                )
+                async for record in results:
+                    edge_tuples = extract_path(record["path"])
+                    if edge_tuples is not None:
+                        paths.append(edge_tuples)
+
+            return paths[:k]

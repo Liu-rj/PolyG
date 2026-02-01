@@ -14,33 +14,34 @@ async def shortest_path_retriever(
     global_config: dict,
 ) -> RetrievalResult:
     cypher_query = (
-        "MATCH p = SHORTEST 20 (s:self.namespace {id: $source_id})-[*]->"
+        "MATCH p = SHORTEST 20 (s:self.namespace {id: $source_id})-[*]-"
         "(t:self.namespace {id: $target_id})\n"
-        "RETURN [n in nodes(p) | n.id] AS path"
+        "RETURN path"
     )
 
     tic = time.perf_counter()
     entry_ids = list(id_mapping.values())
-    all_node_path = await kg_inst.topk_shortest_paths(entry_ids[0], entry_ids[1])
+    all_edge_paths = await kg_inst.topk_shortest_paths(entry_ids[0], entry_ids[1])
     print(f"Shortest path retrieval time: {time.perf_counter() - tic:.2f}s")
-    print(f"Number of paths retrieved: {len(all_node_path)}")
-    print(f"Number of edges retrieved: {sum([len(p) - 1 for p in all_node_path])}")
+    print(f"Number of paths retrieved: {len(all_edge_paths)}")
+    print(f"Number of edges retrieved: {sum([len(p) for p in all_edge_paths])}")
 
     tic = time.perf_counter()
     all_paths = []
     all_nodes = set()
-    for node_path in all_node_path:
+    for edge_path in all_edge_paths:
         path_data = []
-        for i in range(len(node_path) - 1):
-            all_nodes.add(node_path[i])
-            node_data = await kg_inst.get_node(node_path[i])
-            edge_data = await kg_inst.get_edge(node_path[i], node_path[i + 1])
-            assert node_data is not None and edge_data is not None
-            path_data.extend([node_data["name"], edge_data["relation"]])
-        all_nodes.add(node_path[-1])
-        node_data = await kg_inst.get_node(node_path[-1])
-        assert node_data is not None
-        path_data.append(node_data["name"])
+        for src_id, relation, tgt_id in edge_path:
+            all_nodes.add(src_id)
+            all_nodes.add(tgt_id)
+            node_data = await kg_inst.get_node(src_id)
+            assert node_data is not None, f"Node {src_id} not found"
+            path_data.extend([node_data["name"], relation])
+        # Add the last node's name
+        if edge_path:
+            last_node_data = await kg_inst.get_node(edge_path[-1][2])
+            assert last_node_data is not None, f"Node {edge_path[-1][2]} not found"
+            path_data.append(last_node_data["name"])
         all_paths.append(path_data)
     print(f"Collect path data time: {time.perf_counter() - tic:.2f}s")
 
