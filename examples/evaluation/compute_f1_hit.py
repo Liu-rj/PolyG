@@ -156,7 +156,7 @@ async def evaluate_question_responses(question, answers):
             )
 
             print(response)
-            result_str = response.split("```")[1]
+            result_str = response.split("```")[1] if "```" in response else response
             try:
                 result = eval(result_str)
             except Exception as e:
@@ -212,7 +212,6 @@ method_names = [
     "Fastgraphrag_PPR",
     "GraphCoT",
     "cypher_only",
-    "BFS+PPR",
     "adaptive",
 ]
 question_answer = defaultdict(list)

@@ -44,7 +44,7 @@ DATASET_DIR = args.data_dir
 DATASET_NAME = DATASET_DIR.split("/")[-1]
 RESULT_DIR = f"results/{DATASET_NAME}/{args.model}"
 MAX_MODEL_LEN = 65536
-MAX_CONTEXT_TOKENS = 57344
+MAX_CONTEXT_TOKENS = 50000
 MAX_OUTPUT_TOKENS = 8192
 
 print(
@@ -203,37 +203,8 @@ def adaptive(question, id_mapping):
     )
 
 
-def BFS_PPR(question, id_mapping):
-    print(f"Question: {question}")
-    query_param = QueryParam(
-        mode="local",
-        edge_depth=2,
-        local_context_length=MAX_CONTEXT_TOKENS,
-        traversal_type="BFS+PPR",
-        response_type="a sentence or a paragraph based on provided information, concise while comprehensive about details.",
-        token_ratio_for_node=0.5,
-        token_ratio_for_edge=0.4,
-        failure_retries=3,
-    )
-    response, duration, token_len, api_calls, answer_list = rag.query(
-        question,
-        id_mapping,
-        param=query_param,
-    )
-    print_outputs(response)
-    return (
-        "BFS+PPR",
-        response,
-        duration,
-        token_len,
-        api_calls,
-        answer_list,
-        query_param.question_classification_result,
-    )
-
-
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results_bfs_ppr.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 

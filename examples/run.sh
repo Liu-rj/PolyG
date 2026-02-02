@@ -135,3 +135,9 @@ python experiment.py --data_dir=/home/renjie/PolyG/datasets/physics --benchmark_
 cd /home/renjie/PolyG/examples/evaluation
 conda activate polyg
 python judge_by_llm.py --dataset physics --model Qwen/Qwen3-14B
+
+python experiment.py --data_dir=/home/renjie/PolyG/datasets/goodreads --benchmark_dir=/home/renjie/PolyG/benchmarks/goodreads --model=Qwen/Qwen3-14B
+python judge_by_llm.py --dataset goodreads --model Qwen/Qwen3-14B
+
+python experiment.py --data_dir=/home/renjie/PolyG/datasets/amazon --benchmark_dir=/home/renjie/PolyG/benchmarks/amazon --model=Qwen/Qwen3-14B
+python judge_by_llm.py --dataset amazon --model Qwen/Qwen3-14B

@@ -7,14 +7,7 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 
-if args.dataset == "physics":
-    LLM_JUDGE_PATH = f"../results/physics/{args.model}/judgements_w_bfs_ppr.jsonl"
-elif args.dataset == "amazon":
-    LLM_JUDGE_PATH = f"../results/amazon/{args.model}/judgements.jsonl"
-elif args.dataset == "goodreads":
-    LLM_JUDGE_PATH = f"../results/goodreads/{args.model}/judgements.jsonl"
-else:
-    raise ValueError(f"Unknown dataset: {args.dataset}")
+LLM_JUDGE_PATH = f"../results/{args.dataset}/{args.model}/judgements.jsonl"
 
 
 judgements = []
@@ -49,7 +42,6 @@ method_names = [
     "Fastgraphrag_PPR",
     "GraphCoT",
     "cypher_only",
-    "BFS+PPR",
     "adaptive",
 ]
 method_names = [name.lower() for name in method_names]

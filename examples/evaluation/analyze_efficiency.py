@@ -13,7 +13,6 @@ args = argparser.parse_args()
 ANSWER_PATH = [
     f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
     f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
-    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_bfs_ppr.jsonl",
     f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
 ]
 
@@ -43,7 +42,6 @@ method_names = [
     "Fastgraphrag_PPR",
     "GraphCoT",
     "cypher_only",
-    "BFS+PPR",
     "adaptive",
 ]
 all_time, all_tokens, all_api_calls = [], [], []
