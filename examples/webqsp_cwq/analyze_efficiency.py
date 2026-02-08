@@ -9,10 +9,10 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 ANSWER_PATH = [
-    f"results/{args.dataset}/{args.model}/results_rephrased.jsonl",
-    # f"results/{args.dataset}/{args.model}/results_rephrased_others.jsonl",
-    f"/home/renjie/fast-graphrag/examples/results/{args.dataset}/{args.model}/results_rephrased.jsonl",
-    f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results_rephrased.jsonl",
+    # f"results/{args.dataset}/{args.model}/results.jsonl",
+    f"../subgraphrag/results/{args.dataset}/{args.model}/results_dc_100.jsonl",
+    # f"/home/renjie/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    # f"/home/renjie/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
 ]
 
 answers = []
@@ -23,15 +23,15 @@ for path in ANSWER_PATH:
 
 method_names = [
     "BFS",
-    "cypher_single_entity",
     "Fastgraphrag_PPR",
     "GraphCoT",
     "cypher_only",
+    "subgraphrag",
     "adaptive",
 ]
 all_time, all_tokens, all_api_calls = [], [], []
 
-method_time = {method: 0 for method in method_names}
+method_time = {method: 0.0 for method in method_names}
 method_tokens = {method: 0 for method in method_names}
 method_api_calss = {method: 0 for method in method_names}
 method_counts = {method: 0 for method in method_names}

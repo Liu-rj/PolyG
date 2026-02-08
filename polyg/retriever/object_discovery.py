@@ -78,8 +78,9 @@ async def guided_walk_retriever(
         for edges in all_edges:
             hashable_edges = [frozenset(e.items()) for e in edges]
             unique_edges.update(hashable_edges)
-        aux_node_ids.update([e["src_id"] for e in unique_edges])
-        aux_node_ids.update([e["tgt_id"] for e in unique_edges])
+        edges_as_dicts = [dict(e) for e in unique_edges]
+        aux_node_ids.update([e["src_id"] for e in edges_as_dicts])
+        aux_node_ids.update([e["tgt_id"] for e in edges_as_dicts])
 
     all_node_ids = list(aux_node_ids) + ret_ids
     nodes_data = await asyncio.gather(*[kg_inst.get_node(nid) for nid in all_node_ids])

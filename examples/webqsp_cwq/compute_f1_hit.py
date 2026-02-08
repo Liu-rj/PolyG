@@ -15,7 +15,7 @@ args = argparser.parse_args()
 
 ANSWER_PATH = [
     # f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
-    f"../subgraphrag/results/{args.dataset}/{args.model}/results_dc_100.jsonl",
+    f"../subgraphrag/results/{args.dataset}/{args.model}/results_dc_100_subgraphrag+adaptive.jsonl",
     # f"results/{args.dataset}/{args.model}/results.jsonl",
 ]
 OUTPUT_PATH = f"results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
@@ -137,11 +137,9 @@ for path in ANSWER_PATH:
 
 method_names = [
     "BFS",
-    "cypher_single_entity",
     "Fastgraphrag_PPR",
     "GraphCoT",
     "cypher_only",
-    "BFS+PPR",
     "subgraphrag",
     "adaptive",
 ]

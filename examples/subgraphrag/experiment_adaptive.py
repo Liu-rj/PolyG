@@ -104,7 +104,7 @@ rag = GraphRAG(
     model_max_token_size=MAX_MODEL_LEN,
     model_sampling_params=sampling_params,
 )
-rag.register_retriever("cypher_query", subgraphrag_retriever)
+rag.register_retriever("subgraphrag", subgraphrag_retriever)
 print(rag.traversal_functions)
 
 
@@ -132,18 +132,44 @@ def subgraphrag(question, id_mapping, extra_data):
         mode="local",
         edge_depth=1,
         local_context_length=MAX_CONTEXT_TOKENS,
-        traversal_type="adaptive",
+        traversal_type="subgraphrag",
         response_type=(
             'Please return formatted answers by listing each answer on a separate line, starting with the prefix "ans:".'
         ),
         token_ratio_for_node=0,
         token_ratio_for_edge=0.9,
-        failure_retries=3,
+        failure_retries=0,
         extra_data=extra_data,
     )
     response, duration, token_len, api_calls, answer_list = rag.query(
         question, id_mapping, param=query_param
     )
+    if (
+        "ans:" not in response.lower()
+        or "ans: unknown" in response.lower()
+        or ("ans: not " in response.lower() and response.lower().count("ans:") == 1)
+        or ("ans: no " in response.lower() and response.lower().count("ans:") == 1)
+    ):
+        query_param = QueryParam(
+            mode="local",
+            edge_depth=1,
+            local_context_length=MAX_CONTEXT_TOKENS,
+            traversal_type="adaptive",
+            response_type=(
+                'Please return formatted answers by listing each answer on a separate line, starting with the prefix "ans:".'
+            ),
+            token_ratio_for_node=0.5,
+            token_ratio_for_edge=0.4,
+            failure_retries=3,
+            extra_data=extra_data,
+        )
+        response, duration2, token_len2, api_calls2, answer_list2 = rag.query(
+            question, id_mapping, param=query_param
+        )
+        duration += duration2
+        token_len += token_len2
+        api_calls += api_calls2
+        answer_list += answer_list2
     print_outputs(response)
     return (
         "adaptive",
@@ -218,6 +244,8 @@ def extract_graph_schema(nx_graph: nx.DiGraph) -> str:
 
 
 if __name__ == "__main__":
+    remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+
     device = torch.device(f"cuda:0")
 
     cpt = torch.load(args.path, map_location="cpu")
@@ -234,7 +262,15 @@ if __name__ == "__main__":
     model = model.to(device)
     model.eval()
 
-    output_file = os.path.join(RESULT_DIR, f"results_dc_{args.topk}.jsonl")
+    output_file = os.path.join(
+        RESULT_DIR, f"results_dc_{args.topk}_subgraphrag+adaptive.jsonl"
+    )
+
+    previous_answer_file = f"results/{args.benchmark}/{args.model}/results_dc_100.jsonl"
+    answers = []
+    with open(previous_answer_file, "r") as f:
+        for item in jsonlines.Reader(f):
+            answers.append(item)
 
     # resume from history
     start_id = 0
@@ -244,62 +280,76 @@ if __name__ == "__main__":
         questions = set([q["question"] for q in done_lines])
         done_count = len(questions)
         print(f"Resuming from {done_count} done questions.")
-        dataset = dataset.select(range(done_count, len(dataset))) # type: ignore
+        dataset = dataset.select(range(done_count, len(dataset)))  # type: ignore
         start_id = done_count
 
-    for it, raw_sample in enumerate(dataset, start=start_id):
+    for it, raw_sample in tqdm(enumerate(dataset, start=start_id)):
         # for it in tqdm(range(start_id, len(infer_set))):
         sample = infer_set[it]
+        previous_answer = answers[it]
         assert sample["id"] == raw_sample["id"]
-        collate_sample = collate_retriever([sample])
+        assert sample["question"] == previous_answer["question"]
 
+        answer = previous_answer["model_answer"]
         question = sample["question"]
-        id_mapping = {}
-        for entity in sample["q_entity"]:
-            id_mapping[entity] = entity
 
-        nx_graph = build_graph(raw_sample["graph"])
-        insert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
-        rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
+        if not (
+            "ans:" not in answer.lower()
+            or "ans: unknown" in answer.lower()
+            or ("ans: not " in answer.lower() and answer.lower().count("ans:") == 1)
+            or ("ans: no " in answer.lower() and answer.lower().count("ans:") == 1)
+        ):
+            previous_answer["method"] = "adaptive"
+            result_entrees = [previous_answer]
+        else:
+            collate_sample = collate_retriever([sample])
 
-        results = []
-        try:
-            results.append(
-                subgraphrag(
-                    question,
-                    id_mapping.copy(),
-                    {
-                        "model": model,
-                        "sample": collate_sample,
-                        "device": device,
-                        "topk": args.topk,
-                        "maxk": 500,
-                    },
+            id_mapping = {}
+            for entity in sample["q_entity"]:
+                id_mapping[entity] = entity
+
+            nx_graph = build_graph(raw_sample["graph"])
+            insert_to_neo4j(args, nx_graph)  # Insert the graph into Neo4j
+            rag.concrete_graph_schema = extract_graph_schema(nx_graph)  # Extract schema
+
+            results = []
+            try:
+                results.append(
+                    subgraphrag(
+                        question,
+                        id_mapping.copy(),
+                        {
+                            "model": model,
+                            "sample": collate_sample,
+                            "device": device,
+                            "topk": args.topk,
+                            "maxk": 500,
+                        },
+                    )
                 )
-            )
-        except Exception as e:
-            print(f"Error processing sample {it}: {e}")
-            continue
+            except Exception as e:
+                print(f"Error processing sample {it}: {e}")
+                continue
 
-        result_entrees = []
-        for result in results:
-            result_entree = {
-                "question_type": args.benchmark,
-                "question": question,
-                "method": result[0],
-                "model_answer": result[1],
-                "duration": round(result[2], 2),
-                "token_count": result[3],
-                "api_calls": result[4],
-                "answer_list": result[5],
-                "gt_answer": sample["a_entity"],
-            }
-            if len(result) > 6:
-                result_entree["question_classification_result"] = result[6]
-            result_entrees.append(result_entree)
-            print(result_entree)
+            result_entrees = []
+            for result in results:
+                result_entree = {
+                    "question_type": args.benchmark,
+                    "question": question,
+                    "method": result[0],
+                    "model_answer": result[1],
+                    "duration": round(result[2], 2),
+                    "token_count": result[3],
+                    "api_calls": result[4],
+                    "answer_list": result[5],
+                    "gt_answer": sample["a_entity"],
+                }
+                if len(result) > 6:
+                    result_entree["question_classification_result"] = result[6]
+                result_entrees.append(result_entree)
+                print(result_entree)
 
-        remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
+            remove_from_neo4j(args)  # Clean up the Neo4j database after each sample
 
         with jsonlines.open(output_file, "a") as writer:
             writer.write_all(result_entrees)

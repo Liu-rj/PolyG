@@ -143,7 +143,7 @@ def form_entity_relation_context(
 
     # build relation context
     tic = time.perf_counter()
-    if query_param.traversal_type == "cypher_query":
+    if query_param.traversal_type == "subgraphrag":
         relations_section_list = []
         for i, e in enumerate(edges_data):
             relations_section_list.append(
@@ -225,7 +225,7 @@ def form_entity_relation_context(
         auxdata_context = list_to_csv(truncated_auxdata_list)
     print(f"Build auxiliary context time: {time.perf_counter() - tic:.2f}s")
 
-    if query_param.traversal_type == "cypher_query":
+    if query_param.traversal_type == "subgraphrag":
         return SUBGRAPHRAG_CONTEXT.format(relations_context=relations_context)
     else:
         return ALL_CONTEXT.format(
@@ -309,7 +309,7 @@ async def retrieve_and_generate(
     logger.info(f"Using {len(ndata)} entites, {len(edata)} relations")
 
     tic = time.perf_counter()
-    if query_param.traversal_type == "cypher_query":
+    if query_param.traversal_type == "subgraphrag":
         sorted_ndata, sorted_edata = ndata, edata
     else:
         sorted_ndata, sorted_edata = await sort_entity_relation(ndata, edata, kg_inst)
