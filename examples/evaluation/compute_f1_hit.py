@@ -15,11 +15,12 @@ args = argparser.parse_args()
 
 
 ANSWER_PATH = [
-    f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
-    f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
-    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    # f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    # f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_top1.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_top40.jsonl",
 ]
-OUTPUT_PATH = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
+OUTPUT_PATH = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/detailed_evaluation_topk.jsonl"
 
 
 client = AsyncOpenAI(
@@ -207,12 +208,13 @@ for path in ANSWER_PATH:
             answers.append(item)
 
 method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
-    "adaptive",
+    # "BFS",
+    # "cypher_single_entity",
+    # "Fastgraphrag_PPR",
+    # "GraphCoT",
+    # "cypher_only",
+    "adaptive_top1",
+    "adaptive_top40",
 ]
 question_answer = defaultdict(list)
 for item in answers:

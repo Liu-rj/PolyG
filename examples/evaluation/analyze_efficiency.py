@@ -11,9 +11,10 @@ args = argparser.parse_args()
 
 
 ANSWER_PATH = [
-    f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
-    f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
-    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    # f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    # f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_top1.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_top40.jsonl",
 ]
 
 
@@ -37,12 +38,14 @@ for item in answers:
     question_answer[item["question_type"]][item["question"]].append(item)
 
 method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
-    "adaptive",
+    # "BFS",
+    # "cypher_single_entity",
+    # "Fastgraphrag_PPR",
+    # "GraphCoT",
+    # "cypher_only",
+    # "adaptive",
+    "adaptive_top1",
+    "adaptive_top40",
 ]
 all_time, all_tokens, all_api_calls = [], [], []
 bfs_time = []

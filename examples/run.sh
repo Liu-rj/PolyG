@@ -128,16 +128,20 @@
 # python evaluation/judge_by_llm.py --dataset=amazon --model=$model
 # python evaluation/compute_f1.py --dataset=amazon --model=$model
 
-python experiment.py --data_dir=../datasets/physics --benchmark_dir=../benchmarks/physics --model=Qwen/Qwen3-14B
-cd /home/renjie/fast-graphrag/examples
-conda activate fastgrag
-python experiment.py --data_dir=/home/renjie/PolyG/datasets/physics --benchmark_dir=/home/renjie/PolyG/benchmarks/physics --model=Qwen/Qwen3-14B
-cd /home/renjie/PolyG/examples/evaluation
-conda activate polyg
-python judge_by_llm.py --dataset physics --model Qwen/Qwen3-14B
+python experiment.py --data_dir=/raid0/renjie/polg_datasets/datasets/physics --benchmark_dir=../benchmarks/physics --model=Qwen/Qwen3-14B
+# cd /home/renjie/fast-graphrag/examples
+# conda activate fastgrag
+# python experiment.py --data_dir=/home/renjie/PolyG/datasets/physics --benchmark_dir=/home/renjie/PolyG/benchmarks/physics --model=Qwen/Qwen3-14B
+# cd /home/renjie/PolyG/examples/evaluation
+# conda activate polyg
+# python judge_by_llm.py --dataset physics --model Qwen/Qwen3-14B
 
-python experiment.py --data_dir=/home/renjie/PolyG/datasets/goodreads --benchmark_dir=/home/renjie/PolyG/benchmarks/goodreads --model=Qwen/Qwen3-14B
-python judge_by_llm.py --dataset goodreads --model Qwen/Qwen3-14B
+# python experiment.py --data_dir=/raid0/renjie/polg_datasets/datasets/goodreads --benchmark_dir=../benchmarks/goodreads --model=Qwen/Qwen3-14B
+# python judge_by_llm.py --dataset goodreads --model Qwen/Qwen3-14B
 
-python experiment.py --data_dir=/home/renjie/PolyG/datasets/amazon --benchmark_dir=/home/renjie/PolyG/benchmarks/amazon --model=Qwen/Qwen3-14B
-python judge_by_llm.py --dataset amazon --model Qwen/Qwen3-14B
+# python experiment.py --data_dir=/raid0/renjie/polg_datasets/datasets/amazon --benchmark_dir=../benchmarks/amazon --model=Qwen/Qwen3-14B
+# python judge_by_llm.py --dataset amazon --model Qwen/Qwen3-14B
+
+# python experiment.py --data_dir=/raid0/renjie/polg_datasets/datasets/physics --benchmark_dir=../benchmarks/physics --model=deepseek/deepseek-chat
+# python experiment.py --data_dir=/raid0/renjie/polg_datasets/datasets/goodreads --benchmark_dir=../benchmarks/goodreads --model=deepseek/deepseek-chat
+# python experiment.py --data_dir=/raid0/renjie/polg_datasets/datasets/amazon --benchmark_dir=../benchmarks/amazon --model=deepseek/deepseek-chat

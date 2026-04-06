@@ -7,7 +7,7 @@ argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", require
 args = argparser.parse_args()
 
 
-LLM_JUDGE_PATH = f"../results/{args.dataset}/{args.model}/judgements.jsonl"
+LLM_JUDGE_PATH = f"../results/{args.dataset}/{args.model}/judgements_topk.jsonl"
 
 
 judgements = []
@@ -37,12 +37,14 @@ criteria = [
     "Overall Winner",
 ]
 method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
+    # "BFS",
+    # "cypher_single_entity",
+    # "Fastgraphrag_PPR",
+    # "GraphCoT",
+    # "cypher_only",
+    "adaptive_top1",
     "adaptive",
+    "adaptive_top40",
 ]
 method_names = [name.lower() for name in method_names]
 global_method_wins = {name: {method: 0 for method in method_names} for name in criteria}

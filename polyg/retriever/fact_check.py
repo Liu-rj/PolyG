@@ -68,7 +68,10 @@ async def topk_csp_retriever(
                 ]
             )
 
-    nodes_data = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
+    if len(path) == 0:
+        nodes_data = []
+    else:
+        nodes_data = await asyncio.gather(*[kg_inst.get_node(nid) for nid in node_ids])
 
     return RetrievalResult(
         cypher_query=cypher_query,

@@ -204,7 +204,7 @@ def adaptive(question, id_mapping):
 
 
 if __name__ == "__main__":
-    output_file = os.path.join(RESULT_DIR, "results.jsonl")
+    output_file = os.path.join(RESULT_DIR, "results_failure_analysis.jsonl")
     # if os.path.exists(output_file):
     #     os.remove(output_file)
 
@@ -226,7 +226,7 @@ if __name__ == "__main__":
             question, id_mapping = item["question"], item["entity"]
 
             results.append(adaptive(question, id_mapping.copy()))
-            results.append(BFS(question, id_mapping.copy()))
+            # results.append(BFS(question, id_mapping.copy()))
             results.append(cypher_single_entity(question, id_mapping.copy()))
             results.append(cypher_only(question, id_mapping.copy()))
 

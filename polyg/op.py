@@ -242,6 +242,16 @@ async def retrieve_and_generate(
     except Exception as e:
         logger.error(f"Error during retrieval: {e}")
         return PROMPTS["fail_response"], token_consumption, all_llm_calls, []
+
+    if (
+        len(retrieval_result.nodes_data) == 0
+        and len(retrieval_result.edges_data) == 0
+        and len(retrieval_result.reasoning_paths) == 0
+        and len(retrieval_result.auxiliary_data) == 0
+    ):
+        logger.error("No entities or relations retrieved.")
+        return PROMPTS["fail_response"], token_consumption, all_llm_calls, []
+
     ndata = retrieval_result.nodes_data
     edata = retrieval_result.edges_data
     for data in ndata:

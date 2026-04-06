@@ -3,11 +3,22 @@ import jsonlines
 from collections import defaultdict
 from polyg.prompt import PROMPTS
 
+# ANSWER_PATH = [
+#     "/home/renjie/PolyG/examples/results/physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/renjie/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/renjie/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+# ]
+
+# ANSWER_PATH = [
+#     "/home/renjie/PolyG/examples/results/physics/Qwen/Qwen3-14B/results.jsonl",
+#     "/home/renjie/PolyG/examples/results/goodreads/Qwen/Qwen3-14B/results.jsonl",
+#     "/home/renjie/PolyG/examples/results/amazon/Qwen/Qwen3-14B/results.jsonl",
+# ]
 
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-    "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-    "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    "/home/renjie/PolyG/examples/results/physics/deepseek-r1/results_rephrased.jsonl",
+    "/home/renjie/PolyG/examples/results/goodreads/deepseek-r1/results_rephrased.jsonl",
+    "/home/renjie/PolyG/examples/results/amazon/deepseek-r1/results_rephrased.jsonl",
 ]
 
 answers = []
@@ -69,7 +80,7 @@ import matplotlib.pyplot as plt
 FONT_SIZE = 24
 x_labels = ["<s,*,*>", "<s,p,*>", "<s,*,o>", "<s,p,o>", "Nested"]
 methods = ["RoG", "Cypher", "PolyG"]
-colors = ["silver", "bisque", "skyblue"]
+colors = ["silver", "bisque", "#BDD7EE"]
 fig, ax = plt.subplots(figsize=(10, 6))
 
 num_groups = len(x_labels)
@@ -99,4 +110,4 @@ ax.legend(methods, fontsize=FONT_SIZE - 2, loc="upper left")
 ax.grid(axis="y", linestyle="--", alpha=0.6)
 
 plt.tight_layout()
-plt.savefig("failure_rate.pdf", bbox_inches="tight")
+plt.savefig("failure_rate_deepseek.pdf", bbox_inches="tight")

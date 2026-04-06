@@ -3,10 +3,22 @@ import jsonlines
 from collections import defaultdict
 
 
+# ANSWER_PATH = [
+#     "/home/renjie/PolyG/examples/results/physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/renjie/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
+#     "/home/renjie/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+# ]
+
+# ANSWER_PATH = [
+#     "/home/renjie/PolyG/examples/results/physics/Qwen/Qwen3-14B/results.jsonl",
+#     "/home/renjie/PolyG/examples/results/goodreads/Qwen/Qwen3-14B/results.jsonl",
+#     "/home/renjie/PolyG/examples/results/amazon/Qwen/Qwen3-14B/results.jsonl",
+# ]
+
 ANSWER_PATH = [
-    "/home/ubuntu/PolyG/examples/results/physics/claude-3.5-sonnet/results_rephrased_final.jsonl",
-    "/home/ubuntu/PolyG/examples/results/goodreads/claude-3.5-sonnet/results_rephrased_final.jsonl",
-    "/home/ubuntu/PolyG/examples/results/amazon/claude-3.5-sonnet/results_rephrased_final.jsonl",
+    "/home/renjie/PolyG/examples/results/physics/deepseek-r1/results_rephrased.jsonl",
+    "/home/renjie/PolyG/examples/results/goodreads/deepseek-r1/results_rephrased.jsonl",
+    "/home/renjie/PolyG/examples/results/amazon/deepseek-r1/results_rephrased.jsonl",
 ]
 
 answers = []
@@ -57,7 +69,7 @@ FONT_SIZE = 24
 x_labels = ["<s,*,*>", "<s,p,*>", "<s,*,o>", "<s,p,o>", "Nested"]
 
 plt.figure(figsize=(10, 6))
-plt.bar(x_labels, all_acc, color="skyblue", width=0.45, edgecolor="k")
+plt.bar(x_labels, all_acc, color="#BDD7EE", width=0.45, edgecolor="k")
 # plot the average accuracy
 plt.axhline(y=sum(all_acc) / len(all_acc), color="g", linestyle="--", label="Average")
 # write the average accuracy on the plot
@@ -77,4 +89,4 @@ plt.xticks(rotation=45)
 plt.grid(axis="y", linestyle="--", alpha=0.6)
 
 plt.tight_layout()
-plt.savefig("qc_accuracy.pdf", bbox_inches="tight")
+plt.savefig("qc_accuracy_deepseek.pdf", bbox_inches="tight")

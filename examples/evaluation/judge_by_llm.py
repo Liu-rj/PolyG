@@ -23,11 +23,13 @@ client = AsyncOpenAI(
 )
 
 ANSWER_PATH = [
-    f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
-    f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
+    # f"{os.getenv('HOME')}/fast-graphrag/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    # f"{os.getenv('HOME')}/Graph-CoT/Graph-CoT/results/{args.model}/{args.dataset}/results.jsonl",
     f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_top1.jsonl",
+    f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/results_top40.jsonl",
 ]
-OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements.jsonl"
+OUTPUT_FILE = f"{os.getenv('HOME')}/PolyG/examples/results/{args.dataset}/{args.model}/judgements_topk.jsonl"
 
 
 SYSTEM_ROLE = """
@@ -271,12 +273,14 @@ for question_type, qa_pairs in question_answer.items():
     print(f"Total number of questions: {len(qa_pairs)}")
 
 method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "cypher_only",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
+    # "BFS",
+    # "cypher_single_entity",
+    # "cypher_only",
+    # "Fastgraphrag_PPR",
+    # "GraphCoT",
     "adaptive",
+    "adaptive_top1",
+    "adaptive_top40",
 ]
 for question_type in question_types:
     results = asyncio.run(main_judge(question_answer[question_type]))

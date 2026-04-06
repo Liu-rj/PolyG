@@ -7,15 +7,16 @@ argparser.add_argument("--dataset", type=str, default="physics", required=True)
 argparser.add_argument("--model", type=str, default="claude-3.5-sonnet", required=True)
 args = argparser.parse_args()
 
-RESULT_PATH = f"../results/{args.dataset}/{args.model}/detailed_evaluation.jsonl"
+RESULT_PATH = f"../results/{args.dataset}/{args.model}/detailed_evaluation_topk.jsonl"
 
 method_names = [
-    "BFS",
-    "cypher_single_entity",
-    "Fastgraphrag_PPR",
-    "GraphCoT",
-    "cypher_only",
-    "adaptive",
+    # "BFS",
+    # "cypher_single_entity",
+    # "Fastgraphrag_PPR",
+    # "GraphCoT",
+    # "cypher_only",
+    "adaptive_top1",
+    "adaptive_top40",
 ]
 
 method_precision = {method: 0.0 for method in method_names}

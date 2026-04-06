@@ -70,23 +70,28 @@ async def guided_walk_retriever(
                 ]
             )
 
-    tic = time.perf_counter()
-    aux_node_ids = set(id_mapping.values())
-    unique_edges = set()
-    if global_config["dataset"] in ["webqsp", "cwq"]:
-        all_edges = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in ret_ids])
-        for edges in all_edges:
-            hashable_edges = [frozenset(e.items()) for e in edges]
-            unique_edges.update(hashable_edges)
-        edges_as_dicts = [dict(e) for e in unique_edges]
-        aux_node_ids.update([e["src_id"] for e in edges_as_dicts])
-        aux_node_ids.update([e["tgt_id"] for e in edges_as_dicts])
+    if len(ret_ids) == 0:
+        nodes_data = []
+        unique_edges = []
+        ret_names = []
+    else:
+        tic = time.perf_counter()
+        aux_node_ids = set(id_mapping.values())
+        unique_edges = set()
+        if global_config["dataset"] in ["webqsp", "cwq"]:
+            all_edges = await asyncio.gather(*[kg_inst.get_node_edges(d) for d in ret_ids])
+            for edges in all_edges:
+                hashable_edges = [frozenset(e.items()) for e in edges]
+                unique_edges.update(hashable_edges)
+            edges_as_dicts = [dict(e) for e in unique_edges]
+            aux_node_ids.update([e["src_id"] for e in edges_as_dicts])
+            aux_node_ids.update([e["tgt_id"] for e in edges_as_dicts])
 
-    all_node_ids = list(aux_node_ids) + ret_ids
-    nodes_data = await asyncio.gather(*[kg_inst.get_node(nid) for nid in all_node_ids])
-    ret_names = [n["name"] for n in nodes_data[len(aux_node_ids) :]]  # type: ignore
-    print(f"answer list: {ret_names}")
-    print(f"Get node data time: {time.perf_counter() - tic:.2f}s")
+        all_node_ids = list(aux_node_ids) + ret_ids
+        nodes_data = await asyncio.gather(*[kg_inst.get_node(nid) for nid in all_node_ids])
+        ret_names = [n["name"] for n in nodes_data[len(aux_node_ids) :]]  # type: ignore
+        print(f"answer list: {ret_names}")
+        print(f"Get node data time: {time.perf_counter() - tic:.2f}s")
 
     return RetrievalResult(
         cypher_query=cypher_query,
